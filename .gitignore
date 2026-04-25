@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Temporary
+tmp/
+temp/
+
+# Supabase
+supabase/.temp/
+
+# Vercel
+.vercel/
+
+# Extracted document content (large files)
+extracted_content.txt
+extracted_utf8.txt
+smart_extracted.txt

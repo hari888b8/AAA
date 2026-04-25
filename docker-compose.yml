@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: agrihub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: Agrihub
+      POSTGRES_USER: Agrihub
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5455:5432"
+    volumes:
+      - agrihub_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U Agrihub -d Agrihub"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: agrihub-redis
+    restart: unless-stopped
+    ports:
+      - "6399:6379"
+    volumes:
+      - agrihub_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: agrihub-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: Agrihub
+      POSTGRES_USER: Agrihub
+      POSTGRES_PASSWORD: postgres
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: agrihub_secret_jwt_2026_production_key_xyz
+      JWT_EXPIRY: 7d
+      CORS_ORIGIN: "*"
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  agrihub_pg_data:
+  agrihub_redis_data:

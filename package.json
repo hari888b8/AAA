@@ -1,0 +1,27 @@
+{
+  "name": "agrihub-super-app",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "agriculture",
+    "agritech",
+    "agriflow",
+    "aquaos",
+    "kisanconnect",
+    "farmerconnect"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "Agriculture Ecosystem Super-App — Consolidated multi-app hub",
+  "devDependencies": {
+    "vite": "^6.3.3"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.103.3"
+  }
+}
