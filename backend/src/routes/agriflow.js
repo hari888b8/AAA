@@ -31,7 +31,7 @@ router.get('/listings', optionalAuth, async (req, res) => {
     `, params);
 
     const countResult = await query(`
-      SELECT COUNT(*) FROM supply_listings sl WHERE ${conditions.slice(0, -0).join(' AND ')}
+      SELECT COUNT(*) FROM supply_listings sl WHERE ${conditions.join(' AND ')}
     `, params.slice(0, -2));
 
     res.json({ listings: result.rows, total: parseInt(countResult.rows[0].count) });

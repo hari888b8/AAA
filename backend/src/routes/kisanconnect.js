@@ -37,6 +37,28 @@ router.get('/equipment', optionalAuth, async (req, res) => {
 });
 
 // POST /api/kisanconnect/equipment/:id/book
+// POST /api/kisanconnect/equipment — create equipment listing
+router.post('/equipment', authMiddleware, async (req, res) => {
+  try {
+    const { name, equipment_type, description, daily_rate, hourly_rate,
+            operator_included, district_id, location_label } = req.body;
+    if (!name || !equipment_type) return res.status(400).json({ error: 'name and equipment_type required' });
+
+    const result = await query(`
+      INSERT INTO equipment (id, owner_id, name, equipment_type, description, daily_rate, hourly_rate,
+        operator_included, district_id, location_label, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'available') RETURNING *
+    `, [uuidv4(), req.user.id, name, equipment_type, description,
+        daily_rate || null, hourly_rate || null,
+        operator_included || false, district_id || null, location_label || null]);
+
+    res.status(201).json({ equipment: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/kisanconnect/equipment/:id/book
 router.post('/equipment/:id/book', authMiddleware, async (req, res) => {
   try {
     const { start_date, end_date, notes } = req.body;
@@ -107,6 +129,34 @@ router.post('/jobs', authMiddleware, async (req, res) => {
         salary_period, location_label, district_id, vacancies, description, skills]);
 
     res.status(201).json({ job: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/kisanconnect/jobs/:id/apply — apply to a job
+router.post('/jobs/:id/apply', authMiddleware, async (req, res) => {
+  try {
+    const { experience, expected_salary, available_from, cover_note } = req.body;
+    const job = await query(`SELECT * FROM jobs WHERE id = $1 AND is_active = true`, [req.params.id]);
+    if (!job.rows.length) return res.status(404).json({ error: 'Job not found or expired' });
+
+    // Check if already applied
+    const existing = await query(
+      `SELECT id FROM job_applications WHERE job_id = $1 AND applicant_id = $2`,
+      [req.params.id, req.user.id]
+    );
+    if (existing.rows.length) return res.status(400).json({ error: 'Already applied to this job' });
+
+    const result = await query(`
+      INSERT INTO job_applications (id, job_id, applicant_id, experience, expected_salary, available_from, cover_note)
+      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *
+    `, [uuidv4(), req.params.id, req.user.id, experience, expected_salary, available_from, cover_note]);
+
+    // Increment application count
+    await query(`UPDATE jobs SET applications_count = COALESCE(applications_count,0) + 1 WHERE id = $1`, [req.params.id]);
+
+    res.status(201).json({ application: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

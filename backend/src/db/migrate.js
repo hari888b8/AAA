@@ -667,6 +667,27 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE TRIGGER trg_equipment_upd BEFORE UPDATE ON equipment FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- TABLE: job_applications
+CREATE TABLE IF NOT EXISTS job_applications (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  job_id          UUID NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+  applicant_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  experience      VARCHAR(200),
+  expected_salary DECIMAL(10,2),
+  available_from  DATE,
+  cover_note      TEXT,
+  status          VARCHAR(30) DEFAULT 'pending',
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(job_id, applicant_id)
+);
+CREATE INDEX IF NOT EXISTS idx_job_apps_job ON job_applications(job_id);
+CREATE INDEX IF NOT EXISTS idx_job_apps_applicant ON job_applications(applicant_id);
+
+-- Add applications_count to jobs if missing
+DO $$ BEGIN
+  ALTER TABLE jobs ADD COLUMN IF NOT EXISTS applications_count INTEGER DEFAULT 0;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 `;
 
 async function migrate() {
