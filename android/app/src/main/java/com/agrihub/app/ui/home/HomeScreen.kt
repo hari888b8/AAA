@@ -59,8 +59,8 @@ class HomeViewModel @Inject constructor(
             val name = authRepo.getUserName() ?: "Friend"
             val role = authRepo.getUserRole() ?: "farmer"
             try {
-                val prices = intelligenceRepo.getPrices(limit = 6)
-                val feed = intelligenceRepo.getActivityFeed(limit = 5)
+                val prices = intelligenceRepo.getPrices()
+                val feed = intelligenceRepo.getActivityFeed()
                 _state.value = HomeState(userName = name, userRole = role, prices = prices, activity = feed, refreshing = false)
             } catch (_: Exception) {
                 _state.value = _state.value.copy(userName = name, userRole = role, refreshing = false)

@@ -360,7 +360,7 @@ fun WaterLogScreen(navController: NavController, pondId: String, viewModel: Aqua
                 item { Spacer(Modifier.height(16.dp)); Text("History", fontWeight = FontWeight.Bold, fontSize = 16.sp) }
                 items(logs) { log ->
                     Card(Modifier.fillMaxWidth().padding(vertical = 3.dp), shape = RoundedCornerShape(10.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                        Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
+                        Row(Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                             MiniMetric("pH", "${log.ph ?: "—"}")
                             MiniMetric("Temp", "${log.temperature_c ?: "—"}°C")
                             MiniMetric("DO₂", "${log.dissolved_o2 ?: "—"}")

@@ -53,3 +53,6 @@ supabase/.temp/
 extracted_content.txt
 extracted_utf8.txt
 smart_extracted.txt
+android/.gradle/
+android/app/build/
+android/local.properties
