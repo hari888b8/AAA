@@ -130,12 +130,56 @@ router.get('/stats', authMiddleware, async (req, res) => {
         COUNT(*) FILTER (WHERE status = 'active')   AS active_ponds,
         COUNT(*) FILTER (WHERE status = 'harvested') AS harvested_ponds,
         ROUND(SUM(area_acres)::numeric, 2)           AS total_area,
-        ROUND(AVG(survival_pct)::numeric, 1)         AS avg_survival,
-        ROUND(AVG(ph_level)::numeric, 2)             AS avg_ph,
-        ROUND(AVG(temperature_c)::numeric, 1)         AS avg_temp
+        ROUND(AVG(survival_pct) FILTER (WHERE status = 'active')::numeric, 1) AS avg_survival,
+        ROUND(AVG(ph_level) FILTER (WHERE status = 'active' AND ph_level IS NOT NULL)::numeric, 2) AS avg_ph,
+        ROUND(AVG(temperature_c) FILTER (WHERE status = 'active' AND temperature_c IS NOT NULL)::numeric, 1) AS avg_temp
       FROM ponds WHERE farmer_id = $1
     `, [req.user.id]);
     res.json({ stats: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/aquaos/harvest-listings
+router.post('/harvest-listings', authMiddleware, async (req, res) => {
+  try {
+    const { pond_id, species, quantity_kg, avg_size_g, price_per_kg, district_id, location_label, description, harvest_date } = req.body;
+    if (!species || !quantity_kg) return res.status(400).json({ error: 'species and quantity_kg required' });
+
+    const result = await query(`
+      INSERT INTO harvest_listings (id, farmer_id, pond_id, species, quantity_kg, avg_size_g, price_per_kg, district_id, location_label, description, harvest_date)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *
+    `, [uuidv4(), req.user.id, pond_id, species, quantity_kg, avg_size_g, price_per_kg, district_id, location_label, description, harvest_date]);
+
+    res.status(201).json({ listing: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/aquaos/harvest-listings
+router.get('/harvest-listings', async (req, res) => {
+  try {
+    const { species, district_id, limit = 20, offset = 0 } = req.query;
+    let conditions = [`hl.status = 'available'`];
+    let params = [];
+    let i = 1;
+    if (species) { conditions.push(`hl.species ILIKE $${i++}`); params.push(`%${species}%`); }
+    if (district_id) { conditions.push(`hl.district_id = $${i++}`); params.push(district_id); }
+    params.push(parseInt(limit), parseInt(offset));
+
+    const result = await query(`
+      SELECT hl.*, d.name AS district_name, u.name AS farmer_name
+      FROM harvest_listings hl
+      LEFT JOIN districts d ON d.id = hl.district_id
+      JOIN users u ON u.id = hl.farmer_id
+      WHERE ${conditions.join(' AND ')}
+      ORDER BY hl.created_at DESC
+      LIMIT $${i++} OFFSET $${i++}
+    `, params);
+
+    res.json({ listings: result.rows });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

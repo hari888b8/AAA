@@ -19,6 +19,8 @@ const aquaosRouter = require('./routes/aquaos');
 const farmerconnectRouter = require('./routes/farmerconnect');
 const kisanconnectRouter = require('./routes/kisanconnect');
 const intelligenceRouter = require('./routes/intelligence');
+const communityRouter = require('./routes/community');
+const ordersRouter = require('./routes/orders');
 
 const app = express();
 const server = http.createServer(app);
@@ -57,6 +59,8 @@ app.use('/api/aquaos', aquaosRouter);
 app.use('/api/farmerconnect', farmerconnectRouter);
 app.use('/api/kisanconnect', kisanconnectRouter);
 app.use('/api/intelligence', intelligenceRouter);
+app.use('/api/community', communityRouter);
+app.use('/api/orders', ordersRouter);
 
 // 404
 app.use((req, res) => res.status(404).json({ error: `Route ${req.path} not found` }));

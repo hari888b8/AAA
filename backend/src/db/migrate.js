@@ -315,6 +315,63 @@ CREATE TABLE IF NOT EXISTS jobs (
 CREATE INDEX IF NOT EXISTS idx_jobs_district ON jobs(district_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_active   ON jobs(is_active);
 
+-- TABLE: harvest_listings (AquaOS marketplace)
+CREATE TABLE IF NOT EXISTS harvest_listings (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  farmer_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  pond_id         UUID REFERENCES ponds(id),
+  species         VARCHAR(100) NOT NULL,
+  quantity_kg     DECIMAL(10,2) NOT NULL,
+  avg_size_g      DECIMAL(8,2),
+  price_per_kg    DECIMAL(10,2),
+  district_id     INTEGER REFERENCES districts(id),
+  location_label  VARCHAR(200),
+  status          VARCHAR(30) DEFAULT 'available',
+  description     TEXT,
+  harvest_date    DATE,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_harvest_farmer ON harvest_listings(farmer_id);
+
+-- TABLE: community_posts
+CREATE TABLE IF NOT EXISTS community_posts (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title       VARCHAR(300),
+  content     TEXT NOT NULL,
+  category    VARCHAR(50) DEFAULT 'general',
+  app_context VARCHAR(30) DEFAULT 'agriflow',
+  district_id INTEGER REFERENCES districts(id),
+  tags        JSONB,
+  likes       INTEGER DEFAULT 0,
+  replies     INTEGER DEFAULT 0,
+  views       INTEGER DEFAULT 0,
+  pinned      BOOLEAN DEFAULT FALSE,
+  status      VARCHAR(20) DEFAULT 'active',
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_community_app ON community_posts(app_context);
+CREATE INDEX IF NOT EXISTS idx_community_status ON community_posts(status);
+
+-- TABLE: orders
+CREATE TABLE IF NOT EXISTS orders (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  buyer_id        UUID NOT NULL REFERENCES users(id),
+  listing_id      UUID,
+  listing_type    VARCHAR(30) DEFAULT 'supply',
+  quantity        DECIMAL(12,2),
+  price_per_unit  DECIMAL(12,2),
+  total_amount    DECIMAL(12,2),
+  status          VARCHAR(30) DEFAULT 'pending',
+  payment_status  VARCHAR(30) DEFAULT 'unpaid',
+  delivery_address TEXT,
+  notes           TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_orders_buyer ON orders(buyer_id);
+
 -- TABLE: activity_feed (real-time events)
 CREATE TABLE IF NOT EXISTS activity_feed (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

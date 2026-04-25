@@ -1,0 +1,7 @@
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class com.agrihub.app.data.model.** { *; }
+-dontwarn okhttp3.**
+-dontwarn retrofit2.**
+-keep class retrofit2.** { *; }
+-keepclassmembers class * { @com.google.gson.annotations.SerializedName <fields>; }

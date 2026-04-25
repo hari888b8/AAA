@@ -119,7 +119,67 @@ router.post('/refresh', async (req, res) => {
 
 // GET /api/auth/me
 router.get('/me', require('../middleware/auth').authMiddleware, async (req, res) => {
-  res.json({ user: req.user });
+  try {
+    const result = await query(
+      'SELECT id, phone, name, role, is_verified, onboarding_completed, created_at FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    res.json({ user: result.rows[0] || req.user });
+  } catch (err) {
+    res.json({ user: req.user });
+  }
+});
+
+// PATCH /api/auth/me — update profile
+router.patch('/me', require('../middleware/auth').authMiddleware, async (req, res) => {
+  try {
+    const { name, role } = req.body;
+    const result = await query(
+      `UPDATE users SET name = COALESCE($1, name), role = COALESCE($2, role) WHERE id = $3 RETURNING id, phone, name, role, is_verified, onboarding_completed, created_at`,
+      [name, role, req.user.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+    res.json({ user: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// GET /api/auth/notifications
+router.get('/notifications', require('../middleware/auth').authMiddleware, async (req, res) => {
+  try {
+    const { limit = 30, offset = 0, unread_only } = req.query;
+    let where = `user_id = $1`;
+    if (unread_only === 'true') where += ` AND is_read = false`;
+    const result = await query(
+      `SELECT * FROM notifications WHERE ${where} ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
+      [req.user.id, parseInt(limit), parseInt(offset)]
+    );
+    const countResult = await query(`SELECT COUNT(*) FILTER (WHERE is_read = false) AS unread FROM notifications WHERE user_id = $1`, [req.user.id]);
+    res.json({ notifications: result.rows, unread_count: parseInt(countResult.rows[0].unread || 0) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/auth/notifications/:id/read
+router.patch('/notifications/:id/read', require('../middleware/auth').authMiddleware, async (req, res) => {
+  try {
+    await query(`UPDATE notifications SET is_read = true, read_at = NOW() WHERE id = $1 AND user_id = $2`, [req.params.id, req.user.id]);
+    res.json({ message: 'Marked as read' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/notifications/read-all
+router.post('/notifications/read-all', require('../middleware/auth').authMiddleware, async (req, res) => {
+  try {
+    await query(`UPDATE notifications SET is_read = true, read_at = NOW() WHERE user_id = $1 AND is_read = false`, [req.user.id]);
+    res.json({ message: 'All marked as read' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /api/auth/logout
