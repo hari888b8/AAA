@@ -160,6 +160,9 @@ interface IntelligenceApi {
 
     @GET("api/intelligence/activity-feed")
     suspend fun getActivityFeed(@Query("limit") limit: Int = 20): ActivityFeedResponse
+
+    @GET("api/intelligence/crop-recommendations")
+    suspend fun getCropRecommendations(@Query("district_id") districtId: Int? = null): CropRecommendationsResponse
 }
 
 // ─── Community API ─────────────────────────────────────────
@@ -175,6 +178,15 @@ interface CommunityApi {
 
     @POST("api/community/posts/{id}/like")
     suspend fun likePost(@Path("id") id: String): MessageResponse
+
+    @GET("api/community/posts/{id}/comments")
+    suspend fun getComments(@Path("id") postId: String): PostCommentsResponse
+
+    @POST("api/community/posts/{id}/comments")
+    suspend fun addComment(@Path("id") postId: String, @Body body: Map<String, String>): PostCommentWrapper
+
+    @POST("api/community/posts/{id}/comments/{cid}/like")
+    suspend fun likeComment(@Path("id") postId: String, @Path("cid") commentId: String): MessageResponse
 }
 
 // ─── Orders API ────────────────────────────────────────────
@@ -194,6 +206,57 @@ interface OrdersApi {
 
     @PATCH("api/orders/{id}/status")
     suspend fun updateOrderStatus(@Path("id") id: String, @Body body: Map<String, String>): OrderWrapper
+}
+
+// ─── Weather API (PRD Section 11) ─────────────────────────
+interface WeatherApi {
+    @GET("api/weather/forecast")
+    suspend fun getForecast(
+        @Query("district_id") districtId: Int? = null,
+        @Query("days") days: Int = 7,
+    ): WeatherForecastResponse
+
+    @GET("api/weather/advisory")
+    suspend fun getAdvisory(@Query("district_id") districtId: Int? = null): WeatherAdvisoryResponse
+
+    @GET("api/weather/crop-health")
+    suspend fun getCropHealth(
+        @Query("crop_id") cropId: Int? = null,
+        @Query("district_id") districtId: Int? = null,
+    ): CropHealthResponse
+
+    @GET("api/weather/market-outlook")
+    suspend fun getMarketOutlook(): MarketOutlookResponse
+}
+
+// ─── Upload API ────────────────────────────────────────────
+interface UploadApi {
+    @POST("api/upload/image")
+    suspend fun uploadImage(@Body body: Map<String, String>): UploadResponse
+
+    @GET("api/upload/my-files")
+    suspend fun getMyFiles(@Query("context") context: String? = null): UploadFilesResponse
+
+    @DELETE("api/upload/{id}")
+    suspend fun deleteFile(@Path("id") id: String): MessageResponse
+}
+
+// ─── Push Notifications API ───────────────────────────────
+interface PushNotificationsApi {
+    @GET("api/notifications")
+    suspend fun getNotifications(
+        @Query("limit") limit: Int = 30,
+        @Query("unread_only") unreadOnly: String? = null,
+    ): NotificationsResponse
+
+    @PATCH("api/notifications/{id}/read")
+    suspend fun markRead(@Path("id") id: String): MessageResponse
+
+    @PATCH("api/notifications/mark-all-read")
+    suspend fun markAllRead(): MessageResponse
+
+    @POST("api/notifications/register-device")
+    suspend fun registerDevice(@Body body: Map<String, String>): MessageResponse
 }
 
 // ─── Farmer Profile API (PRD Section 6) ────────────────────

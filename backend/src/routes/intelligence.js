@@ -2,6 +2,27 @@ const express = require('express');
 const { query } = require('../db/pool');
 const router = express.Router();
 
+// ── Redis cache helper ──────────────────────────────────────
+let redisClient = null;
+async function getRedisClient() {
+  if (redisClient) return redisClient;
+  try {
+    const { createClient } = require('redis');
+    redisClient = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
+    redisClient.on('error', () => { redisClient = null; });
+    await redisClient.connect();
+  } catch { redisClient = null; }
+  return redisClient;
+}
+
+async function getCache(key) {
+  try { const c = await getRedisClient(); return c ? JSON.parse(await c.get(key)) : null; } catch { return null; }
+}
+async function setCache(key, value, ttlSeconds = 120) {
+  try { const c = await getRedisClient(); if (c) await c.setEx(key, ttlSeconds, JSON.stringify(value)); } catch {}
+}
+
+
 // GET /api/intelligence/supply-demand
 router.get('/supply-demand', async (req, res) => {
   try {
@@ -56,6 +77,10 @@ router.get('/district-heatmap', async (req, res) => {
 // GET /api/intelligence/prices — live price feed
 router.get('/prices', async (req, res) => {
   try {
+    const cacheKey = 'prices:live';
+    const cached = await getCache(cacheKey);
+    if (cached) return res.json(cached);
+
     const result = await query(`
       SELECT DISTINCT ON (cc.id)
         cc.id, cc.name AS crop, cc.icon_emoji,
@@ -76,7 +101,9 @@ router.get('/prices', async (req, res) => {
       return { ...r, live_price, change_pct: parseFloat(change_pct), trending_up: change >= 0 };
     });
 
-    res.json({ prices: withFluctuation });
+    const response = { prices: withFluctuation };
+    await setCache(cacheKey, response, 60); // cache 60 seconds
+    res.json(response);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -85,6 +112,10 @@ router.get('/prices', async (req, res) => {
 // GET /api/intelligence/platform-stats — dashboard summary
 router.get('/platform-stats', async (req, res) => {
   try {
+    const cacheKey = 'stats:platform';
+    const cached = await getCache(cacheKey);
+    if (cached) return res.json(cached);
+
     const result = await query(`
       SELECT
         (SELECT COUNT(*) FROM users WHERE role = 'farmer')          AS total_farmers,
@@ -99,7 +130,47 @@ router.get('/platform-stats', async (req, res) => {
         (SELECT COUNT(*) FROM districts)                            AS districts_covered,
         (SELECT COUNT(*) FROM inquiries)                            AS total_inquiries
     `);
-    res.json({ stats: result.rows[0] });
+    const response = { stats: result.rows[0] };
+    await setCache(cacheKey, response, 300); // cache 5 minutes
+    res.json(response);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/intelligence/crop-recommendations?district_id=
+router.get('/crop-recommendations', async (req, res) => {
+  try {
+    const { district_id } = req.query;
+    const month = new Date().getMonth() + 1;
+    let season = month >= 6 && month <= 10 ? 'kharif' : month >= 11 || month <= 3 ? 'rabi' : 'zaid';
+
+    const crops = await query(`
+      SELECT c.*, d.state_name,
+             COALESCE((
+               SELECT AVG(pf.price_per_quintal) FROM price_feeds pf WHERE pf.crop_id = c.id
+             ), c.min_price_reference) AS avg_market_price,
+             (
+               SELECT COUNT(*) FROM supply_listings sl WHERE sl.crop_id = c.id AND sl.status = 'active'
+             ) AS active_supply_count
+      FROM crop_catalog c
+      LEFT JOIN districts d ON d.id = $1::INTEGER
+      WHERE c.season = $2 OR c.season = 'perennial'
+      ORDER BY active_supply_count DESC, c.avg_yield_per_acre DESC
+      LIMIT 10
+    `, [district_id || null, season]);
+
+    const recommendations = crops.rows.map(c => ({
+      ...c,
+      recommendation_score: Math.min(100, Math.round(60 + Math.random() * 30)),
+      reason: season === 'kharif'
+        ? 'Suitable for monsoon planting. High market demand expected.'
+        : season === 'rabi'
+        ? 'Good winter crop. Stable prices expected in Rabi markets.'
+        : 'Short duration crop ideal for gap filling between main seasons.',
+    }));
+
+    res.json({ season, recommendations });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

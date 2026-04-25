@@ -90,6 +90,7 @@ val platforms = listOf(
     PlatformItem("intelligence", "Intelligence", "Price radar & market analytics", "📊", AppColor.Intelligence, AppColor.IntelligenceLight, Routes.INTELLIGENCE_HOME),
     PlatformItem("fpo", "FPO Dashboard", "Members, procurement & supply", "🏢", AppColor.FpoBlue, AppColor.AquaOSLight, Routes.FPO_DASHBOARD),
     PlatformItem("buyer", "Buyer Intelligence", "Supply search & market insights", "🛒", AppColor.BuyerOrange, AppColor.FarmerConnectLight, Routes.BUYER_DASHBOARD),
+    PlatformItem("weather", "Weather & Advisory", "Crop advisories & price forecast", "⛅", Color(0xFF1565C0), Color(0xFFE3F2FD), Routes.WEATHER_HOME),
 )
 
 @OptIn(ExperimentalMaterialApi::class)

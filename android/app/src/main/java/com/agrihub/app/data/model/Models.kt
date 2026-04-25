@@ -504,6 +504,9 @@ data class PriceFeed(
     val modal_price: Double? = null,
     val unit: String? = "quintal",
     val trend: String? = null,
+    val live_price: Int? = null,
+    val change_pct: Double? = null,
+    val trending_up: Boolean? = null,
     val recorded_at: String? = null,
 )
 
@@ -578,9 +581,10 @@ data class AppNotification(
     val id: String = "",
     val user_id: String = "",
     val title: String = "",
-    val body: String = "",
+    @SerializedName("message") val body: String = "",
     val type: String? = null,
-    val is_read: Boolean = false,
+    @SerializedName("read_at") val is_read: Boolean = false,
+    val data: Map<String, Any>? = null,
     val created_at: String? = null,
 )
 
@@ -596,3 +600,136 @@ data class OfflineAction(
 
 // ─── Generic ───────────────────────────────────────────────
 data class MessageResponse(val message: String)
+
+// ─── Weather & Advisory (PRD Section 11) ─────────────────
+data class WeatherForecastResponse(
+    val location: WeatherLocation = WeatherLocation(),
+    val current: WeatherCurrent = WeatherCurrent(),
+    val forecast: List<WeatherDay> = emptyList(),
+)
+
+data class WeatherLocation(val district: String = "", val state: String = "")
+
+data class WeatherCurrent(
+    val date: String = "",
+    val day: String = "",
+    val condition: String = "",
+    val icon: String = "☀️",
+    val temp_min: Int = 0,
+    val temp_max: Int = 0,
+    val humidity: Int = 0,
+    val wind_kmh: Int = 0,
+    val rain_chance_pct: Int = 0,
+    val rainfall_mm: Double = 0.0,
+    val feels_like: Int = 0,
+    val uv_index: Int = 0,
+    val visibility_km: Int = 10,
+)
+
+data class WeatherDay(
+    val date: String = "",
+    val day: String = "",
+    val condition: String = "",
+    val icon: String = "☀️",
+    val temp_min: Int = 0,
+    val temp_max: Int = 0,
+    val humidity: Int = 0,
+    val wind_kmh: Int = 0,
+    val rain_chance_pct: Int = 0,
+    val rainfall_mm: Double = 0.0,
+)
+
+data class WeatherAdvisoryResponse(
+    val weather_based: List<WeatherAdvisory> = emptyList(),
+    val expert_advisories: List<Advisory> = emptyList(),
+    val generated_at: String = "",
+)
+
+data class WeatherAdvisory(
+    val id: String = "",
+    val severity: String = "low",
+    val icon: String = "📋",
+    val title: String = "",
+    val message: String = "",
+    val crops: List<String>? = null,
+    val action_required: Boolean = false,
+)
+
+data class MarketOutlookResponse(val market_outlook: List<MarketOutlookItem> = emptyList())
+
+data class MarketOutlookItem(
+    val id: Int = 0,
+    val name: String = "",
+    val icon_emoji: String? = null,
+    val current_price: Double = 0.0,
+    val predicted_price: Double = 0.0,
+    val trend: String = "stable",
+    val confidence: Int = 0,
+    val reason: String = "",
+)
+
+data class CropHealthResponse(
+    val crop: String = "",
+    val health_score: Int = 0,
+    val health_label: String = "",
+    val factors: CropHealthFactors? = null,
+    val recommendations: List<String> = emptyList(),
+)
+
+data class CropHealthFactors(
+    val temperature: CropHealthFactor? = null,
+    val humidity: CropHealthFactor? = null,
+    val rainfall: CropHealthFactor? = null,
+)
+
+data class CropHealthFactor(val score: Int = 0, val avg: Double = 0.0, val label: String = "")
+
+// ─── Crop Recommendations (PRD Section 13) ───────────────
+data class CropRecommendationsResponse(
+    val season: String = "",
+    val recommendations: List<CropRecommendation> = emptyList(),
+)
+
+data class CropRecommendation(
+    val id: Int = 0,
+    val name: String = "",
+    val icon_emoji: String? = null,
+    val category: String? = null,
+    val avg_market_price: Double? = null,
+    val avg_yield_per_acre: Double? = null,
+    val growing_days: Int? = null,
+    val recommendation_score: Int = 0,
+    val reason: String = "",
+    val active_supply_count: Int = 0,
+)
+
+// ─── Community Comments ───────────────────────────────────
+data class PostCommentsResponse(val comments: List<PostComment>)
+data class PostCommentWrapper(val comment: PostComment)
+data class PostComment(
+    val id: String = "",
+    val post_id: String = "",
+    val author_id: String = "",
+    val author_name: String? = null,
+    val author_role: String? = null,
+    val content: String = "",
+    val likes: Int = 0,
+    val created_at: String? = null,
+)
+
+// ─── File Upload ──────────────────────────────────────────
+data class UploadResponse(
+    val url: String = "",
+    val filename: String = "",
+    val size_bytes: Int = 0,
+    val context: String = "",
+)
+
+data class UploadFilesResponse(val files: List<UploadedFile>)
+data class UploadedFile(
+    val id: String = "",
+    val url: String = "",
+    val context: String = "",
+    val size_bytes: Int = 0,
+    val created_at: String? = null,
+)

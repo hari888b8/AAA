@@ -71,6 +71,9 @@ object NetworkModule {
     @Provides @Singleton fun provideFarmerProfileApi(retrofit: Retrofit): FarmerProfileApi = retrofit.create(FarmerProfileApi::class.java)
     @Provides @Singleton fun provideFpoApi(retrofit: Retrofit): FpoApi = retrofit.create(FpoApi::class.java)
     @Provides @Singleton fun provideBuyerApi(retrofit: Retrofit): BuyerApi = retrofit.create(BuyerApi::class.java)
+    @Provides @Singleton fun provideWeatherApi(retrofit: Retrofit): WeatherApi = retrofit.create(WeatherApi::class.java)
+    @Provides @Singleton fun provideUploadApi(retrofit: Retrofit): UploadApi = retrofit.create(UploadApi::class.java)
+    @Provides @Singleton fun providePushNotificationsApi(retrofit: Retrofit): PushNotificationsApi = retrofit.create(PushNotificationsApi::class.java)
 }
 
 @Module

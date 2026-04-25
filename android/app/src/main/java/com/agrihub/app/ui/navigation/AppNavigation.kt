@@ -33,6 +33,7 @@ import com.agrihub.app.ui.onboarding.*
 import com.agrihub.app.ui.orders.*
 import com.agrihub.app.ui.profile.*
 import com.agrihub.app.ui.theme.AppColor
+import com.agrihub.app.ui.weather.*
 
 // ─── Route Definitions ─────────────────────────────────────
 object Routes {
@@ -83,6 +84,7 @@ object Routes {
     const val INTELLIGENCE_HOME = "intelligence/home"
     const val PRICES = "intelligence/prices"
     const val HEATMAP = "intelligence/heatmap"
+    const val CROP_RECS = "intelligence/crop-recs"
 
     // Others
     const val COMMUNITY = "community"
@@ -114,6 +116,11 @@ object Routes {
 
     // Farmer enhanced (PRD Section 6)
     const val HARVEST_CALENDAR = "farmer/harvest-calendar"
+
+    // Weather & Advisory (PRD Section 11)
+    const val WEATHER_HOME = "weather/home"
+    const val MARKET_OUTLOOK = "weather/market-outlook"
+    const val CROP_HEALTH = "weather/crop-health"
 }
 
 // ─── Bottom Tab Items ──────────────────────────────────────
@@ -255,6 +262,7 @@ fun MainNavHost() {
             composable(Routes.INTELLIGENCE_HOME) { IntelligenceHomeScreen(navController) }
             composable(Routes.PRICES) { PricesScreen(navController) }
             composable(Routes.HEATMAP) { HeatmapScreen(navController) }
+            composable(Routes.CROP_RECS) { CropRecommendationsScreen(navController) }
 
             // ── Community ──
             composable(Routes.COMMUNITY) { CommunityScreen(navController) }
@@ -291,6 +299,11 @@ fun MainNavHost() {
 
             // ── Farmer Enhanced ──
             composable(Routes.HARVEST_CALENDAR) { HarvestCalendarScreen(navController) }
+
+            // ── Weather & Advisory (PRD Section 11) ──
+            composable(Routes.WEATHER_HOME) { WeatherHomeScreen(navController) }
+            composable(Routes.MARKET_OUTLOOK) { MarketOutlookScreen(navController) }
+            composable(Routes.CROP_HEALTH) { CropHealthScreen(navController) }
         }
     }
 }

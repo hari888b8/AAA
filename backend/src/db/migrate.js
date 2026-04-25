@@ -599,6 +599,50 @@ CREATE TABLE IF NOT EXISTS supply_intelligence (
   computed_at       TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- TABLE: device_tokens (FCM push notification registration)
+CREATE TABLE IF NOT EXISTS device_tokens (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  fcm_token   TEXT NOT NULL,
+  platform    VARCHAR(10) DEFAULT 'android',
+  app_version VARCHAR(20),
+  active      BOOLEAN DEFAULT TRUE,
+  last_seen   TIMESTAMPTZ DEFAULT NOW(),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, fcm_token)
+);
+CREATE INDEX IF NOT EXISTS idx_device_tokens_user ON device_tokens(user_id);
+
+-- TABLE: uploaded_files
+CREATE TABLE IF NOT EXISTS uploaded_files (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  filename    TEXT NOT NULL,
+  url         TEXT NOT NULL,
+  context     VARCHAR(50) DEFAULT 'general',
+  size_bytes  INTEGER,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_uploaded_files_user ON uploaded_files(user_id);
+
+-- TABLE: post_comments
+CREATE TABLE IF NOT EXISTS post_comments (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id     UUID NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+  author_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content     TEXT NOT NULL,
+  likes       INTEGER DEFAULT 0,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_post_comments_post ON post_comments(post_id);
+
+-- Alter notifications table to add read_at if not exist
+DO $$ BEGIN
+  ALTER TABLE notifications ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ;
+  ALTER TABLE notifications ADD COLUMN IF NOT EXISTS data JSONB DEFAULT '{}';
+  ALTER TABLE notifications ADD COLUMN IF NOT EXISTS type VARCHAR(50) DEFAULT 'system';
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
 -- AUTO-UPDATED updated_at function
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$

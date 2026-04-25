@@ -58,6 +58,13 @@ class IntelligenceViewModel @Inject constructor(private val repo: IntelligenceRe
     fun loadPlatformStats() = viewModelScope.launch {
         try { _platformStats.value = repo.getPlatformStats() } catch (_: Exception) {}
     }
+
+    private val _recommendations = MutableStateFlow<CropRecommendationsResponse?>(null)
+    val recommendations: StateFlow<CropRecommendationsResponse?> = _recommendations.asStateFlow()
+
+    fun loadRecommendations(districtId: Int? = null) = viewModelScope.launch {
+        try { _recommendations.value = repo.getCropRecommendations(districtId) } catch (_: Exception) {}
+    }
 }
 
 // ─── Intelligence Home ─────────────────────────────────────
@@ -81,6 +88,7 @@ fun IntelligenceHomeScreen(navController: NavController, viewModel: Intelligence
         item { Spacer(Modifier.height(12.dp)) }
         item { ActionCard("💰", "Live Prices", "Real-time crop prices across mandis", AppColor.Intelligence) { navController.navigate(Routes.PRICES) } }
         item { ActionCard("🗺️", "District Heatmap", "Activity distribution by district", AppColor.Intelligence) { navController.navigate(Routes.HEATMAP) } }
+        item { ActionCard("🌱", "Crop Recommendations", "Best crops for current season", AppColor.Intelligence) { navController.navigate(Routes.CROP_RECS) } }
 
         if (supplyDemand.isNotEmpty()) {
             item { Spacer(Modifier.height(16.dp)); SectionTitle("Supply vs Demand") }
@@ -240,5 +248,111 @@ private fun OverviewStat(emoji: String, value: String, label: String) {
         Text(emoji, fontSize = 20.sp)
         Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = AppColor.TextPrimary)
         Text(label, fontSize = 10.sp, color = AppColor.TextMuted)
+    }
+}
+
+// ─── Crop Recommendations Screen ──────────────────────────
+@Composable
+fun CropRecommendationsScreen(navController: NavController, viewModel: IntelligenceViewModel = hiltViewModel()) {
+    val recommendations by viewModel.recommendations.collectAsState()
+    LaunchedEffect(Unit) { viewModel.loadRecommendations() }
+
+    Column(Modifier.fillMaxSize().background(AppColor.Background)) {
+        GradientHeader("Crop Recommendations", "Best crops for this season", Color(0xFF1B5E20), AppColor.Intelligence, onBack = { navController.popBackStack() })
+
+        if (recommendations == null) {
+            LoadingScreen()
+        } else {
+            val recs = recommendations!!
+            LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
+                item {
+                    Card(
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
+                    ) {
+                        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("🌱", fontSize = 24.sp)
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text("${recs.season.replaceFirstChar { it.uppercase() }} Season", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF166534))
+                                Text("${recs.recommendations.size} crops recommended based on market data", fontSize = 12.sp, color = AppColor.TextSecondary)
+                            }
+                        }
+                    }
+                }
+                items(recs.recommendations) { rec ->
+                    Card(
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(2.dp),
+                    ) {
+                        Column(Modifier.padding(14.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(rec.icon_emoji ?: "🌾", fontSize = 28.sp)
+                                Spacer(Modifier.width(10.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(rec.name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    rec.category?.let { Text(it.replaceFirstChar { c -> c.uppercase() }, fontSize = 12.sp, color = AppColor.TextMuted) }
+                                }
+                                // Score circle
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(androidx.compose.foundation.shape.CircleShape)
+                                        .background(
+                                            when {
+                                                rec.recommendation_score >= 80 -> AppColor.Success.copy(0.15f)
+                                                rec.recommendation_score >= 60 -> AppColor.Warning.copy(0.15f)
+                                                else -> AppColor.Error.copy(0.15f)
+                                            }
+                                        ),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            "${rec.recommendation_score}",
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 14.sp,
+                                            color = when {
+                                                rec.recommendation_score >= 80 -> AppColor.Success
+                                                rec.recommendation_score >= 60 -> AppColor.Warning
+                                                else -> AppColor.Error
+                                            },
+                                        )
+                                        Text("score", fontSize = 8.sp, color = AppColor.TextMuted)
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(rec.reason, fontSize = 12.sp, color = AppColor.TextSecondary)
+                            Spacer(Modifier.height(8.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                rec.avg_market_price?.let {
+                                    MetricTag("💰", "₹${it.toInt()}/qtl")
+                                }
+                                rec.avg_yield_per_acre?.let {
+                                    MetricTag("📦", "${it}T/acre")
+                                }
+                                rec.growing_days?.let {
+                                    MetricTag("📅", "${it} days")
+                                }
+                            }
+                        }
+                    }
+                }
+                item { Spacer(Modifier.height(24.dp)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetricTag(icon: String, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(icon, fontSize = 12.sp)
+        Spacer(Modifier.width(3.dp))
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = AppColor.TextSecondary)
     }
 }

@@ -54,7 +54,7 @@ class KisanViewModel @Inject constructor(private val repo: KisanConnectRepositor
     fun loadStats() = viewModelScope.launch {
         try { _stats.value = repo.getStats() } catch (_: Exception) {}
     }
-    fun loadEquipment() = viewModelScope.launch {
+    fun loadEquipment(type: String? = null) = viewModelScope.launch {
         _loading.value = true
         try { _equipment.value = repo.getEquipment() } catch (e: Exception) { _error.value = e.message }
         _loading.value = false
@@ -121,17 +121,49 @@ private fun StepItem(emoji: String, text: String) {
 fun EquipmentScreen(navController: NavController, viewModel: KisanViewModel = hiltViewModel()) {
     val equipment by viewModel.equipment.collectAsState()
     val loading by viewModel.loading.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
+    val equipmentTypes = listOf("All", "Tractor", "Harvester", "Sprayer", "Thresher", "Rotavator", "Pump")
+    var selectedType by remember { mutableStateOf("All") }
+
     LaunchedEffect(Unit) { viewModel.loadEquipment() }
-    val pullRefreshState = rememberPullRefreshState(loading, { viewModel.loadEquipment() })
+    val pullRefreshState = rememberPullRefreshState(loading, { viewModel.loadEquipment(selectedType.takeIf { it != "All" }) })
+
+    val filtered = remember(equipment, searchQuery, selectedType) {
+        equipment.filter { eq ->
+            (searchQuery.isBlank() || eq.equipment_type.contains(searchQuery, ignoreCase = true) ||
+                eq.brand?.contains(searchQuery, ignoreCase = true) == true ||
+                eq.district_name?.contains(searchQuery, ignoreCase = true) == true) &&
+            (selectedType == "All" || eq.equipment_type.equals(selectedType, ignoreCase = true))
+        }
+    }
 
     Column(Modifier.fillMaxSize().background(AppColor.Background)) {
-        GradientHeader("Equipment Rental", "${equipment.size} available", Color(0xFF5B21B6), AppColor.KisanConnect, onBack = { navController.popBackStack() })
+        GradientHeader("Equipment Rental", "${filtered.size} available", Color(0xFF5B21B6), AppColor.KisanConnect, onBack = { navController.popBackStack() })
+
+        OutlinedTextField(
+            value = searchQuery, onValueChange = { searchQuery = it },
+            placeholder = { Text("Search equipment, brand, location...", fontSize = 13.sp) },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            shape = RoundedCornerShape(12.dp), singleLine = true,
+            leadingIcon = { Text("🔍", fontSize = 16.sp) },
+        )
+
+        androidx.compose.foundation.lazy.LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.padding(bottom = 4.dp),
+        ) {
+            items(equipmentTypes) { type ->
+                FilterChip(selected = selectedType == type, onClick = { selectedType = type }, label = { Text(type, fontSize = 11.sp) })
+            }
+        }
+
         Box(Modifier.weight(1f).pullRefresh(pullRefreshState)) {
             when {
                 loading && equipment.isEmpty() -> LoadingScreen()
-                equipment.isEmpty() -> EmptyState("🚜", "No equipment listed", "Equipment from owners will appear here")
+                filtered.isEmpty() -> EmptyState("🚜", "No equipment found", "Try a different search or type")
                 else -> LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
-                    items(equipment) { eq ->
+                    items(filtered) { eq ->
                         Card(
                             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
                                 .clickable { navController.navigate(Routes.bookEquipment(eq.id)) },
@@ -192,17 +224,49 @@ fun BookEquipmentScreen(navController: NavController, equipmentId: String, viewM
 fun JobsScreen(navController: NavController, viewModel: KisanViewModel = hiltViewModel()) {
     val jobs by viewModel.jobs.collectAsState()
     val loading by viewModel.loading.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
+    val jobTypes = listOf("All", "Permanent", "Seasonal", "Daily", "Contract")
+    var selectedType by remember { mutableStateOf("All") }
+
     LaunchedEffect(Unit) { viewModel.loadJobs() }
     val pullRefreshState = rememberPullRefreshState(loading, { viewModel.loadJobs() })
 
+    val filtered = remember(jobs, searchQuery, selectedType) {
+        jobs.filter { job ->
+            (searchQuery.isBlank() || job.title.contains(searchQuery, ignoreCase = true) ||
+                job.employer_name?.contains(searchQuery, ignoreCase = true) == true ||
+                job.district_name?.contains(searchQuery, ignoreCase = true) == true) &&
+            (selectedType == "All" || job.job_type?.equals(selectedType, ignoreCase = true) == true)
+        }
+    }
+
     Column(Modifier.fillMaxSize().background(AppColor.Background)) {
-        GradientHeader("Rural Jobs", "${jobs.size} positions", Color(0xFF5B21B6), AppColor.KisanConnect, onBack = { navController.popBackStack() })
+        GradientHeader("Rural Jobs", "${filtered.size} positions", Color(0xFF5B21B6), AppColor.KisanConnect, onBack = { navController.popBackStack() })
+
+        OutlinedTextField(
+            value = searchQuery, onValueChange = { searchQuery = it },
+            placeholder = { Text("Search jobs, employer, location...", fontSize = 13.sp) },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            shape = RoundedCornerShape(12.dp), singleLine = true,
+            leadingIcon = { Text("🔍", fontSize = 16.sp) },
+        )
+
+        androidx.compose.foundation.lazy.LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.padding(bottom = 4.dp),
+        ) {
+            items(jobTypes) { type ->
+                FilterChip(selected = selectedType == type, onClick = { selectedType = type }, label = { Text(type, fontSize = 11.sp) })
+            }
+        }
+
         Box(Modifier.weight(1f).pullRefresh(pullRefreshState)) {
             when {
                 loading && jobs.isEmpty() -> LoadingScreen()
-                jobs.isEmpty() -> EmptyState("💼", "No jobs posted", "Job listings will appear here")
+                filtered.isEmpty() -> EmptyState("💼", "No jobs found", "Try a different search or post a job", "Post Job") { navController.navigate(Routes.POST_JOB) }
                 else -> LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
-                    items(jobs) { job ->
+                    items(filtered) { job ->
                         Card(
                             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                             shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp),

@@ -123,6 +123,7 @@ class IntelligenceRepository @Inject constructor(private val api: IntelligenceAp
     suspend fun getSupplyDemand() = api.getSupplyDemand().data
     suspend fun getPlatformStats() = api.getPlatformStats().stats
     suspend fun getActivityFeed(limit: Int = 20) = api.getActivityFeed(limit).feed
+    suspend fun getCropRecommendations(districtId: Int? = null) = api.getCropRecommendations(districtId)
 }
 
 @Singleton
@@ -130,6 +131,9 @@ class CommunityRepository @Inject constructor(private val api: CommunityApi) {
     suspend fun getPosts(category: String? = null) = api.getPosts(category).posts
     suspend fun createPost(body: Map<String, Any?>) = api.createPost(body).post
     suspend fun likePost(id: String) = api.likePost(id)
+    suspend fun getComments(postId: String) = api.getComments(postId).comments
+    suspend fun addComment(postId: String, content: String) = api.addComment(postId, mapOf("content" to content)).comment
+    suspend fun likeComment(postId: String, commentId: String) = api.likeComment(postId, commentId)
 }
 
 @Singleton
@@ -187,4 +191,20 @@ class BuyerRepository @Inject constructor(private val api: BuyerApi) {
     suspend fun removeFromWatchlist(id: String) = api.removeFromWatchlist(id)
     suspend fun getIntelligence(cropId: Int? = null, state: String? = null) = api.getIntelligence(cropId, state).intelligence
     suspend fun getStats() = api.getStats().stats
+}
+
+@Singleton
+class WeatherRepository @Inject constructor(private val api: WeatherApi) {
+    suspend fun getForecast(districtId: Int? = null, days: Int = 7) = api.getForecast(districtId, days)
+    suspend fun getAdvisory(districtId: Int? = null) = api.getAdvisory(districtId)
+    suspend fun getCropHealth(cropId: Int? = null, districtId: Int? = null) = api.getCropHealth(cropId, districtId)
+    suspend fun getMarketOutlook() = api.getMarketOutlook().market_outlook
+}
+
+@Singleton
+class UploadRepository @Inject constructor(private val api: UploadApi) {
+    suspend fun uploadImage(base64: String, context: String = "general") =
+        api.uploadImage(mapOf("image" to base64, "context" to context))
+    suspend fun getMyFiles(context: String? = null) = api.getMyFiles(context).files
+    suspend fun deleteFile(id: String) = api.deleteFile(id)
 }

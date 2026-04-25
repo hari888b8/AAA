@@ -67,10 +67,14 @@ class AgriFlowViewModel @Inject constructor(
     private val _detail = MutableStateFlow<SupplyListing?>(null)
     val detail: StateFlow<SupplyListing?> = _detail.asStateFlow()
 
-    fun loadListings() = viewModelScope.launch {
+    fun loadListings(cropId: Int? = null, districtId: Int? = null) = viewModelScope.launch {
         _loading.value = true; _error.value = null
-        try { _listings.value = repo.getListings() } catch (e: Exception) { _error.value = e.message }
+        try { _listings.value = repo.getListings(cropId, districtId) } catch (e: Exception) { _error.value = e.message }
         _loading.value = false
+    }
+
+    fun loadCrops() = viewModelScope.launch {
+        try { _crops.value = repo.refreshCrops() } catch (_: Exception) {}
     }
 
     fun loadDeclarations() = viewModelScope.launch {
@@ -152,22 +156,74 @@ private fun InfoStep(emoji: String, text: String) {
 @Composable
 fun ListingsScreen(navController: NavController, viewModel: AgriFlowViewModel = hiltViewModel()) {
     val listings by viewModel.listings.collectAsState()
+    val crops by viewModel.crops.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedCropId by remember { mutableStateOf<Int?>(null) }
 
-    LaunchedEffect(Unit) { viewModel.loadListings() }
-    val pullRefreshState = rememberPullRefreshState(loading, { viewModel.loadListings() })
+    LaunchedEffect(Unit) { viewModel.loadListings(); viewModel.loadCrops() }
+    LaunchedEffect(selectedCropId) { viewModel.loadListings(cropId = selectedCropId) }
+    val pullRefreshState = rememberPullRefreshState(loading, { viewModel.loadListings(cropId = selectedCropId) })
+
+    val filteredListings = remember(listings, searchQuery) {
+        if (searchQuery.isBlank()) listings
+        else listings.filter {
+            it.crop_name?.contains(searchQuery, ignoreCase = true) == true ||
+                it.farmer_name?.contains(searchQuery, ignoreCase = true) == true ||
+                it.district_name?.contains(searchQuery, ignoreCase = true) == true ||
+                it.variety?.contains(searchQuery, ignoreCase = true) == true
+        }
+    }
 
     Column(Modifier.fillMaxSize().background(AppColor.Background)) {
-        GradientHeader("Supply Listings", "${listings.size} active listings", AppColor.PrimaryDark, AppColor.Primary, onBack = { navController.popBackStack() })
+        GradientHeader("Supply Listings", "${filteredListings.size} active listings", AppColor.PrimaryDark, AppColor.Primary, onBack = { navController.popBackStack() })
+
+        // Search bar
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Search crop, farmer, district...", fontSize = 13.sp) },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            shape = RoundedCornerShape(12.dp),
+            singleLine = true,
+            leadingIcon = { Text("🔍", fontSize = 16.sp) },
+            trailingIcon = if (searchQuery.isNotEmpty()) {
+                { TextButton(onClick = { searchQuery = "" }) { Text("✕", fontSize = 14.sp, color = AppColor.TextMuted) } }
+            } else null,
+        )
+
+        // Crop filter chips
+        if (crops.isNotEmpty()) {
+            androidx.compose.foundation.lazy.LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.padding(bottom = 4.dp),
+            ) {
+                item {
+                    FilterChip(
+                        selected = selectedCropId == null,
+                        onClick = { selectedCropId = null },
+                        label = { Text("All Crops", fontSize = 11.sp) },
+                    )
+                }
+                items(crops) { crop ->
+                    FilterChip(
+                        selected = selectedCropId == crop.id,
+                        onClick = { selectedCropId = if (selectedCropId == crop.id) null else crop.id },
+                        label = { Text("${crop.emoji ?: "🌾"} ${crop.name}", fontSize = 11.sp) },
+                    )
+                }
+            }
+        }
 
         Box(Modifier.weight(1f).pullRefresh(pullRefreshState)) {
             when {
                 loading && listings.isEmpty() -> LoadingScreen()
                 error != null && listings.isEmpty() -> ErrorScreen(error!!) { viewModel.loadListings() }
-                listings.isEmpty() -> EmptyState("📋", "No listings yet", "Post your first crop listing", "Create Listing") { navController.navigate(Routes.CREATE_LISTING) }
+                filteredListings.isEmpty() -> EmptyState("📋", "No listings found", "Try a different search or filter", "Create Listing") { navController.navigate(Routes.CREATE_LISTING) }
                 else -> LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
-                    items(listings) { listing ->
+                    items(filteredListings) { listing ->
                         ListingCard(listing) { navController.navigate(Routes.listingDetail(listing.id)) }
                     }
                 }

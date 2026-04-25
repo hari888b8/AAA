@@ -24,6 +24,10 @@ const ordersRouter = require('./routes/orders');
 const fpoRouter = require('./routes/fpo');
 const buyerRouter = require('./routes/buyer');
 const farmerRouter = require('./routes/farmer');
+const weatherRouter = require('./routes/weather');
+const uploadRouter = require('./routes/upload');
+const { router: notificationsRouter } = require('./routes/pushnotifications');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -67,6 +71,12 @@ app.use('/api/orders', ordersRouter);
 app.use('/api/fpo', fpoRouter);
 app.use('/api/buyer', buyerRouter);
 app.use('/api/farmer', farmerRouter);
+app.use('/api/weather', weatherRouter);
+app.use('/api/upload', uploadRouter);
+app.use('/api/notifications', notificationsRouter);
+
+// Serve uploaded images
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // 404
 app.use((req, res) => res.status(404).json({ error: `Route ${req.path} not found` }));
