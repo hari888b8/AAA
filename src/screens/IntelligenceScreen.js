@@ -9,6 +9,12 @@ export function renderIntelligence(container) {
 
   function render() {
     container.innerHTML = `
+      <div class="app-brand-header" style="padding:14px 16px 10px;background:linear-gradient(135deg,#e63946 0%,#9b59b6 100%);color:#fff">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:28px">📊</span>
+          <div><div style="font-size:18px;font-weight:800;letter-spacing:-0.3px">Agri Intelligence</div><div style="font-size:11px;opacity:0.85">National Data Engine & Analytics · 10M+ Farmer Scale</div></div>
+        </div>
+      </div>
       <div class="tab-bar" style="overflow-x:auto;white-space:nowrap">
         <button class="tab-btn ${tab === 'dashboard' ? 'active' : ''}" data-tab="dashboard">📊 Dashboard</button>
         <button class="tab-btn ${tab === 'prices' ? 'active' : ''}" data-tab="prices">💰 Prices</button>

@@ -98,6 +98,7 @@ class ApiClient {
   getForecast(params = '') { return this.get(`/weather/forecast${params}`); }
   getWeatherAdvisory() { return this.get('/weather/advisory'); }
   getCropHealth(params = '') { return this.get(`/weather/crop-health${params}`); }
+  getMarketOutlook() { return this.get('/weather/market-outlook'); }
 
   // Notifications (dedicated router)
   getNotifications(params = '') { return this.get(`/notifications${params}`); }
@@ -136,6 +137,37 @@ class ApiClient {
   removeWatchlist(id) { return this.del(`/buyer/watchlist/${id}`); }
   getBuyerIntelligence() { return this.get('/buyer/intelligence'); }
   getBuyerStats() { return this.get('/buyer/stats'); }
+
+  // AgriFlow CRUD management
+  updateListing(id, d) { return this.patch(`/agriflow/listings/${id}`, d); }
+  deleteListing(id) { return this.del(`/agriflow/listings/${id}`); }
+  updateDeclaration(id, d) { return this.patch(`/agriflow/declarations/${id}`, d); }
+  deleteDeclaration(id) { return this.del(`/agriflow/declarations/${id}`); }
+  respondInquiry(id, d) { return this.patch(`/agriflow/inquiries/${id}`, d); }
+
+  // AquaOS extended
+  getWaterLogs(pondId) { return this.get(`/aquaos/ponds/${pondId}/water-logs`); }
+  updatePond(id, d) { return this.patch(`/aquaos/ponds/${id}`, d); }
+  deletePond(id) { return this.del(`/aquaos/ponds/${id}`); }
+  createOffer(d) { return this.post('/aquaos/offers', d); }
+
+  // KisanConnect extended
+  getMyBookings() { return this.get('/kisanconnect/bookings'); }
+  getMyApplications() { return this.get('/kisanconnect/applications'); }
+  updateBooking(id, d) { return this.patch(`/kisanconnect/bookings/${id}`, d); }
+  updateEquipment(id, d) { return this.patch(`/kisanconnect/equipment/${id}`, d); }
+  deleteEquipment(id) { return this.del(`/kisanconnect/equipment/${id}`); }
+  updateJob(id, d) { return this.patch(`/kisanconnect/jobs/${id}`, d); }
+  deleteJob(id) { return this.del(`/kisanconnect/jobs/${id}`); }
+
+  // FarmerConnect extended
+  updateProperty(id, d) { return this.patch(`/farmerconnect/properties/${id}`, d); }
+  deleteProperty(id) { return this.del(`/farmerconnect/properties/${id}`); }
+  getSavedProperties() { return this.get('/farmerconnect/saved'); }
+  saveProperty(d) { return this.post('/farmerconnect/saved', d); }
+  unsaveProperty(id) { return this.del(`/farmerconnect/saved/${id}`); }
+  createPropertyInquiry(d) { return this.post('/farmerconnect/inquiries', d); }
+  getPropertyInquiries() { return this.get('/farmerconnect/inquiries'); }
 }
 
 export const api = new ApiClient();

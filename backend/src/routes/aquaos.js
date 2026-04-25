@@ -185,4 +185,45 @@ router.get('/harvest-listings', async (req, res) => {
   }
 });
 
+// DELETE /api/aquaos/ponds/:id
+router.delete('/ponds/:id', authMiddleware, async (req, res) => {
+  try {
+    const existing = await query('SELECT * FROM ponds WHERE id = $1 AND farmer_id = $2', [req.params.id, req.user.id]);
+    if (!existing.rows.length) return res.status(404).json({ error: 'Pond not found' });
+    await query('DELETE FROM water_quality_logs WHERE pond_id = $1', [req.params.id]);
+    await query('DELETE FROM ponds WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Pond deleted' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/aquaos/ponds/:id/feed-log — track feeding
+router.post('/ponds/:id/feed-log', authMiddleware, async (req, res) => {
+  try {
+    const { feed_type, quantity_kg, cost, notes } = req.body;
+    const pond = await query('SELECT * FROM ponds WHERE id = $1 AND farmer_id = $2', [req.params.id, req.user.id]);
+    if (!pond.rows.length) return res.status(404).json({ error: 'Pond not found' });
+    // Store as water quality log with feed data in notes
+    const result = await query(`
+      INSERT INTO water_quality_logs (id, pond_id, ph, dissolved_oxygen, temperature, notes)
+      VALUES ($1, $2, NULL, NULL, NULL, $3) RETURNING *
+    `, [require('uuid').v4(), req.params.id, JSON.stringify({ type: 'feed', feed_type, quantity_kg, cost, notes })]);
+    res.status(201).json({ feed_log: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/aquaos/offers — buyer makes offer on harvest listing
+router.post('/offers', authMiddleware, async (req, res) => {
+  try {
+    const { listing_id, offered_price, quantity_kg, message } = req.body;
+    if (!listing_id) return res.status(400).json({ error: 'listing_id required' });
+    const listing = await query('SELECT * FROM harvest_listings WHERE id = $1', [listing_id]);
+    if (!listing.rows.length) return res.status(404).json({ error: 'Listing not found' });
+    const result = await query(`
+      INSERT INTO inquiries (id, listing_id, buyer_id, quantity_needed, offered_price, message, status)
+      VALUES ($1, NULL, $2, $3, $4, $5, 'pending') RETURNING *
+    `, [require('uuid').v4(), req.user.id, quantity_kg, offered_price, `[AquaOS Offer] Listing: ${listing_id}. ${message || ''}`]);
+    res.status(201).json({ offer: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

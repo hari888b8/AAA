@@ -17,6 +17,12 @@ export function renderAgriFlow(container) {
 
   function render() {
     container.innerHTML = `
+      <div class="app-brand-header" style="padding:14px 16px 10px;background:linear-gradient(135deg,#7b2ff7 0%,#2f80ed 100%);color:#fff">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:28px">🌾</span>
+          <div><div style="font-size:18px;font-weight:800;letter-spacing:-0.3px">AgriFlow</div><div style="font-size:11px;opacity:0.85">Supply Intelligence & Farmer Network · 200+ Features</div></div>
+        </div>
+      </div>
       ${isBuyer ? `<div class="role-badge" style="display:flex;align-items:center;gap:6px;padding:10px 16px;background:var(--info-bg);border-bottom:1px solid var(--border)">
         <span style="font-size:16px">🛒</span><span class="fw-600 text-sm" style="color:var(--info)">Buyer View</span>
         <span class="text-sm text-muted" style="margin-left:auto">Aggregated data only · Individual farmer data hidden</span>
@@ -187,15 +193,22 @@ export function renderAgriFlow(container) {
   function renderMyListings() {
     return `
       <div class="section">
+        ${!loading && myListings.length > 0 ? '<button class="btn btn-primary btn-small mb" id="createListingBtn" style="width:100%">+ Create New Listing</button>' : ''}
         ${loading ? '<div class="loading"><div class="spinner"></div></div>' : myListings.length === 0
           ? `<div class="empty-state"><div class="es-icon">📋</div><div class="es-title">No listings yet</div><div class="es-text">Create your first crop listing</div><button class="btn btn-primary btn-small mt" id="createListingBtn">+ Create Listing</button></div>`
           : myListings.map(l => `
-            <div class="listing-card">
-              <div class="l-icon">${l.icon_emoji || '🌾'}</div>
-              <div class="l-body">
-                <div class="l-title">${l.crop_name || 'Crop'}</div>
-                <div class="l-meta">${Number(l.quantity_kg || 0).toLocaleString()} kg · ₹${Number(l.price_per_kg || 0).toFixed(0)}/kg</div>
+            <div class="card" style="padding:12px;margin-bottom:8px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:24px">${l.icon_emoji || '🌾'}</span>
+                <div style="flex:1">
+                  <div class="fw-600">${l.crop_name || 'Crop'}</div>
+                  <div class="text-sm text-muted">${Number(l.quantity_kg || 0).toLocaleString()} kg · ₹${Number(l.price_per_kg || 0).toFixed(0)}/kg</div>
+                </div>
                 <span class="tag tag-${l.status === 'active' ? 'green' : 'gray'}">${l.status}</span>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button class="btn btn-secondary btn-small edit-listing-btn" data-id="${l.id}" style="flex:1;font-size:11px">✏️ Edit</button>
+                <button class="btn btn-small delete-listing-btn" data-id="${l.id}" style="flex:1;font-size:11px;background:#FFEBEE;color:#C62828;border:none">🗑️ Delete</button>
               </div>
             </div>
           `).join('')}
@@ -205,10 +218,11 @@ export function renderAgriFlow(container) {
   function renderDeclarations() {
     return `
       <div class="section">
+        ${!loading && declarations.length > 0 ? '<button class="btn btn-primary btn-small mb" id="createDeclBtn" style="width:100%">+ New Declaration</button>' : ''}
         ${loading ? '<div class="loading"><div class="spinner"></div></div>' : declarations.length === 0
           ? `<div class="empty-state"><div class="es-icon">🌱</div><div class="es-title">No declarations</div><div class="es-text">Declare your crop harvest</div><button class="btn btn-primary btn-small mt" id="createDeclBtn">+ New Declaration</button></div>`
           : declarations.map(d => `
-            <div class="card">
+            <div class="card" style="padding:12px;margin-bottom:8px">
               <div class="flex-between">
                 <div><strong>${d.crop_name || 'Crop'}</strong> ${d.icon_emoji || ''}</div>
                 <span class="tag tag-green">${d.quality_grade || 'A'}</span>
@@ -216,6 +230,10 @@ export function renderAgriFlow(container) {
               <div class="text-sm text-muted mt-sm">${d.area_acres || 0} acres · Expected: ${Number(d.expected_yield || 0).toLocaleString()} kg</div>
               <div class="text-sm text-muted">Sow: ${fmtDate(d.sow_date)} → Harvest: ${fmtDate(d.expected_harvest_date)}</div>
               ${d.is_organic ? '<span class="tag tag-green mt-sm">🌿 Organic</span>' : ''}
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button class="btn btn-secondary btn-small edit-decl-btn" data-id="${d.id}" style="flex:1;font-size:11px">✏️ Edit</button>
+                <button class="btn btn-small delete-decl-btn" data-id="${d.id}" style="flex:1;font-size:11px;background:#FFEBEE;color:#C62828;border:none">🗑️ Delete</button>
+              </div>
             </div>
           `).join('')}
       </div>`;
@@ -225,18 +243,27 @@ export function renderAgriFlow(container) {
     return `
       <div class="section">
         ${loading ? '<div class="loading"><div class="spinner"></div></div>' : inquiries.length === 0
-          ? '<div class="empty-state"><div class="es-icon">💬</div><div class="es-title">No inquiries</div></div>'
-          : inquiries.map(q => `
-            <div class="card">
+          ? '<div class="empty-state"><div class="es-icon">💬</div><div class="es-title">No inquiries</div><div class="es-text">Inquiries from buyers will appear here</div></div>'
+          : inquiries.map(q => {
+            const isPending = q.status === 'pending';
+            const isAccepted = q.status === 'accepted';
+            return `<div class="card" style="padding:12px;margin-bottom:8px">
               <div class="flex-between">
                 <strong>${q.crop_name || 'Crop'}</strong>
-                <span class="tag tag-blue">${q.status || 'pending'}</span>
+                <span class="tag tag-${q.status === 'accepted' ? 'green' : q.status === 'rejected' ? 'red' : 'blue'}">${q.status || 'pending'}</span>
               </div>
-              <div class="text-sm text-muted mt-sm">Qty: ${q.quantity_needed || 'N/A'} kg · ${q.timeline || ''}</div>
-              <div class="text-sm text-muted">${q.buyer_name || ''} → ${q.seller_name || ''}</div>
-              ${q.message ? `<div class="text-sm mt-sm" style="color:var(--text)">"${q.message}"</div>` : ''}
-            </div>
-          `).join('')}
+              <div class="text-sm text-muted mt-sm">Qty: ${q.quantity_needed || 'N/A'} kg${q.offered_price ? ' · Offered: ₹' + Number(q.offered_price).toFixed(0) + '/kg' : ''}</div>
+              <div class="text-sm text-muted">${q.buyer_name || 'Buyer'} ${q.timeline ? '· ' + q.timeline : ''}</div>
+              ${q.message ? `<div class="text-sm mt-sm" style="color:var(--text);font-style:italic">"${q.message}"</div>` : ''}
+              ${q.response_message ? `<div class="text-sm mt-sm" style="color:var(--primary)">Response: "${q.response_message}"</div>` : ''}
+              ${!isBuyer && isPending ? `<div style="display:flex;gap:8px;margin-top:10px">
+                <button class="btn btn-primary btn-small accept-inq-btn" data-id="${q.id}" style="flex:1;font-size:11px">✅ Accept</button>
+                <button class="btn btn-secondary btn-small negotiate-inq-btn" data-id="${q.id}" style="flex:1;font-size:11px">💬 Negotiate</button>
+                <button class="btn btn-small reject-inq-btn" data-id="${q.id}" style="flex:1;font-size:11px;background:#FFEBEE;color:#C62828;border:none">❌ Reject</button>
+              </div>` : ''}
+              ${!isBuyer && isAccepted ? `<button class="btn btn-primary btn-small create-order-btn mt" data-iq="${q.id}" style="width:100%;font-size:12px">📦 Create Order</button>` : ''}
+            </div>`;
+          }).join('')}
       </div>`;
   }
 
@@ -253,6 +280,99 @@ export function renderAgriFlow(container) {
     });
     container.querySelector('#createListingBtn')?.addEventListener('click', showCreateListing);
     container.querySelector('#createDeclBtn')?.addEventListener('click', showCreateDeclaration);
+
+    // Edit/delete listings
+    container.querySelectorAll('.edit-listing-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        const l = myListings.find(x => x.id == b.dataset.id);
+        if (!l) return;
+        showModal(`<div class="modal-handle"></div><h3>Edit Listing</h3>
+          <div class="form-group"><label>Quantity (kg)</label><input class="form-input" type="number" id="elQty" value="${l.quantity_kg || ''}"></div>
+          <div class="form-group"><label>Price per kg (₹)</label><input class="form-input" type="number" id="elPrice" value="${l.price_per_kg || ''}" step="0.5"></div>
+          <div class="form-group"><label>Grade</label><select class="form-input" id="elGrade"><option ${l.grade==='A'?'selected':''}>A</option><option ${l.grade==='B'?'selected':''}>B</option><option ${l.grade==='C'?'selected':''}>C</option></select></div>
+          <div class="form-group"><label>Status</label><select class="form-input" id="elStatus"><option value="active" ${l.status==='active'?'selected':''}>Active</option><option value="sold" ${l.status==='sold'?'selected':''}>Sold</option><option value="expired" ${l.status==='expired'?'selected':''}>Expired</option></select></div>
+          <div class="form-group"><label>Description</label><textarea class="form-input" id="elDesc" rows="2">${l.description || ''}</textarea></div>
+          <button class="btn btn-primary" id="saveEditListing" style="width:100%">Save Changes</button>`);
+        document.querySelector('#saveEditListing')?.addEventListener('click', async () => {
+          try {
+            await api.updateListing(l.id, { quantity_kg: Number(document.querySelector('#elQty').value), price_per_kg: Number(document.querySelector('#elPrice').value), grade: document.querySelector('#elGrade').value, status: document.querySelector('#elStatus').value, description: document.querySelector('#elDesc').value });
+            showToast('Listing updated!', 'success'); closeModal(); loadData();
+          } catch(e) { showToast(e.message, 'error'); }
+        });
+      });
+    });
+    container.querySelectorAll('.delete-listing-btn').forEach(b => {
+      b.addEventListener('click', async () => {
+        if (!confirm('Delete this listing?')) return;
+        try { await api.deleteListing(b.dataset.id); showToast('Listing deleted', 'success'); loadData(); } catch(e) { showToast(e.message, 'error'); }
+      });
+    });
+
+    // Edit/delete declarations
+    container.querySelectorAll('.edit-decl-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        const d = declarations.find(x => x.id == b.dataset.id);
+        if (!d) return;
+        showModal(`<div class="modal-handle"></div><h3>Edit Declaration</h3>
+          <div class="form-group"><label>Area (acres)</label><input class="form-input" type="number" id="edArea" value="${d.area_acres || ''}"></div>
+          <div class="form-group"><label>Expected Yield (kg)</label><input class="form-input" type="number" id="edYield" value="${d.expected_yield || ''}"></div>
+          <div class="form-group"><label>Grade</label><select class="form-input" id="edGrade"><option ${d.quality_grade==='A'?'selected':''}>A</option><option ${d.quality_grade==='B'?'selected':''}>B</option><option ${d.quality_grade==='C'?'selected':''}>C</option></select></div>
+          <div class="form-group"><label>Harvest Date</label><input class="form-input" type="date" id="edDate" value="${d.expected_harvest_date ? d.expected_harvest_date.split('T')[0] : ''}"></div>
+          <div class="form-group"><label>Notes</label><textarea class="form-input" id="edNotes" rows="2">${d.notes || ''}</textarea></div>
+          <button class="btn btn-primary" id="saveEditDecl" style="width:100%">Save Changes</button>`);
+        document.querySelector('#saveEditDecl')?.addEventListener('click', async () => {
+          try {
+            await api.updateDeclaration(d.id, { area_acres: Number(document.querySelector('#edArea').value), expected_yield: Number(document.querySelector('#edYield').value), quality_grade: document.querySelector('#edGrade').value, expected_harvest_date: document.querySelector('#edDate').value, notes: document.querySelector('#edNotes').value });
+            showToast('Declaration updated!', 'success'); closeModal(); loadData();
+          } catch(e) { showToast(e.message, 'error'); }
+        });
+      });
+    });
+    container.querySelectorAll('.delete-decl-btn').forEach(b => {
+      b.addEventListener('click', async () => {
+        if (!confirm('Delete this declaration?')) return;
+        try { await api.deleteDeclaration(b.dataset.id); showToast('Declaration deleted', 'success'); loadData(); } catch(e) { showToast(e.message, 'error'); }
+      });
+    });
+
+    // Inquiry accept/reject/negotiate
+    container.querySelectorAll('.accept-inq-btn').forEach(b => {
+      b.addEventListener('click', async () => {
+        try { await api.respondInquiry(b.dataset.id, { status: 'accepted' }); showToast('Inquiry accepted!', 'success'); loadData(); } catch(e) { showToast(e.message, 'error'); }
+      });
+    });
+    container.querySelectorAll('.reject-inq-btn').forEach(b => {
+      b.addEventListener('click', async () => {
+        try { await api.respondInquiry(b.dataset.id, { status: 'rejected' }); showToast('Inquiry rejected', 'info'); loadData(); } catch(e) { showToast(e.message, 'error'); }
+      });
+    });
+    container.querySelectorAll('.negotiate-inq-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        const q = inquiries.find(x => x.id == b.dataset.id);
+        showModal(`<div class="modal-handle"></div><h3>💬 Negotiate</h3>
+          <div class="form-group"><label>Counter Price (₹/kg)</label><input class="form-input" type="number" id="negPrice" placeholder="Your price"></div>
+          <div class="form-group"><label>Message</label><textarea class="form-input" id="negMsg" rows="2" placeholder="Your terms…"></textarea></div>
+          <button class="btn btn-primary" id="sendNeg" style="width:100%">Send Counter Offer</button>`);
+        document.querySelector('#sendNeg')?.addEventListener('click', async () => {
+          try {
+            await api.respondInquiry(q.id, { status: 'negotiating', counter_price: Number(document.querySelector('#negPrice').value), response_message: document.querySelector('#negMsg').value });
+            showToast('Counter offer sent!', 'success'); closeModal(); loadData();
+          } catch(e) { showToast(e.message, 'error'); }
+        });
+      });
+    });
+
+    // Create order from accepted inquiry
+    container.querySelectorAll('.create-order-btn').forEach(b => {
+      b.addEventListener('click', async () => {
+        const q = inquiries.find(x => x.id == b.dataset.iq);
+        if (!q) return;
+        try {
+          await api.createOrder({ inquiry_id: q.id, listing_id: q.listing_id, quantity_kg: q.quantity_needed, total_amount: (q.offered_price || 0) * (q.quantity_needed || 0) });
+          showToast('Order created!', 'success'); loadData();
+        } catch(e) { showToast(e.message, 'error'); }
+      });
+    });
     container.querySelector('#addMemberBtn')?.addEventListener('click', () => {
       showModal(`<div class="modal-handle"></div><h3>Add FPO Member</h3>
         <div class="form-group"><label>Farmer Phone</label><input class="form-input" type="tel" id="memberPhone" placeholder="9876543210"></div>

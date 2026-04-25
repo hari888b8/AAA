@@ -98,4 +98,96 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// PATCH /api/farmerconnect/properties/:id — edit property
+router.patch('/properties/:id', authMiddleware, async (req, res) => {
+  try {
+    const { rent_amount, description, furnishing, amenities, is_available } = req.body;
+    const existing = await query('SELECT * FROM properties WHERE id = $1 AND owner_id = $2', [req.params.id, req.user.id]);
+    if (!existing.rows.length) return res.status(404).json({ error: 'Property not found' });
+    const result = await query(`
+      UPDATE properties SET rent_amount = COALESCE($1, rent_amount),
+        description = COALESCE($2, description), furnishing = COALESCE($3, furnishing),
+        amenities = COALESCE($4, amenities), is_available = COALESCE($5, is_available)
+      WHERE id = $6 RETURNING *
+    `, [rent_amount, description, furnishing, amenities, is_available, req.params.id]);
+    res.json({ property: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/farmerconnect/properties/:id
+router.delete('/properties/:id', authMiddleware, async (req, res) => {
+  try {
+    const existing = await query('SELECT * FROM properties WHERE id = $1 AND owner_id = $2', [req.params.id, req.user.id]);
+    if (!existing.rows.length) return res.status(404).json({ error: 'Property not found' });
+    await query('DELETE FROM properties WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Property deleted' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/farmerconnect/inquiries — send property inquiry
+router.post('/inquiries', authMiddleware, async (req, res) => {
+  try {
+    const { property_id, message, move_in_date } = req.body;
+    if (!property_id) return res.status(400).json({ error: 'property_id required' });
+    const prop = await query('SELECT * FROM properties WHERE id = $1', [property_id]);
+    if (!prop.rows.length) return res.status(404).json({ error: 'Property not found' });
+    const result = await query(`
+      INSERT INTO inquiries (id, buyer_id, quantity_needed, message, status)
+      VALUES ($1, $2, 1, $3, 'pending') RETURNING *
+    `, [uuidv4(), req.user.id, `[Property Inquiry] ID: ${property_id}. Move-in: ${move_in_date || 'Flexible'}. ${message || ''}`]);
+    res.status(201).json({ inquiry: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/farmerconnect/inquiries
+router.get('/inquiries', authMiddleware, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT i.* FROM inquiries i WHERE i.buyer_id = $1 AND i.message LIKE '%Property Inquiry%'
+      ORDER BY i.created_at DESC
+    `, [req.user.id]);
+    res.json({ inquiries: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/farmerconnect/saved — save property
+router.post('/saved', authMiddleware, async (req, res) => {
+  try {
+    const { property_id } = req.body;
+    if (!property_id) return res.status(400).json({ error: 'property_id required' });
+    // Store as a notification-like record or use a dedicated table
+    // Using buyer_watchlists with a property context
+    const result = await query(`
+      INSERT INTO buyer_watchlists (id, buyer_id, crop_id, state, alert_enabled)
+      VALUES ($1, $2, NULL, $3, false) RETURNING *
+    `, [uuidv4(), req.user.id, `saved_property:${property_id}`]);
+    res.status(201).json({ saved: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/farmerconnect/saved
+router.get('/saved', authMiddleware, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT bw.*, bw.state AS property_ref FROM buyer_watchlists bw
+      WHERE bw.buyer_id = $1 AND bw.state LIKE 'saved_property:%'
+    `, [req.user.id]);
+    const propertyIds = result.rows.map(r => r.state.replace('saved_property:', '')).filter(Boolean);
+    let properties = [];
+    if (propertyIds.length) {
+      const propRes = await query(`SELECT * FROM properties WHERE id = ANY($1::uuid[])`, [propertyIds]);
+      properties = propRes.rows;
+    }
+    res.json({ saved: result.rows, properties });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/farmerconnect/saved/:id
+router.delete('/saved/:id', authMiddleware, async (req, res) => {
+  try {
+    await query('DELETE FROM buyer_watchlists WHERE id = $1 AND buyer_id = $2', [req.params.id, req.user.id]);
+    res.json({ message: 'Removed from saved' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

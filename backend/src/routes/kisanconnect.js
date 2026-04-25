@@ -182,4 +182,106 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// GET /api/kisanconnect/bookings — user's equipment bookings
+router.get('/bookings', authMiddleware, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT eb.*, e.name AS equipment_name, e.equipment_type,
+             u_owner.name AS owner_name, u_renter.name AS renter_name
+      FROM equipment_bookings eb
+      JOIN equipment e ON e.id = eb.equipment_id
+      JOIN users u_owner ON u_owner.id = e.owner_id
+      JOIN users u_renter ON u_renter.id = eb.renter_id
+      WHERE eb.renter_id = $1 OR e.owner_id = $1
+      ORDER BY eb.created_at DESC
+    `, [req.user.id]);
+    res.json({ bookings: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/kisanconnect/bookings/:id — update booking status
+router.patch('/bookings/:id', authMiddleware, async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!['confirmed', 'rejected', 'completed', 'cancelled'].includes(status))
+      return res.status(400).json({ error: 'Invalid status' });
+    const result = await query(`
+      UPDATE equipment_bookings SET status = $1 WHERE id = $2 RETURNING *
+    `, [status, req.params.id]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Booking not found' });
+    if (status === 'completed' || status === 'cancelled') {
+      await query(`UPDATE equipment SET status = 'available' WHERE id = $1`, [result.rows[0].equipment_id]);
+    }
+    res.json({ booking: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/kisanconnect/applications — user's job applications
+router.get('/applications', authMiddleware, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT ja.*, j.title AS job_title, j.employer_name, j.job_type, j.salary_min, j.salary_max
+      FROM job_applications ja
+      JOIN jobs j ON j.id = ja.job_id
+      WHERE ja.applicant_id = $1
+      ORDER BY ja.created_at DESC
+    `, [req.user.id]);
+    res.json({ applications: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/kisanconnect/equipment/:id — edit equipment
+router.patch('/equipment/:id', authMiddleware, async (req, res) => {
+  try {
+    const { name, daily_rate, hourly_rate, operator_included, location_label, description, status } = req.body;
+    const existing = await query('SELECT * FROM equipment WHERE id = $1 AND owner_id = $2', [req.params.id, req.user.id]);
+    if (!existing.rows.length) return res.status(404).json({ error: 'Equipment not found' });
+    const result = await query(`
+      UPDATE equipment SET name = COALESCE($1, name), daily_rate = COALESCE($2, daily_rate),
+        hourly_rate = COALESCE($3, hourly_rate), operator_included = COALESCE($4, operator_included),
+        location_label = COALESCE($5, location_label), description = COALESCE($6, description),
+        status = COALESCE($7, status) WHERE id = $8 RETURNING *
+    `, [name, daily_rate, hourly_rate, operator_included, location_label, description, status, req.params.id]);
+    res.json({ equipment: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/kisanconnect/equipment/:id
+router.delete('/equipment/:id', authMiddleware, async (req, res) => {
+  try {
+    const existing = await query('SELECT * FROM equipment WHERE id = $1 AND owner_id = $2', [req.params.id, req.user.id]);
+    if (!existing.rows.length) return res.status(404).json({ error: 'Equipment not found' });
+    await query('DELETE FROM equipment_bookings WHERE equipment_id = $1', [req.params.id]);
+    await query('DELETE FROM equipment WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Equipment deleted' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/kisanconnect/jobs/:id — edit/deactivate job
+router.patch('/jobs/:id', authMiddleware, async (req, res) => {
+  try {
+    const { title, salary_min, salary_max, description, is_active, vacancies } = req.body;
+    const existing = await query('SELECT * FROM jobs WHERE id = $1 AND employer_id = $2', [req.params.id, req.user.id]);
+    if (!existing.rows.length) return res.status(404).json({ error: 'Job not found' });
+    const result = await query(`
+      UPDATE jobs SET title = COALESCE($1, title), salary_min = COALESCE($2, salary_min),
+        salary_max = COALESCE($3, salary_max), description = COALESCE($4, description),
+        is_active = COALESCE($5, is_active), vacancies = COALESCE($6, vacancies)
+      WHERE id = $7 RETURNING *
+    `, [title, salary_min, salary_max, description, is_active, vacancies, req.params.id]);
+    res.json({ job: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/kisanconnect/jobs/:id
+router.delete('/jobs/:id', authMiddleware, async (req, res) => {
+  try {
+    const existing = await query('SELECT * FROM jobs WHERE id = $1 AND employer_id = $2', [req.params.id, req.user.id]);
+    if (!existing.rows.length) return res.status(404).json({ error: 'Job not found' });
+    await query('DELETE FROM job_applications WHERE job_id = $1', [req.params.id]);
+    await query('DELETE FROM jobs WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Job deleted' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

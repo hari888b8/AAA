@@ -19,13 +19,13 @@ import { renderArchitecture } from './screens/ArchitectureScreen.js';
 // ===== ROUTE CONFIG =====
 const ROUTES = {
   home:          { title: 'AgriHub',          icon: '🌾', render: renderHome,          nav: true },
-  agriflow:      { title: 'AgriFlow',         icon: '🌾', render: renderAgriFlow,      nav: true },
+  agriflow:      { title: 'AgriFlow',         icon: '�', render: renderAgriFlow,      nav: true },
   aquaos:        { title: 'AquaOS',           icon: '🐟', render: renderAquaOS,        nav: true },
-  kisan:         { title: 'KisanConnect',     icon: '🤝', render: renderKisan,         nav: true },
+  kisan:         { title: 'KisanConnect',     icon: '🚜', render: renderKisan,         nav: true },
   profile:       { title: 'Profile',          icon: '👤', render: renderProfile,       nav: true },
-  farmerconnect: { title: 'FarmerConnect',    icon: '🏠', render: renderFarmerConnect,  back: 'home' },
-  intelligence:  { title: 'Intelligence',     icon: '📊', render: renderIntelligence,   back: 'home' },
-  weather:       { title: 'Weather',          icon: '🌤️', render: renderWeather,       back: 'home' },
+  farmerconnect: { title: 'FarmerConnect',    icon: '🏡', render: renderFarmerConnect,  back: 'home' },
+  intelligence:  { title: 'Agri Intelligence',icon: '📊', render: renderIntelligence,   back: 'home' },
+  weather:       { title: 'Weather & Crop',   icon: '🌤️', render: renderWeather,       back: 'home' },
   community:     { title: 'Community',        icon: '💬', render: renderCommunity,      back: 'profile' },
   notifications: { title: 'Notifications',    icon: '🔔', render: renderNotifications,  back: 'profile' },
   orders:        { title: 'Orders',           icon: '📦', render: renderOrders,          back: 'profile' },

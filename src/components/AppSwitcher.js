@@ -1,13 +1,13 @@
 // Global App Switcher — floating sidebar for cross-app navigation
 
 const apps = [
-  { id: '/', label: 'Hub Home', icon: '🌾', color: '#7b2ff7' },
-  { id: 'agriflow', label: 'AgriFlow', icon: '🌿', color: '#7b2ff7' },
-  { id: 'aquaos', label: 'AquaOS', icon: '🐟', color: '#00c9a7' },
-  { id: 'farmerconnect', label: 'FarmerConnect', icon: '🏠', color: '#a8e063' },
-  { id: 'kisanconnect', label: 'KisanConnect', icon: '🚜', color: '#ff6b35' },
-  { id: 'intelligence', label: 'Intelligence', icon: '🧠', color: '#e63946' },
-  { id: 'architecture', label: 'Architecture', icon: '🏗️', color: '#f1c40f' },
+  { id: '/', label: 'AgriHub Home', icon: '🌾', color: '#7b2ff7', tagline: 'India\'s Agriculture Ecosystem' },
+  { id: 'agriflow', label: 'AgriFlow', icon: '🌿', color: '#7b2ff7', tagline: 'Supply Intelligence · 200+ Features' },
+  { id: 'aquaos', label: 'AquaOS', icon: '🐟', color: '#00c9a7', tagline: 'Aquaculture Platform · 97+ Features' },
+  { id: 'farmerconnect', label: 'FarmerConnect', icon: '🏡', color: '#2e7d32', tagline: 'Property & Land · Zero Broker' },
+  { id: 'kisanconnect', label: 'KisanConnect', icon: '🚜', color: '#ff6b35', tagline: 'Rural Super-App · 4 Marketplaces' },
+  { id: 'intelligence', label: 'Agri Intelligence', icon: '📊', color: '#e63946', tagline: 'National Data Engine · 93+ Features' },
+  { id: 'architecture', label: 'Architecture', icon: '🏗️', color: '#f1c40f', tagline: 'System Design Blueprint' },
 ];
 
 export function mountAppSwitcher() {
@@ -30,7 +30,10 @@ export function mountAppSwitcher() {
         ${apps.map(a => `
           <button class="app-switcher__btn" onclick="navigate('/${a.id === '/' ? '' : a.id}');document.getElementById('switcher-panel').classList.remove('app-switcher__panel--open')" data-app="${a.id}" style="--app-color:${a.color}">
             <span class="app-switcher__icon">${a.icon}</span>
-            <span class="app-switcher__label">${a.label}</span>
+            <div style="text-align:left">
+              <span class="app-switcher__label">${a.label}</span>
+              <div style="font-size:9px;opacity:0.65;margin-top:1px">${a.tagline}</div>
+            </div>
           </button>
         `).join('')}
       </nav>
