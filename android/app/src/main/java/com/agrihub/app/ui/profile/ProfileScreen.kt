@@ -52,6 +52,13 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    fun updateName(name: String) {
+        viewModelScope.launch {
+            authRepo.saveUserName(name)
+            _state.value = _state.value.copy(name = name)
+        }
+    }
+
     fun logout(onDone: () -> Unit) {
         viewModelScope.launch {
             authRepo.logout()
@@ -71,34 +78,66 @@ fun ProfileScreen(navController: NavController, viewModel: ProfileViewModel = hi
     val state by viewModel.state.collectAsState()
     val initial = state.name.firstOrNull()?.uppercase() ?: "U"
 
+    var showEditName by remember { mutableStateOf(false) }
+    var editNameText by remember { mutableStateOf("") }
+
+    val roleColor = when (state.role) {
+        "farmer" -> AppColor.AgriFlow
+        "fpo" -> AppColor.FpoBlue
+        "buyer" -> AppColor.BuyerOrange
+        "service_provider" -> AppColor.KisanConnect
+        else -> AppColor.Primary
+    }
+
     LazyColumn(
         Modifier.fillMaxSize().background(AppColor.Background).statusBarsPadding(),
     ) {
-        // Avatar + Info
+        // Avatar Header
         item {
-            Column(
-                Modifier.fillMaxWidth().padding(vertical = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            Box(
+                Modifier.fillMaxWidth().background(
+                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                        listOf(AppColor.PrimaryDark, AppColor.Primary, AppColor.Background),
+                    ),
+                ).padding(vertical = 32.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    Modifier.size(80.dp).clip(CircleShape).background(AppColor.Primary),
-                    contentAlignment = Alignment.Center,
-                ) { Text(initial, color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold) }
-                Spacer(Modifier.height(12.dp))
-                Text(state.name, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = AppColor.TextPrimary)
-                Text("+91 ${state.phone}", fontSize = 14.sp, color = AppColor.TextSecondary)
-                Spacer(Modifier.height(6.dp))
-                Box(
-                    Modifier.clip(RoundedCornerShape(6.dp)).background(AppColor.Primary.copy(alpha = 0.1f)).padding(horizontal = 10.dp, vertical = 3.dp),
-                ) {
-                    Text(state.role.replaceFirstChar { it.uppercase() }, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = AppColor.Primary)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box {
+                        Box(
+                            Modifier.size(88.dp).clip(CircleShape).background(Color.White.copy(0.2f)),
+                            contentAlignment = Alignment.Center,
+                        ) { Text(initial, color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Bold) }
+                        // Edit overlay
+                        Box(
+                            Modifier
+                                .align(Alignment.BottomEnd)
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                                .clickable {
+                                    editNameText = state.name
+                                    showEditName = true
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(Icons.Default.Edit, "Edit", tint = AppColor.Primary, modifier = Modifier.size(14.dp)) }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Text(state.name, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White)
+                    Text("+91 ${state.phone}", fontSize = 14.sp, color = Color.White.copy(0.75f))
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        Modifier.clip(RoundedCornerShape(8.dp)).background(Color.White.copy(0.2f)).padding(horizontal = 16.dp, vertical = 5.dp),
+                    ) {
+                        Text(state.role.replace("_", " ").replaceFirstChar { it.uppercase() }, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
                 }
             }
         }
 
         // Quick Platform Access
         item {
-            Text("Quick Access", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+            Text("Quick Access", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp))
         }
         item {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -107,18 +146,45 @@ fun ProfileScreen(navController: NavController, viewModel: ProfileViewModel = hi
                 QuickAccessTile("🤝", "Kisan", AppColor.KisanConnectLight, Modifier.weight(1f)) { navController.navigate(Routes.KISAN) }
             }
         }
+        item {
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                QuickAccessTile("🌤️", "Weather", Color(0xFFE3F2FD), Modifier.weight(1f)) { navController.navigate(Routes.WEATHER_HOME) }
+                QuickAccessTile("🧠", "Market", Color(0xFFF3E5F5), Modifier.weight(1f)) { navController.navigate(Routes.INTELLIGENCE_HOME) }
+                QuickAccessTile("🏘️", "Land", Color(0xFFFFF8E1), Modifier.weight(1f)) { navController.navigate(Routes.FARMER_CONNECT_HOME) }
+            }
+        }
+
+        // Role-specific section
+        if (state.role == "fpo") {
+            item {
+                Spacer(Modifier.height(12.dp))
+                SettingsRow(Icons.Default.BusinessCenter, "FPO Dashboard") { navController.navigate(Routes.FPO_DASHBOARD) }
+            }
+        }
+        if (state.role == "buyer") {
+            item {
+                Spacer(Modifier.height(12.dp))
+                SettingsRow(Icons.Default.ShoppingBag, "Buyer Dashboard") { navController.navigate(Routes.BUYER_DASHBOARD) }
+            }
+        }
 
         // Settings Menu
         item {
             Spacer(Modifier.height(20.dp))
-            Text("Settings", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+            Text("Account Settings", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+        }
+        item {
+            SettingsRow(Icons.Default.Edit, "Edit Name") {
+                editNameText = state.name
+                showEditName = true
+            }
         }
         item { SettingsRow(Icons.Default.ShoppingCart, "My Orders") { navController.navigate(Routes.ORDERS) } }
         item { SettingsRow(Icons.Default.Notifications, "Notifications") { navController.navigate(Routes.NOTIFICATIONS) } }
         item { SettingsRow(Icons.Default.Forum, "Community") { navController.navigate(Routes.COMMUNITY) } }
-        item { SettingsRow(Icons.Default.Language, "Language") { /* TODO */ } }
         item { SettingsRow(Icons.Default.Help, "Help & Support") { /* TODO */ } }
-        item { SettingsRow(Icons.Default.Info, "About AgriHub") { /* TODO */ } }
+        item { SettingsRow(Icons.Default.Info, "About AgriHub v1.0") { /* TODO */ } }
 
         // Logout
         item {
@@ -145,6 +211,38 @@ fun ProfileScreen(navController: NavController, viewModel: ProfileViewModel = hi
             }
             Spacer(Modifier.height(32.dp))
         }
+    }
+
+    // Edit name dialog
+    if (showEditName) {
+        AlertDialog(
+            onDismissRequest = { showEditName = false },
+            title = { Text("Edit Name", fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = editNameText,
+                    onValueChange = { editNameText = it },
+                    label = { Text("Display name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (editNameText.isNotBlank()) {
+                            viewModel.updateName(editNameText)
+                            showEditName = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AppColor.Primary),
+                ) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditName = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 
@@ -180,3 +278,4 @@ private fun SettingsRow(icon: ImageVector, label: String, onClick: () -> Unit) {
         }
     }
 }
+

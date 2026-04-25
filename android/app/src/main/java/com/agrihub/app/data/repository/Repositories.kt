@@ -46,6 +46,7 @@ class AuthRepository @Inject constructor(
     suspend fun getUserRole() = tokenManager.getUserRole()
     suspend fun getUserPhone() = tokenManager.getUserPhone()
     suspend fun getUserId() = tokenManager.getUserId()
+    suspend fun saveUserName(name: String) = tokenManager.saveUserName(name)
 }
 
 @Singleton

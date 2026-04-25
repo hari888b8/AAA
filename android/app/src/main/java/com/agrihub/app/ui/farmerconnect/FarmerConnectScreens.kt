@@ -1,3 +1,4 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
 package com.agrihub.app.ui.farmerconnect
 
 import androidx.compose.foundation.background
@@ -104,7 +105,11 @@ fun FarmerConnectHomeScreen(navController: NavController) {
 // ─── Properties Screen ─────────────────────────────────────
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun PropertiesScreen(navController: NavController, viewModel: FarmerConnectViewModel = hiltViewModel()) {
+fun PropertiesScreen(
+    navController: NavController,
+    onPropertyClick: ((Property) -> Unit)? = null,
+    viewModel: FarmerConnectViewModel = hiltViewModel(),
+) {
     val properties by viewModel.properties.collectAsState()
     val loading by viewModel.loading.collectAsState()
     var selectedType by remember { mutableStateOf<String?>(null) }
@@ -130,7 +135,9 @@ fun PropertiesScreen(navController: NavController, viewModel: FarmerConnectViewM
                 else -> LazyColumn(contentPadding = PaddingValues(vertical = 4.dp)) {
                     items(properties) { prop ->
                         Card(
-                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp).clickable {
+                                if (onPropertyClick != null) onPropertyClick(prop) else navController.navigate(Routes.propertyDetail(prop.id))
+                            },
                             shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp),
                         ) {
                             Column(Modifier.padding(14.dp)) {
@@ -198,5 +205,180 @@ fun AddPropertyScreen(navController: NavController, viewModel: FarmerConnectView
                 else Text("List Property", fontWeight = FontWeight.Bold)
             }
         }
+    }
+}
+
+// ─── Property Detail ───────────────────────────────────────
+@HiltViewModel
+class PropertyDetailViewModel @Inject constructor(private val repo: FarmerConnectRepository) : ViewModel() {
+    private val _contactSent = MutableStateFlow(false)
+    val contactSent: StateFlow<Boolean> = _contactSent.asStateFlow()
+    private val _sending = MutableStateFlow(false)
+    val sending: StateFlow<Boolean> = _sending.asStateFlow()
+
+    fun contactOwner(propertyId: String, message: String, onDone: () -> Unit) = viewModelScope.launch {
+        _sending.value = true
+        try {
+            repo.contactOwner(propertyId, message)
+            _contactSent.value = true
+            onDone()
+        } catch (_: Exception) {}
+        _sending.value = false
+    }
+}
+
+@Composable
+fun PropertyDetailScreen(
+    navController: NavController,
+    property: Property,
+    viewModel: PropertyDetailViewModel = hiltViewModel(),
+) {
+    val contactSent by viewModel.contactSent.collectAsState()
+    val sending by viewModel.sending.collectAsState()
+    var showContactDialog by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf("") }
+
+    val typeEmoji = when (property.property_type) {
+        "farmland" -> "🌾"; "storage" -> "🏭"; "greenhouse" -> "🌿"
+        "cold_storage" -> "❄️"; "irrigation_land" -> "💧"; else -> "🏠"
+    }
+
+    Column(Modifier.fillMaxSize().background(AppColor.Background)) {
+        // Header
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .background(brush = androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFFB57900), AppColor.FarmerConnect)))
+                .statusBarsPadding()
+                .padding(16.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Text("←", fontSize = 20.sp, color = Color.White)
+                }
+                Column(Modifier.weight(1f)) {
+                    Text("Property Details", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                    Text(property.property_type.replace("_", " ").replaceFirstChar { it.uppercase() }, fontSize = 12.sp, color = Color.White.copy(0.8f))
+                }
+                Text(typeEmoji, fontSize = 28.sp)
+            }
+        }
+
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            // Main info card
+            Card(
+                Modifier.fillMaxWidth().padding(16.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(3.dp),
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(property.title, fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
+                        StatusBadge(property.status.replaceFirstChar { it.uppercase() }, if (property.status == "active") AppColor.Success else AppColor.TextMuted)
+                    }
+                    Divider(Modifier.padding(vertical = 12.dp), color = AppColor.Divider)
+
+                    // Key stats
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        property.area_acres?.let { StatRow("📐 Area", "${it} acres") }
+                        property.price_per_month?.let { StatRow("💰 Monthly Rent", "₹${it.toInt()}/month") }
+                        property.price_total?.let { StatRow("🏷️ Total Price", "₹${it.toInt()}") }
+                        property.location_label?.let { StatRow("📍 Location", it) }
+                        property.district_name?.let { StatRow("🗺️ District", it) }
+                        property.owner_name?.let { StatRow("👤 Owner", it) }
+                        property.created_at?.let { StatRow("📅 Listed", it.take(10)) }
+                    }
+
+                    if (!property.description.isNullOrBlank()) {
+                        Divider(Modifier.padding(vertical = 12.dp), color = AppColor.Divider)
+                        Text("Description", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = AppColor.TextPrimary)
+                        Spacer(Modifier.height(6.dp))
+                        Text(property.description, fontSize = 14.sp, color = AppColor.TextSecondary, lineHeight = 22.sp)
+                    }
+
+                    if (!property.amenities.isNullOrEmpty()) {
+                        Divider(Modifier.padding(vertical = 12.dp), color = AppColor.Divider)
+                        Text("Amenities", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = AppColor.TextPrimary)
+                        Spacer(Modifier.height(8.dp))
+                        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            items(property.amenities) { amenity ->
+                                AssistChip(
+                                    onClick = {},
+                                    label = { Text(amenity.replaceFirstChar { it.uppercase() }, fontSize = 11.sp) },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Contact button
+            if (contactSent) {
+                Card(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = AppColor.Success.copy(0.1f)),
+                ) {
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("✅", fontSize = 24.sp)
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("Message Sent!", fontWeight = FontWeight.Bold, color = AppColor.Success)
+                            Text("The owner will contact you soon.", fontSize = 12.sp, color = AppColor.TextSecondary)
+                        }
+                    }
+                }
+            } else {
+                Button(
+                    onClick = { showContactDialog = true },
+                    modifier = Modifier.fillMaxWidth().padding(16.dp).height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AppColor.FarmerConnect),
+                ) {
+                    Text("📞 Contact Owner", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            }
+            Spacer(Modifier.height(32.dp))
+        }
+    }
+
+    // Contact dialog
+    if (showContactDialog) {
+        AlertDialog(
+            onDismissRequest = { showContactDialog = false },
+            title = { Text("Contact Owner", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Send a message to ${property.owner_name ?: "the owner"}:", fontSize = 13.sp, color = AppColor.TextSecondary)
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = message,
+                        onValueChange = { message = it },
+                        label = { Text("Your message") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        minLines = 3,
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (message.isNotBlank()) {
+                            viewModel.contactOwner(property.id, message) { showContactDialog = false }
+                        }
+                    },
+                    enabled = message.isNotBlank() && !sending,
+                    colors = ButtonDefaults.buttonColors(containerColor = AppColor.FarmerConnect),
+                ) {
+                    if (sending) CircularProgressIndicator(Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
+                    else Text("Send Message")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showContactDialog = false }) { Text("Cancel") }
+            },
+        )
     }
 }

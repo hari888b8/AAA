@@ -51,6 +51,7 @@ object AppColor {
     val AquaTeal = Color(0xFF00897B)
     val KisanOrange = Color(0xFFFF8F00)
     val SurfaceVariant = Color(0xFFF1F5F9)
+    val Divider = Color(0xFFE2E8E4)
 }
 
 private val LightColorScheme = lightColorScheme(

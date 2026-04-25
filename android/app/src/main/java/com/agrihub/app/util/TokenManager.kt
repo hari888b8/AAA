@@ -51,6 +51,10 @@ class TokenManager @Inject constructor(@ApplicationContext private val context: 
     suspend fun getUserPhone(): String? = context.dataStore.data.first()[USER_PHONE_KEY]
     suspend fun getUserId(): String? = context.dataStore.data.first()[USER_ID_KEY]
 
+    suspend fun saveUserName(name: String) {
+        context.dataStore.edit { it[USER_NAME_KEY] = name }
+    }
+
     suspend fun clear() {
         context.dataStore.edit { it.clear() }
     }

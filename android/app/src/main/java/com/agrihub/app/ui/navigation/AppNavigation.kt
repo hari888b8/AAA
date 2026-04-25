@@ -121,6 +121,14 @@ object Routes {
     const val WEATHER_HOME = "weather/home"
     const val MARKET_OUTLOOK = "weather/market-outlook"
     const val CROP_HEALTH = "weather/crop-health"
+
+    // Detail screens (id-based)
+    const val POST_DETAIL = "community/post/{postId}"
+    fun postDetail(postId: String) = "community/post/$postId"
+    const val PROPERTY_DETAIL = "farmerconnect/property/{propertyId}"
+    fun propertyDetail(propertyId: String) = "farmerconnect/property/$propertyId"
+    const val ORDER_DETAIL = "orders/{orderId}"
+    fun orderDetail(orderId: String) = "orders/$orderId"
 }
 
 // ─── Bottom Tab Items ──────────────────────────────────────
@@ -174,6 +182,7 @@ fun AuthNavHost(authViewModel: AuthViewModel) {
 @Composable
 fun MainNavHost() {
     val navController = rememberNavController()
+    val sharedViewModel: SharedViewModel = hiltViewModel()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute in tabRoutes
@@ -255,8 +264,20 @@ fun MainNavHost() {
 
             // ── FarmerConnect ──
             composable(Routes.FARMER_CONNECT_HOME) { FarmerConnectHomeScreen(navController) }
-            composable(Routes.PROPERTIES) { PropertiesScreen(navController) }
+            composable(Routes.PROPERTIES) {
+                PropertiesScreen(
+                    navController = navController,
+                    onPropertyClick = { prop ->
+                        sharedViewModel.selectProperty(prop)
+                        navController.navigate(Routes.propertyDetail(prop.id))
+                    },
+                )
+            }
             composable(Routes.ADD_PROPERTY) { AddPropertyScreen(navController) }
+            composable(Routes.PROPERTY_DETAIL, arguments = listOf(navArgument("propertyId") { type = NavType.StringType })) {
+                val prop by sharedViewModel.selectedProperty.collectAsStateWithLifecycle()
+                prop?.let { PropertyDetailScreen(navController, it) }
+            }
 
             // ── Intelligence ──
             composable(Routes.INTELLIGENCE_HOME) { IntelligenceHomeScreen(navController) }
@@ -265,11 +286,35 @@ fun MainNavHost() {
             composable(Routes.CROP_RECS) { CropRecommendationsScreen(navController) }
 
             // ── Community ──
-            composable(Routes.COMMUNITY) { CommunityScreen(navController) }
+            composable(Routes.COMMUNITY) {
+                CommunityScreen(
+                    navController = navController,
+                    onPostClick = { post ->
+                        sharedViewModel.selectPost(post)
+                        navController.navigate(Routes.postDetail(post.id))
+                    },
+                )
+            }
             composable(Routes.CREATE_POST) { CreatePostScreen(navController) }
+            composable(Routes.POST_DETAIL, arguments = listOf(navArgument("postId") { type = NavType.StringType })) {
+                val post by sharedViewModel.selectedPost.collectAsStateWithLifecycle()
+                post?.let { PostDetailScreen(navController, it) }
+            }
 
             // ── Orders ──
-            composable(Routes.ORDERS) { OrdersScreen(navController) }
+            composable(Routes.ORDERS) {
+                OrdersScreen(
+                    navController = navController,
+                    onOrderClick = { order ->
+                        sharedViewModel.selectOrder(order)
+                        navController.navigate(Routes.orderDetail(order.id))
+                    },
+                )
+            }
+            composable(Routes.ORDER_DETAIL, arguments = listOf(navArgument("orderId") { type = NavType.StringType })) {
+                val orderId = it.arguments?.getString("orderId") ?: ""
+                OrderDetailScreen(navController, orderId)
+            }
 
             // ── Notifications ──
             composable(Routes.NOTIFICATIONS) { NotificationsScreen(navController) }
