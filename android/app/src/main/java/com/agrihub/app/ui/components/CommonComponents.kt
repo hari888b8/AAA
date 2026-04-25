@@ -31,10 +31,22 @@ fun GradientHeader(
     actions: @Composable RowScope.() -> Unit = {},
     content: @Composable ColumnScope.() -> Unit = {},
 ) {
+    GradientHeader(title, subtitle, colors = listOf(color1, color2), onBack, actions, content)
+}
+
+@Composable
+fun GradientHeader(
+    title: String,
+    subtitle: String = "",
+    colors: List<Color> = listOf(AppColor.PrimaryDark, AppColor.Primary),
+    onBack: (() -> Unit)? = null,
+    actions: @Composable RowScope.() -> Unit = {},
+    content: @Composable ColumnScope.() -> Unit = {},
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(color1, color2)))
+            .background(Brush.verticalGradient(colors))
             .statusBarsPadding()
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
@@ -186,4 +198,38 @@ fun SectionTitle(title: String, subtitle: String = "", modifier: Modifier = Modi
             Text(subtitle, fontSize = 12.sp, color = AppColor.TextSecondary)
         }
     }
+}
+
+// Overload: StatRow with label-value pair
+@Composable
+fun StatRow(label: String, value: String, valueColor: Color = AppColor.TextPrimary) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, fontSize = 12.sp, color = AppColor.TextSecondary)
+        Text(value, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = valueColor)
+    }
+}
+
+// Overload: simple ActionCard with title and subtitle strings
+@Composable
+fun ActionCard(title: String, subtitle: String, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = AppColor.TextPrimary)
+                Text(subtitle, fontSize = 11.sp, color = AppColor.TextSecondary)
+            }
+            Text("›", fontSize = 20.sp, color = AppColor.Primary)
+        }
+    }
+}
+
+// Overload: simple EmptyState with two strings
+@Composable
+fun EmptyState(title: String, subtitle: String) {
+    EmptyState(emoji = "📭", title = title, subtitle = subtitle)
 }

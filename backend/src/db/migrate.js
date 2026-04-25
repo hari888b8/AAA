@@ -398,6 +398,207 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(user_id, is_read);
 
+-- TABLE: farmer_profiles (extended farmer data per PRD)
+CREATE TABLE IF NOT EXISTS farmer_profiles (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  state           VARCHAR(100),
+  district_id     INTEGER REFERENCES districts(id),
+  mandal          VARCHAR(100),
+  village         VARCHAR(150),
+  pincode         VARCHAR(6),
+  total_land_acres DECIMAL(10,3),
+  land_unit       VARCHAR(20) DEFAULT 'acres',
+  irrigation_type TEXT[],
+  farming_method  VARCHAR(50) DEFAULT 'conventional',
+  soil_type       TEXT[],
+  organic_certified BOOLEAN DEFAULT FALSE,
+  primary_crops   TEXT[],
+  fpo_id          UUID,
+  contact_consent VARCHAR(20) DEFAULT 'fpo_only',
+  data_quality_score SMALLINT DEFAULT 50,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_farmer_profiles_user ON farmer_profiles(user_id);
+
+-- TABLE: fpo_profiles (FPO management per PRD Section 7)
+CREATE TABLE IF NOT EXISTS fpo_profiles (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id             UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  fpo_name            VARCHAR(200) NOT NULL,
+  fpo_type            VARCHAR(50) DEFAULT 'FPO',
+  registration_number VARCHAR(100),
+  state               VARCHAR(100),
+  district_id         INTEGER REFERENCES districts(id),
+  block               VARCHAR(100),
+  office_address      TEXT,
+  ceo_name            VARCHAR(150),
+  whatsapp_number     VARCHAR(15),
+  member_count        INTEGER DEFAULT 0,
+  active_member_count INTEGER DEFAULT 0,
+  primary_crops       TEXT[],
+  subscription_plan   VARCHAR(50) DEFAULT 'starter',
+  verification_status VARCHAR(30) DEFAULT 'pending',
+  trust_score         SMALLINT DEFAULT 50,
+  response_rate       DECIMAL(5,2) DEFAULT 0,
+  year_established    SMALLINT,
+  created_at          TIMESTAMPTZ DEFAULT NOW(),
+  updated_at          TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_fpo_profiles_user ON fpo_profiles(user_id);
+
+-- TABLE: fpo_memberships
+CREATE TABLE IF NOT EXISTS fpo_memberships (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  fpo_id     UUID NOT NULL REFERENCES fpo_profiles(id) ON DELETE CASCADE,
+  farmer_id  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status     VARCHAR(20) DEFAULT 'active',
+  joined_at  TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(fpo_id, farmer_id)
+);
+
+-- TABLE: buyer_profiles (Buyer Intelligence per PRD Section 8)
+CREATE TABLE IF NOT EXISTS buyer_profiles (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id           UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  company_name      VARCHAR(200),
+  business_type     VARCHAR(50),
+  gstin             VARCHAR(15),
+  state             VARCHAR(100),
+  city              VARCHAR(100),
+  sourcing_states   TEXT[],
+  commodities       TEXT[],
+  monthly_volume_tons DECIMAL(10,2),
+  subscription_plan VARCHAR(50) DEFAULT 'explorer',
+  contact_name      VARCHAR(150),
+  contact_email     VARCHAR(255),
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_buyer_profiles_user ON buyer_profiles(user_id);
+
+-- TABLE: procurement_records (FPO procurement from farmers)
+CREATE TABLE IF NOT EXISTS procurement_records (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  fpo_id            UUID NOT NULL REFERENCES fpo_profiles(id),
+  farmer_id         UUID NOT NULL REFERENCES users(id),
+  crop_id           INTEGER REFERENCES crop_catalog(id),
+  quantity_kg       DECIMAL(12,2) NOT NULL,
+  quality_grade     quality_grade DEFAULT 'ungraded',
+  moisture_content  DECIMAL(5,2),
+  price_per_kg      DECIMAL(10,2) NOT NULL,
+  gross_amount      DECIMAL(12,2),
+  deduction_transport DECIMAL(10,2) DEFAULT 0,
+  deduction_other   DECIMAL(10,2) DEFAULT 0,
+  net_payable       DECIMAL(12,2),
+  payment_status    VARCHAR(30) DEFAULT 'pending',
+  payment_mode      VARCHAR(30),
+  paid_at           TIMESTAMPTZ,
+  collection_center VARCHAR(200),
+  procurement_date  TIMESTAMPTZ DEFAULT NOW(),
+  notes             TEXT,
+  created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_procurement_fpo ON procurement_records(fpo_id);
+CREATE INDEX IF NOT EXISTS idx_procurement_farmer ON procurement_records(farmer_id);
+
+-- TABLE: fpo_inventory
+CREATE TABLE IF NOT EXISTS fpo_inventory (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  fpo_id            UUID NOT NULL REFERENCES fpo_profiles(id),
+  crop_id           INTEGER REFERENCES crop_catalog(id),
+  storage_location  VARCHAR(200),
+  storage_type      VARCHAR(50),
+  quantity_kg       DECIMAL(12,2) NOT NULL,
+  quality_grade     quality_grade DEFAULT 'ungraded',
+  entry_date        DATE DEFAULT CURRENT_DATE,
+  freshness_status  VARCHAR(20) DEFAULT 'fresh',
+  notes             TEXT,
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_fpo_inventory ON fpo_inventory(fpo_id);
+
+-- TABLE: fpo_supply_listings (FPO → Buyer marketplace)
+CREATE TABLE IF NOT EXISTS fpo_supply_listings (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  fpo_id            UUID NOT NULL REFERENCES fpo_profiles(id),
+  crop_id           INTEGER REFERENCES crop_catalog(id),
+  quantity_available DECIMAL(12,2) NOT NULL,
+  quality_grade     quality_grade DEFAULT 'A',
+  harvest_from_date DATE,
+  harvest_to_date   DATE,
+  price_per_kg      DECIMAL(10,2),
+  min_order_kg      DECIMAL(10,2),
+  packaging         TEXT[],
+  certifications    TEXT[],
+  storage_location  VARCHAR(200),
+  special_notes     TEXT,
+  status            listing_status DEFAULT 'active',
+  view_count        INTEGER DEFAULT 0,
+  inquiry_count     INTEGER DEFAULT 0,
+  expires_at        TIMESTAMPTZ,
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_fpo_supply ON fpo_supply_listings(fpo_id);
+CREATE INDEX IF NOT EXISTS idx_fpo_supply_crop ON fpo_supply_listings(crop_id);
+CREATE INDEX IF NOT EXISTS idx_fpo_supply_status ON fpo_supply_listings(status);
+
+-- TABLE: buyer_inquiries (detailed buyer → FPO inquiry)
+CREATE TABLE IF NOT EXISTS buyer_inquiries (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  buyer_id          UUID NOT NULL REFERENCES users(id),
+  fpo_listing_id    UUID REFERENCES fpo_supply_listings(id),
+  crop_id           INTEGER REFERENCES crop_catalog(id),
+  quantity_needed   DECIMAL(12,2),
+  required_by_date  DATE,
+  delivery_location TEXT,
+  quality_needed    quality_grade,
+  price_range_min   DECIMAL(10,2),
+  price_range_max   DECIMAL(10,2),
+  message           TEXT,
+  status            inquiry_status DEFAULT 'pending',
+  response_message  TEXT,
+  contact_shared    BOOLEAN DEFAULT FALSE,
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_buyer_inquiries_buyer ON buyer_inquiries(buyer_id);
+
+-- TABLE: buyer_watchlists
+CREATE TABLE IF NOT EXISTS buyer_watchlists (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  buyer_id         UUID NOT NULL REFERENCES users(id),
+  crop_id          INTEGER REFERENCES crop_catalog(id),
+  state            VARCHAR(100),
+  district_id      INTEGER REFERENCES districts(id),
+  min_quantity_kg  DECIMAL(12,2),
+  max_price_per_kg DECIMAL(10,2),
+  alert_enabled    BOOLEAN DEFAULT TRUE,
+  created_at       TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_watchlists_buyer ON buyer_watchlists(buyer_id);
+
+-- TABLE: supply_intelligence (computed aggregates)
+CREATE TABLE IF NOT EXISTS supply_intelligence (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  crop_id           INTEGER REFERENCES crop_catalog(id),
+  state             VARCHAR(100),
+  district_id       INTEGER REFERENCES districts(id),
+  total_declared_area DECIMAL(12,3),
+  total_declared_yield DECIMAL(12,3),
+  farmer_count      INTEGER,
+  forecast_harvest_tons DECIMAL(12,3),
+  forecast_confidence DECIMAL(5,2),
+  fpo_listed_tons   DECIMAL(12,3),
+  active_fpo_count  INTEGER,
+  price_trend_7d    DECIMAL(5,2),
+  price_trend_30d   DECIMAL(5,2),
+  computed_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- AUTO-UPDATED updated_at function
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$

@@ -147,3 +147,44 @@ class NotificationsRepository @Inject constructor(private val api: AuthApi) {
     suspend fun markAsRead(id: String) = api.markNotificationRead(id)
     suspend fun markAllRead() = api.markAllNotificationsRead()
 }
+
+@Singleton
+class FarmerProfileRepository @Inject constructor(private val api: FarmerProfileApi) {
+    suspend fun getProfile() = api.getProfile().profile
+    suspend fun saveProfile(body: Map<String, Any?>) = api.saveProfile(body).profile
+    suspend fun getHarvestCalendar() = api.getHarvestCalendar().calendar
+    suspend fun getMyListings() = api.getMyListings().listings
+    suspend fun getMyInquiries(limit: Int = 20) = api.getMyInquiries(limit).inquiries
+    suspend fun getStats() = api.getStats().stats
+}
+
+@Singleton
+class FpoRepository @Inject constructor(private val api: FpoApi) {
+    suspend fun getProfile() = api.getProfile().profile
+    suspend fun saveProfile(body: Map<String, Any?>) = api.saveProfile(body).profile
+    suspend fun getMembers() = api.getMembers()
+    suspend fun addMember(phone: String) = api.addMember(mapOf("farmer_phone" to phone))
+    suspend fun getProcurement(limit: Int = 20) = api.getProcurement(limit).records
+    suspend fun recordProcurement(body: Map<String, Any?>) = api.recordProcurement(body)
+    suspend fun getInventory() = api.getInventory().inventory
+    suspend fun addInventory(body: Map<String, Any?>) = api.addInventory(body)
+    suspend fun getSupplyListings(cropId: Int? = null) = api.getSupplyListings(cropId).listings
+    suspend fun createSupplyListing(body: Map<String, Any?>) = api.createSupplyListing(body).listing
+    suspend fun getStats() = api.getStats().stats
+}
+
+@Singleton
+class BuyerRepository @Inject constructor(private val api: BuyerApi) {
+    suspend fun getProfile() = api.getProfile().profile
+    suspend fun saveProfile(body: Map<String, Any?>) = api.saveProfile(body).profile
+    suspend fun searchSupply(cropId: Int? = null, state: String? = null, districtId: Int? = null,
+                             quality: String? = null, minQty: Double? = null, sourceType: String? = null) =
+        api.searchSupply(cropId, state, districtId, quality, minQty, sourceType).results
+    suspend fun getInquiries(limit: Int = 20) = api.getInquiries(limit).inquiries
+    suspend fun sendInquiry(body: Map<String, Any?>) = api.sendInquiry(body)
+    suspend fun getWatchlist() = api.getWatchlist().watchlist
+    suspend fun addToWatchlist(body: Map<String, Any?>) = api.addToWatchlist(body)
+    suspend fun removeFromWatchlist(id: String) = api.removeFromWatchlist(id)
+    suspend fun getIntelligence(cropId: Int? = null, state: String? = null) = api.getIntelligence(cropId, state).intelligence
+    suspend fun getStats() = api.getStats().stats
+}

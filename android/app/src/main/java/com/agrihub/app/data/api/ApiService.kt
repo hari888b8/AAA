@@ -195,3 +195,104 @@ interface OrdersApi {
     @PATCH("api/orders/{id}/status")
     suspend fun updateOrderStatus(@Path("id") id: String, @Body body: Map<String, String>): OrderWrapper
 }
+
+// ─── Farmer Profile API (PRD Section 6) ────────────────────
+interface FarmerProfileApi {
+    @GET("api/farmer/profile")
+    suspend fun getProfile(): FarmerProfileResponse
+
+    @POST("api/farmer/profile")
+    suspend fun saveProfile(@Body body: Map<String, @JvmSuppressWildcards Any?>): FarmerProfileResponse
+
+    @GET("api/farmer/harvest-calendar")
+    suspend fun getHarvestCalendar(): HarvestCalendarResponse
+
+    @GET("api/farmer/my-listings")
+    suspend fun getMyListings(): ListingsResponse
+
+    @GET("api/farmer/my-inquiries")
+    suspend fun getMyInquiries(@Query("limit") limit: Int = 20): InquiriesResponse
+
+    @GET("api/farmer/stats")
+    suspend fun getStats(): FarmerStatsResponse
+}
+
+// ─── FPO API (PRD Section 7) ──────────────────────────────
+interface FpoApi {
+    @GET("api/fpo/profile")
+    suspend fun getProfile(): FpoProfileResponse
+
+    @POST("api/fpo/profile")
+    suspend fun saveProfile(@Body body: Map<String, @JvmSuppressWildcards Any?>): FpoProfileResponse
+
+    @GET("api/fpo/members")
+    suspend fun getMembers(): FpoMembersResponse
+
+    @POST("api/fpo/members")
+    suspend fun addMember(@Body body: Map<String, String>): MessageResponse
+
+    @GET("api/fpo/procurement")
+    suspend fun getProcurement(@Query("limit") limit: Int = 20): ProcurementResponse
+
+    @POST("api/fpo/procurement")
+    suspend fun recordProcurement(@Body body: Map<String, @JvmSuppressWildcards Any?>): MessageResponse
+
+    @GET("api/fpo/inventory")
+    suspend fun getInventory(): FpoInventoryResponse
+
+    @POST("api/fpo/inventory")
+    suspend fun addInventory(@Body body: Map<String, @JvmSuppressWildcards Any?>): MessageResponse
+
+    @GET("api/fpo/supply-listings")
+    suspend fun getSupplyListings(@Query("crop_id") cropId: Int? = null): FpoSupplyListingsResponse
+
+    @POST("api/fpo/supply-listings")
+    suspend fun createSupplyListing(@Body body: Map<String, @JvmSuppressWildcards Any?>): FpoSupplyListingWrapper
+
+    @GET("api/fpo/stats")
+    suspend fun getStats(): FpoStatsResponse
+}
+
+// ─── Buyer API (PRD Section 8) ────────────────────────────
+interface BuyerApi {
+    @GET("api/buyer/profile")
+    suspend fun getProfile(): BuyerProfileResponse
+
+    @POST("api/buyer/profile")
+    suspend fun saveProfile(@Body body: Map<String, @JvmSuppressWildcards Any?>): BuyerProfileResponse
+
+    @GET("api/buyer/supply-search")
+    suspend fun searchSupply(
+        @Query("crop_id") cropId: Int? = null,
+        @Query("state") state: String? = null,
+        @Query("district_id") districtId: Int? = null,
+        @Query("quality_grade") quality: String? = null,
+        @Query("min_quantity") minQty: Double? = null,
+        @Query("source_type") sourceType: String? = null,
+        @Query("limit") limit: Int = 20,
+    ): SupplySearchResponse
+
+    @GET("api/buyer/inquiries")
+    suspend fun getInquiries(@Query("limit") limit: Int = 20): BuyerInquiriesResponse
+
+    @POST("api/buyer/inquiries")
+    suspend fun sendInquiry(@Body body: Map<String, @JvmSuppressWildcards Any?>): MessageResponse
+
+    @GET("api/buyer/watchlist")
+    suspend fun getWatchlist(): WatchlistResponse
+
+    @POST("api/buyer/watchlist")
+    suspend fun addToWatchlist(@Body body: Map<String, @JvmSuppressWildcards Any?>): MessageResponse
+
+    @DELETE("api/buyer/watchlist/{id}")
+    suspend fun removeFromWatchlist(@Path("id") id: String): MessageResponse
+
+    @GET("api/buyer/intelligence")
+    suspend fun getIntelligence(
+        @Query("crop_id") cropId: Int? = null,
+        @Query("state") state: String? = null,
+    ): SupplyIntelligenceResponse
+
+    @GET("api/buyer/stats")
+    suspend fun getStats(): BuyerStatsResponse
+}

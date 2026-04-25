@@ -20,12 +20,16 @@ import androidx.navigation.navArgument
 import com.agrihub.app.ui.agriflow.*
 import com.agrihub.app.ui.aquaos.*
 import com.agrihub.app.ui.auth.*
+import com.agrihub.app.ui.buyer.*
 import com.agrihub.app.ui.community.*
+import com.agrihub.app.ui.farmer.*
 import com.agrihub.app.ui.farmerconnect.*
+import com.agrihub.app.ui.fpo.*
 import com.agrihub.app.ui.home.*
 import com.agrihub.app.ui.intelligence.*
 import com.agrihub.app.ui.kisanconnect.*
 import com.agrihub.app.ui.notifications.*
+import com.agrihub.app.ui.onboarding.*
 import com.agrihub.app.ui.orders.*
 import com.agrihub.app.ui.profile.*
 import com.agrihub.app.ui.theme.AppColor
@@ -85,6 +89,31 @@ object Routes {
     const val CREATE_POST = "community/create"
     const val ORDERS = "orders"
     const val NOTIFICATIONS = "notifications"
+
+    // Onboarding
+    const val FARMER_SETUP = "onboarding/farmer"
+    const val FPO_SETUP = "onboarding/fpo"
+    const val BUYER_SETUP = "onboarding/buyer"
+
+    // FPO Management (PRD Section 7)
+    const val FPO_DASHBOARD = "fpo/dashboard"
+    const val FPO_MEMBERS = "fpo/members"
+    const val FPO_PROCUREMENT = "fpo/procurement"
+    const val FPO_INVENTORY = "fpo/inventory"
+    const val FPO_SUPPLY_LISTINGS = "fpo/supply-listings"
+    const val FPO_CREATE_LISTING = "fpo/create-listing"
+
+    // Buyer Intelligence (PRD Section 8)
+    const val BUYER_DASHBOARD = "buyer/dashboard"
+    const val BUYER_SEARCH = "buyer/search"
+    const val BUYER_INQUIRIES = "buyer/inquiries"
+    const val BUYER_WATCHLIST = "buyer/watchlist"
+    const val BUYER_INTELLIGENCE = "buyer/intelligence"
+    const val BUYER_INQUIRY_FORM = "buyer/inquiry/{listingId}"
+    fun buyerInquiryForm(id: String) = "buyer/inquiry/$id"
+
+    // Farmer enhanced (PRD Section 6)
+    const val HARVEST_CALENDAR = "farmer/harvest-calendar"
 }
 
 // ─── Bottom Tab Items ──────────────────────────────────────
@@ -236,6 +265,32 @@ fun MainNavHost() {
 
             // ── Notifications ──
             composable(Routes.NOTIFICATIONS) { NotificationsScreen(navController) }
+
+            // ── Onboarding ──
+            composable(Routes.FARMER_SETUP) { FarmerSetupScreen(navController) { navController.popBackStack() } }
+            composable(Routes.FPO_SETUP) { FpoSetupScreen(navController) { navController.popBackStack() } }
+            composable(Routes.BUYER_SETUP) { BuyerSetupScreen(navController) { navController.popBackStack() } }
+
+            // ── FPO Management (PRD Section 7) ──
+            composable(Routes.FPO_DASHBOARD) { FpoDashboardScreen(navController) }
+            composable(Routes.FPO_MEMBERS) { FpoMembersScreen(navController) }
+            composable(Routes.FPO_PROCUREMENT) { FpoProcurementScreen(navController) }
+            composable(Routes.FPO_INVENTORY) { FpoInventoryScreen(navController) }
+            composable(Routes.FPO_SUPPLY_LISTINGS) { FpoSupplyListingsScreen(navController) }
+            composable(Routes.FPO_CREATE_LISTING) { FpoCreateListingScreen(navController) }
+
+            // ── Buyer Intelligence (PRD Section 8) ──
+            composable(Routes.BUYER_DASHBOARD) { BuyerDashboardScreen(navController) }
+            composable(Routes.BUYER_SEARCH) { BuyerSearchScreen(navController) }
+            composable(Routes.BUYER_INQUIRIES) { BuyerInquiriesScreen(navController) }
+            composable(Routes.BUYER_WATCHLIST) { BuyerWatchlistScreen(navController) }
+            composable(Routes.BUYER_INTELLIGENCE) { BuyerIntelligenceScreen(navController) }
+            composable(Routes.BUYER_INQUIRY_FORM, arguments = listOf(navArgument("listingId") { type = NavType.StringType })) {
+                BuyerInquiryFormScreen(navController, it.arguments?.getString("listingId") ?: "")
+            }
+
+            // ── Farmer Enhanced ──
+            composable(Routes.HARVEST_CALENDAR) { HarvestCalendarScreen(navController) }
         }
     }
 }

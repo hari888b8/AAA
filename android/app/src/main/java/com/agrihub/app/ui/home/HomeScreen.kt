@@ -88,6 +88,8 @@ val platforms = listOf(
     PlatformItem("kisan", "KisanConnect", "Equipment rental & rural jobs", "🤝", AppColor.KisanConnect, AppColor.KisanConnectLight, Routes.KISAN),
     PlatformItem("farmerconnect", "FarmerConnect", "Agricultural housing & rentals", "🏠", AppColor.FarmerConnect, AppColor.FarmerConnectLight, Routes.FARMER_CONNECT_HOME),
     PlatformItem("intelligence", "Intelligence", "Price radar & market analytics", "📊", AppColor.Intelligence, AppColor.IntelligenceLight, Routes.INTELLIGENCE_HOME),
+    PlatformItem("fpo", "FPO Dashboard", "Members, procurement & supply", "🏢", AppColor.FpoBlue, AppColor.AquaOSLight, Routes.FPO_DASHBOARD),
+    PlatformItem("buyer", "Buyer Intelligence", "Supply search & market insights", "🛒", AppColor.BuyerOrange, AppColor.FarmerConnectLight, Routes.BUYER_DASHBOARD),
 )
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -212,6 +214,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                         Triple("📦", "Orders", Routes.ORDERS),
                         Triple("💬", "Community", Routes.COMMUNITY),
                         Triple("🔔", "Alerts", Routes.NOTIFICATIONS),
+                        Triple("📅", "Calendar", Routes.HARVEST_CALENDAR),
                     ).forEach { (emoji, label, route) ->
                         Card(
                             Modifier.weight(1f).clickable { navController.navigate(route) },

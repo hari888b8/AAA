@@ -44,6 +44,13 @@ object AppColor {
     val FarmerConnectLight = Color(0xFFFFF8E6)
     val Intelligence = Color(0xFFEF4444)
     val IntelligenceLight = Color(0xFFFFF1F1)
+
+    // Role-based colors
+    val FpoBlue = Color(0xFF1565C0)
+    val BuyerOrange = Color(0xFFE65100)
+    val AquaTeal = Color(0xFF00897B)
+    val KisanOrange = Color(0xFFFF8F00)
+    val SurfaceVariant = Color(0xFFF1F5F9)
 }
 
 private val LightColorScheme = lightColorScheme(

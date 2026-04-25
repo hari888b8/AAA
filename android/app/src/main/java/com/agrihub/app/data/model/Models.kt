@@ -29,9 +29,249 @@ data class User(
     val phone: String = "",
     val name: String = "",
     val role: String = "farmer",
+    val language: String = "en",
+    val district_id: Int? = null,
+    val state_code: String? = null,
     val is_verified: Boolean = false,
     val onboarding_completed: Boolean? = null,
     val created_at: String? = null,
+)
+
+// ─── Farmer Profile (PRD Section 6) ───────────────────────
+data class FarmerProfileResponse(val profile: FarmerProfile?)
+data class FarmerProfile(
+    val id: String = "",
+    val user_id: String = "",
+    val state: String? = null,
+    val district_id: Int? = null,
+    val district_name: String? = null,
+    val state_name: String? = null,
+    val mandal: String? = null,
+    val village: String? = null,
+    val pincode: String? = null,
+    val total_land_acres: Double? = null,
+    val land_unit: String = "acres",
+    val irrigation_type: List<String>? = null,
+    val farming_method: String = "conventional",
+    val soil_type: List<String>? = null,
+    val organic_certified: Boolean = false,
+    val primary_crops: List<String>? = null,
+    val contact_consent: String = "fpo_only",
+    val data_quality_score: Int = 50,
+)
+
+data class FarmerStatsResponse(val stats: FarmerStats)
+data class FarmerStats(
+    val total_declarations: Int = 0,
+    val active_listings: Int = 0,
+    val total_inquiries: Int = 0,
+    val land_acres: Double = 0.0,
+)
+
+data class HarvestCalendarResponse(val calendar: List<HarvestCalendarItem>)
+data class HarvestCalendarItem(
+    val id: String = "",
+    val crop_id: Int = 0,
+    val crop_name: String = "",
+    val icon_emoji: String? = null,
+    val area_acres: Double = 0.0,
+    val expected_yield: Double? = null,
+    val sow_date: String = "",
+    val expected_harvest_date: String = "",
+    val days_to_harvest: Double? = null,
+    val quality_grade: String = "ungraded",
+    val is_organic: Boolean = false,
+)
+
+// ─── FPO Profile (PRD Section 7) ──────────────────────────
+data class FpoProfileResponse(val profile: FpoProfile?)
+data class FpoProfile(
+    val id: String = "",
+    val user_id: String = "",
+    val fpo_name: String = "",
+    val fpo_type: String = "FPO",
+    val registration_number: String? = null,
+    val state: String? = null,
+    val district_id: Int? = null,
+    val district_name: String? = null,
+    val state_name: String? = null,
+    val block: String? = null,
+    val office_address: String? = null,
+    val ceo_name: String? = null,
+    val whatsapp_number: String? = null,
+    val member_count: Int = 0,
+    val active_member_count: Int = 0,
+    val primary_crops: List<String>? = null,
+    val subscription_plan: String = "starter",
+    val verification_status: String = "pending",
+    val trust_score: Int = 50,
+    val response_rate: Double = 0.0,
+    val year_established: Int? = null,
+)
+
+data class FpoMembersResponse(val members: List<FpoMember>, val total: Int = 0)
+data class FpoMember(
+    val id: String = "",
+    val fpo_id: String = "",
+    val farmer_id: String = "",
+    val farmer_name: String? = null,
+    val farmer_phone: String? = null,
+    val village: String? = null,
+    val total_land_acres: Double? = null,
+    val farmer_crops: List<String>? = null,
+    val status: String = "active",
+    val joined_at: String? = null,
+)
+
+data class ProcurementResponse(val records: List<ProcurementRecord>)
+data class ProcurementRecord(
+    val id: String = "",
+    val fpo_id: String = "",
+    val farmer_id: String = "",
+    val farmer_name: String? = null,
+    val crop_id: Int? = null,
+    val crop_name: String? = null,
+    val quantity_kg: Double = 0.0,
+    val quality_grade: String = "ungraded",
+    val moisture_content: Double? = null,
+    val price_per_kg: Double = 0.0,
+    val gross_amount: Double = 0.0,
+    val deduction_transport: Double = 0.0,
+    val deduction_other: Double = 0.0,
+    val net_payable: Double = 0.0,
+    val payment_status: String = "pending",
+    val collection_center: String? = null,
+    val procurement_date: String? = null,
+)
+
+data class FpoInventoryResponse(val inventory: List<FpoInventoryItem>)
+data class FpoInventoryItem(
+    val id: String = "",
+    val fpo_id: String = "",
+    val crop_id: Int? = null,
+    val crop_name: String? = null,
+    val storage_location: String? = null,
+    val storage_type: String? = null,
+    val quantity_kg: Double = 0.0,
+    val quality_grade: String = "ungraded",
+    val entry_date: String? = null,
+    val freshness_status: String = "fresh",
+)
+
+data class FpoSupplyListingsResponse(val listings: List<FpoSupplyListing>)
+data class FpoSupplyListingWrapper(val listing: FpoSupplyListing)
+data class FpoSupplyListing(
+    val id: String = "",
+    val fpo_id: String = "",
+    val fpo_name: String? = null,
+    val crop_id: Int? = null,
+    val crop_name: String? = null,
+    val district_name: String? = null,
+    val quantity_available: Double = 0.0,
+    val quality_grade: String = "A",
+    val harvest_from_date: String? = null,
+    val harvest_to_date: String? = null,
+    val price_per_kg: Double? = null,
+    val min_order_kg: Double? = null,
+    val packaging: List<String>? = null,
+    val certifications: List<String>? = null,
+    val storage_location: String? = null,
+    val special_notes: String? = null,
+    val status: String = "active",
+    val view_count: Int = 0,
+    val inquiry_count: Int = 0,
+    val member_count: Int? = null,
+    val trust_score: Int? = null,
+    val state_name: String? = null,
+    val source_type: String? = null,
+    val created_at: String? = null,
+)
+
+data class FpoStatsResponse(val stats: FpoStats)
+data class FpoStats(
+    val member_count: Int = 0,
+    val active_members: Int = 0,
+    val procurement_total: Double = 0.0,
+    val inventory_kg: Double = 0.0,
+    val active_listings: Int = 0,
+    val pending_payments: Double = 0.0,
+)
+
+// ─── Buyer Profile (PRD Section 8) ────────────────────────
+data class BuyerProfileResponse(val profile: BuyerProfile?)
+data class BuyerProfile(
+    val id: String = "",
+    val user_id: String = "",
+    val company_name: String? = null,
+    val business_type: String? = null,
+    val gstin: String? = null,
+    val state: String? = null,
+    val city: String? = null,
+    val sourcing_states: List<String>? = null,
+    val commodities: List<String>? = null,
+    val monthly_volume_tons: Double? = null,
+    val subscription_plan: String = "explorer",
+    val contact_name: String? = null,
+    val contact_email: String? = null,
+)
+
+data class SupplySearchResponse(val results: List<FpoSupplyListing>, val total: Int = 0)
+
+data class BuyerInquiriesResponse(val inquiries: List<BuyerInquiry>)
+data class BuyerInquiry(
+    val id: String = "",
+    val buyer_id: String = "",
+    val fpo_listing_id: String? = null,
+    val crop_id: Int? = null,
+    val crop_name: String? = null,
+    val fpo_name: String? = null,
+    val quantity_needed: Double? = null,
+    val required_by_date: String? = null,
+    val delivery_location: String? = null,
+    val message: String? = null,
+    val status: String = "pending",
+    val response_message: String? = null,
+    val created_at: String? = null,
+)
+
+data class WatchlistResponse(val watchlist: List<WatchlistItem>)
+data class WatchlistItem(
+    val id: String = "",
+    val buyer_id: String = "",
+    val crop_id: Int? = null,
+    val crop_name: String? = null,
+    val state: String? = null,
+    val district_id: Int? = null,
+    val district_name: String? = null,
+    val min_quantity_kg: Double? = null,
+    val max_price_per_kg: Double? = null,
+    val alert_enabled: Boolean = true,
+)
+
+data class BuyerStatsResponse(val stats: BuyerStats)
+data class BuyerStats(
+    val total_inquiries: Int = 0,
+    val active_watchlists: Int = 0,
+    val available_listings: Int = 0,
+)
+
+data class SupplyIntelligenceResponse(val intelligence: List<SupplyIntelligenceItem>)
+data class SupplyIntelligenceItem(
+    val id: String = "",
+    val crop_id: Int? = null,
+    val crop_name: String? = null,
+    val state: String? = null,
+    val district_id: Int? = null,
+    val district_name: String? = null,
+    val total_declared_area: Double? = null,
+    val total_declared_yield: Double? = null,
+    val farmer_count: Int? = null,
+    val forecast_harvest_tons: Double? = null,
+    val forecast_confidence: Double? = null,
+    val fpo_listed_tons: Double? = null,
+    val active_fpo_count: Int? = null,
+    val price_trend_7d: Double? = null,
+    val price_trend_30d: Double? = null,
 )
 
 // ─── AgriFlow ──────────────────────────────────────────────

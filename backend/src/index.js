@@ -21,6 +21,9 @@ const kisanconnectRouter = require('./routes/kisanconnect');
 const intelligenceRouter = require('./routes/intelligence');
 const communityRouter = require('./routes/community');
 const ordersRouter = require('./routes/orders');
+const fpoRouter = require('./routes/fpo');
+const buyerRouter = require('./routes/buyer');
+const farmerRouter = require('./routes/farmer');
 
 const app = express();
 const server = http.createServer(app);
@@ -61,6 +64,9 @@ app.use('/api/kisanconnect', kisanconnectRouter);
 app.use('/api/intelligence', intelligenceRouter);
 app.use('/api/community', communityRouter);
 app.use('/api/orders', ordersRouter);
+app.use('/api/fpo', fpoRouter);
+app.use('/api/buyer', buyerRouter);
+app.use('/api/farmer', farmerRouter);
 
 // 404
 app.use((req, res) => res.status(404).json({ error: `Route ${req.path} not found` }));
