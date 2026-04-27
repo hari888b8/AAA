@@ -1,4 +1,4 @@
-import { navigate } from '../main.js';
+import { navigate } from '../app-shell.js';
 
 /**
  * Platform Architecture Map
@@ -19,14 +19,23 @@ export function renderArchitecture(container) {
 
   function render() {
     container.innerHTML = `
-      <div style="background:linear-gradient(135deg,#1a237e,#311b92);color:white;padding:16px">
-        <div style="font-size:28px;margin-bottom:4px">🏗️</div>
-        <div style="font-weight:800;font-size:18px">AgriHub Platform Map</div>
-        <div style="font-size:12px;opacity:0.85">5 platforms · 5 roles · One login · Central data engine</div>
+      <div class="hero-v2" style="background:linear-gradient(135deg,#1a237e,#311b92);color:white" role="banner">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="hero-avatar" aria-hidden="true">🏗️</div>
+          <div style="flex:1">
+            <h1 class="hero-title">AgriHub Platform Map</h1>
+            <div class="hero-sub">5 platforms · 5 roles · One login · Central data engine</div>
+          </div>
+        </div>
+        <div class="hero-stats" role="list">
+          <div class="hero-stat-card" role="listitem"><div class="v">5</div><div class="l">Platform Apps</div></div>
+          <div class="hero-stat-card" role="listitem"><div class="v">5</div><div class="l">User Roles</div></div>
+          <div class="hero-stat-card" role="listitem"><div class="v">22</div><div class="l">Screens</div></div>
+        </div>
       </div>
-      <div style="display:flex;gap:4px;overflow-x:auto;padding:10px 12px;background:white;border-bottom:1px solid var(--border)">
+      <div class="tab-bar-v2" role="tablist" aria-label="Architecture sections">
         ${[['map','🗺️ Platform Map'],['roles','👥 Roles & Access'],['intel','🧠 Agri Intelligence'],['flow','🔄 Data Flow'],['roadmap','🚀 Roadmap']].map(([k,l])=>`
-          <button style="flex-shrink:0;padding:6px 14px;border-radius:20px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:${tab===k?'#1a237e':'var(--bg)'};color:${tab===k?'white':'var(--text2)'}" data-tab="${k}">${l}</button>
+          <button class="tab-btn ${tab===k?'active':''}" role="tab" aria-selected="${tab===k}" data-tab="${k}">${l}</button>
         `).join('')}
       </div>
       <div style="padding:14px 14px 80px">${renderTab()}</div>

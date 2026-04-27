@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { showToast, showModal, closeModal } from '../main.js';
+import { showToast, showModal, closeModal, navigate } from '../app-shell.js';
 import { getRole, getState } from '../store.js';
 import { t } from '../i18n.js';
 
@@ -14,7 +14,7 @@ export function renderFarmerConnect(container) {
 
   function render() {
     container.innerHTML = `
-      <div class="app-brand-header" style="padding:14px 16px 10px;background:linear-gradient(135deg,#00c9a7 0%,#a8e063 100%);color:#fff">
+      <div class="hero-v2" role="banner" style="background:linear-gradient(135deg,#00c9a7 0%,#a8e063 100%);color:#fff">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:28px">🏡</span>
           <div><div style="font-size:18px;font-weight:800;letter-spacing:-0.3px">FarmerConnect</div><div style="font-size:11px;opacity:0.85">Property & Agricultural Land · Zero Broker · AI-Powered</div></div>
@@ -25,18 +25,18 @@ export function renderFarmerConnect(container) {
         <button class="mode-btn ${mode === 'owner' ? 'active' : ''}" data-mode="owner" style="flex:1;padding:8px;border-radius:10px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .2s;${mode === 'owner' ? 'background:var(--primary);color:white;box-shadow:0 2px 6px rgba(0,0,0,0.15)' : 'background:transparent;color:var(--text2)'}">🏠 Owner</button>
       </div>
       ${mode === 'owner' ? `
-        <div class="tab-bar">
-          <button class="tab-btn ${tab === 'listings' ? 'active' : ''}" data-tab="listings">🏠 Listings</button>
-          <button class="tab-btn ${tab === 'inquiries' ? 'active' : ''}" data-tab="inquiries">📩 Inquiries</button>
-          <button class="tab-btn ${tab === 'societies' ? 'active' : ''}" data-tab="societies">🏘️ Society</button>
-          <button class="tab-btn ${tab === 'agreements' ? 'active' : ''}" data-tab="agreements">📝 Agreements</button>
+        <div class="tab-bar" role="tablist">
+          <button role="tab" aria-selected="${tab === 'listings'}" class="tab-btn ${tab === 'listings' ? 'active' : ''}" data-tab="listings">🏠 Listings</button>
+          <button role="tab" aria-selected="${tab === 'inquiries'}" class="tab-btn ${tab === 'inquiries' ? 'active' : ''}" data-tab="inquiries">📩 Inquiries</button>
+          <button role="tab" aria-selected="${tab === 'societies'}" class="tab-btn ${tab === 'societies' ? 'active' : ''}" data-tab="societies">🏘️ Society</button>
+          <button role="tab" aria-selected="${tab === 'advisor'}" class="tab-btn ${tab === 'advisor' ? 'active' : ''}" data-tab="advisor">🔬 Disease Advisor</button>
         </div>
-        ${tab === 'listings' ? renderOwnerView() : tab === 'inquiries' ? renderOwnerInquiries() : tab === 'societies' ? renderSocieties() : renderAgreements()}
+        ${tab === 'listings' ? renderOwnerView() : tab === 'inquiries' ? renderOwnerInquiries() : tab === 'societies' ? renderSocieties() : tab === 'advisor' ? renderDiseaseAdvisor() : renderAgreements()}
       ` : `
-        <div class="tab-bar">
-          <button class="tab-btn ${tab === 'browse' ? 'active' : ''}" data-tab="browse">🔍 Browse</button>
-          <button class="tab-btn ${tab === 'saved' ? 'active' : ''}" data-tab="saved">❤️ Saved</button>
-          <button class="tab-btn ${tab === 'myinquiries' ? 'active' : ''}" data-tab="myinquiries">📩 My Inquiries</button>
+        <div class="tab-bar" role="tablist">
+          <button role="tab" aria-selected="${tab === 'browse'}" class="tab-btn ${tab === 'browse' ? 'active' : ''}" data-tab="browse">🔍 Browse</button>
+          <button role="tab" aria-selected="${tab === 'saved'}" class="tab-btn ${tab === 'saved' ? 'active' : ''}" data-tab="saved">❤️ Saved</button>
+          <button role="tab" aria-selected="${tab === 'myinquiries'}" class="tab-btn ${tab === 'myinquiries' ? 'active' : ''}" data-tab="myinquiries">📩 My Inquiries</button>
         </div>
         ${tab === 'browse' ? renderSeekerView() : tab === 'saved' ? renderSavedView() : renderMyInquiries()}
       `}
@@ -140,7 +140,7 @@ export function renderFarmerConnect(container) {
     return `
       <div class="search-bar">
         <span class="s-icon">🔍</span>
-        <input type="text" id="searchProp" placeholder="Search properties…" value="${search}">
+        <input type="search" id="searchProp" aria-label="Search properties" placeholder="Search properties…" value="${search}">
       </div>
       <div class="filter-chips">
         <button class="chip ${!filterType ? 'active' : ''}" data-type="">All</button>
@@ -196,6 +196,17 @@ export function renderFarmerConnect(container) {
     container.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; render(); }));
     container.querySelector('#searchProp')?.addEventListener('input', e => { search = e.target.value; render(); });
     container.querySelectorAll('.chip[data-type]').forEach(c => c.addEventListener('click', () => { filterType = c.dataset.type; render(); }));
+    // Disease advisor events
+    container.querySelectorAll('[data-acrop]').forEach(b => b.addEventListener('click', () => { advisorCrop = b.dataset.acrop; render(); }));
+    container.querySelectorAll('[data-symptom]').forEach(cb => cb.addEventListener('change', () => {
+      if (cb.checked) advisorSymptoms.add(cb.dataset.symptom);
+      else advisorSymptoms.delete(cb.dataset.symptom);
+      // Re-render without wiping state
+      const el = container.querySelector('.disease-results');
+      if (el) el.innerHTML = '';
+    }));
+    container.querySelectorAll('.ask-expert-disease-btn').forEach(b => b.addEventListener('click', () => showToast('Opening Community Expert Q&A...', 'info')));
+    container.querySelectorAll('.buy-spray-btn').forEach(b => b.addEventListener('click', () => { navigate('agrigalaxy'); }));
     container.querySelectorAll('.listing-card[data-pid]').forEach(c => {
       c.addEventListener('click', e => {
         if (e.target.closest('.prop-edit-btn, .prop-del-btn, .save-btn, .unsave-btn')) return;
@@ -364,6 +375,126 @@ export function renderFarmerConnect(container) {
         closeModal(); render();
       } catch(err) { showToast(err.message, 'error'); }
     });
+  }
+
+  // ─── CROP DISEASE ADVISOR ─────────────────────────────────────────────────
+  const DISEASES = [
+    {
+      id:'d1', crop:'Paddy', name:'Brown Plant Hopper (BPH)', icon:'🐛',
+      symptoms:['Yellow/brown patches in circles','Hopper burn — plants drying in patches','Presence of small brown insects at base','Honey dew sticky secretion at stem base'],
+      cause:'Insect infestation (Nilaparvata lugens)', severity:'High',
+      treatment:['Drain water for 2-3 days (makes insects visible)','Apply Imidacloprid 17.8 SL (0.3ml/L) at base','Avoid excess nitrogen fertilizers','Use BPH-resistant varieties (Dhanalakshmi, Swarna)'],
+      prevention:'Avoid excess urea, maintain alternate wetting-drying',
+      color:'#FFEBEE', badge:'#C62828',
+    },
+    {
+      id:'d2', crop:'Paddy', name:'Blast Disease (Neck Blast)', icon:'🍃',
+      symptoms:['Diamond-shaped lesions on leaves','Grey-white spots with brown border','Neck of panicle turns grey and breaks','Poor grain filling'],
+      cause:'Fungus: Pyricularia oryzae', severity:'High',
+      treatment:['Spray Tricyclazole 75 WP (0.6g/L) at booting','Apply Carbendazim+Mancozeb at disease onset','Avoid high nitrogen during booting stage'],
+      prevention:'Seed treatment with Carbendazim, use resistant varieties',
+      color:'#F3E5F5', badge:'#6A1B9A',
+    },
+    {
+      id:'d3', crop:'Cotton', name:'Cotton Bollworm', icon:'🐛',
+      symptoms:['Round holes in bolls','Caterpillars inside bolls','Premature boll shedding','Webbing visible on plant'],
+      cause:'Helicoverpa armigera insect', severity:'Medium',
+      treatment:['Spray Emamectin Benzoate 5 SG (0.4g/L)','Use pheromone traps (5/acre)','Spray Spinosad 45 SC at 0.3ml/L','Remove and destroy infested bolls'],
+      prevention:'Use Bt cotton varieties, install yellow sticky traps',
+      color:'#FFF3E0', badge:'#E65100',
+    },
+    {
+      id:'d4', crop:'Chilli', name:'Leaf Curl Virus (TYLCV)', icon:'🌿',
+      symptoms:['Leaves curl upward (cup-like)','Mosaic pattern on young leaves','Stunted growth','Reduced fruit set'],
+      cause:'Virus spread by whiteflies', severity:'High',
+      treatment:['No direct cure; remove infected plants immediately','Control whitefly: Imidacloprid 17.8 SL (0.3ml/L)','Apply reflective mulch to repel vectors','Use virus-free certified seedlings'],
+      prevention:'Use resistant varieties (LCA306, Byadgi Kaddi), sticky traps',
+      color:'#E8F5E9', badge:'#2E7D32',
+    },
+    {
+      id:'d5', crop:'Tomato', name:'Early Blight', icon:'🍅',
+      symptoms:['Dark brown concentric ring spots on older leaves','Yellow halo around spots','Leaves turn yellow and fall','Spots on stem and fruit near calyx'],
+      cause:'Fungus: Alternaria solani', severity:'Medium',
+      treatment:['Spray Mancozeb 75 WP (2.5g/L) every 7-10 days','Apply Chlorothalonil 75 WP at 2g/L','Remove and burn infected lower leaves'],
+      prevention:'Crop rotation, avoid overhead irrigation, mulching',
+      color:'#E3F2FD', badge:'#1565C0',
+    },
+    {
+      id:'d6', crop:'Groundnut', name:'Tikka / Leaf Spot Disease', icon:'🥜',
+      symptoms:['Light brown spots with yellow halo (early blight)','Dark brown spots without halo (late blight)','Premature defoliation','Reduced pod yield'],
+      cause:'Cercospora arachidicola / C. personatum fungi', severity:'Medium',
+      treatment:['Spray Chlorothalonil 75 WP (2g/L) every 14 days','Apply Tebuconazole 25.9 EC at 1ml/L','Spray at 30, 45, 60, 75 DAS'],
+      prevention:'Use disease-free seed, treat with Thiram, crop rotation',
+      color:'#FFF8E1', badge:'#F9A825',
+    },
+  ];
+
+  let advisorCrop = 'All', advisorStage = 1, advisorSymptoms = new Set();
+
+  const SYMPTOM_CHECKLIST = [
+    'Yellow/brown patches','Spots on leaves','Holes in leaves/fruit','Wilting','Stunted growth',
+    'White powder on leaves','Roots rotting','Insects visible','Leaf curl','Sticky secretions',
+    'Webbing on plant','Premature fruit drop','Discoloration of stem','Mosaic pattern',
+  ];
+
+  function renderDiseaseAdvisor() {
+    const crops = ['All','Paddy','Cotton','Chilli','Tomato','Groundnut','Maize','Soybean'];
+    const filtered = advisorCrop === 'All' ? DISEASES : DISEASES.filter(d => d.crop === advisorCrop);
+
+    return `<div style="padding:10px 14px 0">
+      <div style="background:linear-gradient(135deg,#1B5E20,#2E7D32);border-radius:12px;padding:14px;color:white;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:800;margin-bottom:4px">🔬 AI Crop Disease Advisor</div>
+        <div style="font-size:11px;opacity:0.85">Identify crop diseases from symptoms and get treatment recommendations</div>
+      </div>
+
+      <!-- Step 1: Select Crop -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3,#9E9E9E);text-transform:uppercase;margin-bottom:8px">Step 1: Select Your Crop</div>
+        <div style="overflow-x:auto;white-space:nowrap">
+          ${crops.map(c=>`<button data-acrop="${c}" style="display:inline-block;padding:7px 14px;border-radius:20px;border:none;font-size:11px;font-weight:600;cursor:pointer;margin-right:6px;${advisorCrop===c?'background:#1B5E20;color:white':'background:#E8F5E9;color:#1B5E20'}">${c}</button>`).join('')}
+        </div>
+      </div>
+
+      <!-- Step 2: Symptom Checker -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3,#9E9E9E);text-transform:uppercase;margin-bottom:8px">Step 2: Mark Visible Symptoms</div>
+        <div style="background:var(--card,white);border-radius:10px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            ${SYMPTOM_CHECKLIST.map(s=>`<label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" data-symptom="${s}" ${advisorSymptoms.has(s)?'checked':''}> ${s}</label>`).join('')}
+          </div>
+          ${advisorSymptoms.size>0?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid #EEE;font-size:11px;color:#1B5E20;font-weight:600">✓ ${advisorSymptoms.size} symptoms selected</div>`:''}
+        </div>
+      </div>
+
+      <!-- Disease Results -->
+      <div style="font-size:11px;font-weight:700;color:var(--text3,#9E9E9E);text-transform:uppercase;margin-bottom:8px">Matching Diseases (${filtered.length})</div>
+      ${filtered.map(d=>`
+        <div style="background:${d.color};border-radius:12px;padding:14px;margin-bottom:12px;border-left:4px solid ${d.badge}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div>
+              <div style="font-weight:800;font-size:14px">${d.icon} ${d.name}</div>
+              <div style="font-size:11px;color:#555;margin-top:2px">🌾 ${d.crop} · 🦠 ${d.cause}</div>
+            </div>
+            <span style="background:${d.badge};color:white;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700">${d.severity} Risk</span>
+          </div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px">🔍 Symptoms:</div>
+          <ul style="margin:0 0 8px 14px;font-size:11px;color:#555;line-height:1.8">
+            ${d.symptoms.map(s=>`<li>${s}</li>`).join('')}
+          </ul>
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px">💊 Treatment:</div>
+          <ul style="margin:0 0 8px 14px;font-size:11px;color:#555;line-height:1.8">
+            ${d.treatment.map(tr=>`<li>${tr}</li>`).join('')}
+          </ul>
+          <div style="background:rgba(255,255,255,0.6);border-radius:8px;padding:8px;font-size:11px;color:#333">
+            <strong>🛡️ Prevention:</strong> ${d.prevention}
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="ask-expert-disease-btn" data-disease="${d.name}" style="flex:1;background:white;border:1px solid ${d.badge};color:${d.badge};border-radius:8px;padding:7px;font-size:11px;font-weight:700;cursor:pointer">💬 Ask Expert</button>
+            <button class="buy-spray-btn" data-disease="${d.name}" style="flex:1;background:${d.badge};color:white;border:none;border-radius:8px;padding:7px;font-size:11px;font-weight:700;cursor:pointer">🛒 Buy Spray</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
   }
 
   function renderSocieties() {

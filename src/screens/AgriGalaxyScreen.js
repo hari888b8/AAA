@@ -1,4 +1,4 @@
-import { navigate, showToast, showModal, closeModal } from '../main.js';
+import { navigate, showToast, showModal, closeModal } from '../app-shell.js';
 import { api } from '../api.js';
 import { getRole } from '../store.js';
 import { t } from '../i18n.js';
@@ -29,6 +29,7 @@ export function renderAgriGalaxy(container) {
   let searchQ = '';
   let categoryFilter = '';
   let districtFilter = '';
+  let compareList = []; // product IDs selected for comparison
 
   const CATEGORIES = [
     { id: 'seeds',       icon: '🌱', label: 'Seeds',       color: '#33691E' },
@@ -68,41 +69,48 @@ export function renderAgriGalaxy(container) {
   function render() {
     const isSeller = mode === 'seller';
     container.innerHTML = `
-      <!-- HEADER -->
-      <div style="background:linear-gradient(135deg,#6A1B9A,#4A148C);color:white;padding:14px 16px 10px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:28px">🌐</span>
-          <div>
-            <div style="font-weight:800;font-size:18px">AgriGalaxy</div>
-            <div style="font-size:11px;opacity:0.85">Input Supplier Marketplace · Seeds · Fertilizers · Pesticides</div>
+      <!-- HERO v2 -->
+      <div class="hero-v2" role="banner" style="background:linear-gradient(135deg,#6A1B9A,#4A148C)">
+        <div class="hero-row">
+          <div class="hero-avatar">🌐</div>
+          <div style="flex:1;min-width:0">
+            <div class="hero-greeting">AgriGalaxy</div>
+            <div class="hero-title">Input Marketplace</div>
+            <div class="hero-sub">Seeds · Fertilizers · Pesticides · 2,150+ stores</div>
+          </div>
+          <div class="hero-actions">
+            <button class="hero-icon-btn" data-nav="orders">🛒</button>
+            <button class="hero-icon-btn" data-nav="notifications">🔔<span class="badge-dot"></span></button>
           </div>
         </div>
       </div>
 
       <!-- MODE TOGGLE -->
-      <div class="mode-toggle-bar" style="display:flex;margin:8px 14px;background:#F5F5F5;border-radius:12px;padding:3px;border:1px solid #E0E0E0">
-        <button data-gmode="buyer" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;border:none;cursor:pointer;${mode==='buyer'?'background:#6A1B9A;color:white;box-shadow:0 2px 6px rgba(0,0,0,0.15)':'background:transparent;color:#757575'}">🛒 Browse & Buy</button>
-        <button data-gmode="seller" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;border:none;cursor:pointer;${mode==='seller'?'background:#4A148C;color:white;box-shadow:0 2px 6px rgba(0,0,0,0.15)':'background:transparent;color:#757575'}">🏪 My Store</button>
+      <div style="display:flex;margin:10px 14px;background:var(--card);border-radius:14px;padding:4px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+        <button data-gmode="buyer" style="flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;${mode==='buyer'?'background:linear-gradient(135deg,#6A1B9A,#4A148C);color:white;box-shadow:0 2px 8px rgba(106,27,154,0.3)':'background:transparent;color:var(--text2)'}">🛒 Browse & Buy</button>
+        <button data-gmode="seller" style="flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;${mode==='seller'?'background:linear-gradient(135deg,#4A148C,#311B92);color:white;box-shadow:0 2px 8px rgba(74,20,140,0.3)':'background:transparent;color:var(--text2)'}">🏪 My Store</button>
       </div>
 
       <!-- TABS -->
-      <div class="tab-bar" style="overflow-x:auto;white-space:nowrap">
+      <div class="tab-bar-v2" role="tablist">
         ${isSeller ? `
-          <button class="tab-btn ${tab==='stores'?'active':''}" data-tab="stores">🏪 My Store</button>
-          <button class="tab-btn ${tab==='products'?'active':''}" data-tab="products">📦 Products</button>
-          <button class="tab-btn ${tab==='orders'?'active':''}" data-tab="orders">📋 Orders</button>
-          <button class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📊 Analytics</button>
+          <button role="tab" aria-selected="${tab==='stores'}" class="tab-btn ${tab==='stores'?'active':''}" data-tab="stores">🏪 My Store</button>
+          <button role="tab" aria-selected="${tab==='products'}" class="tab-btn ${tab==='products'?'active':''}" data-tab="products">📦 Products</button>
+          <button role="tab" aria-selected="${tab==='orders'}" class="tab-btn ${tab==='orders'?'active':''}" data-tab="orders">📋 Orders</button>
+          <button role="tab" aria-selected="${tab==='analytics'}" class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📊 Analytics</button>
         ` : `
-          <button class="tab-btn ${tab==='stores'?'active':''}" data-tab="stores">🏪 Stores</button>
-          <button class="tab-btn ${tab==='products'?'active':''}" data-tab="products">🌱 Products</button>
-          <button class="tab-btn ${tab==='orders'?'active':''}" data-tab="orders">📋 My Orders</button>
+          <button role="tab" aria-selected="${tab==='stores'}" class="tab-btn ${tab==='stores'?'active':''}" data-tab="stores">🏪 Stores</button>
+          <button role="tab" aria-selected="${tab==='products'}" class="tab-btn ${tab==='products'?'active':''}" data-tab="products">🌱 Products</button>
+          <button role="tab" aria-selected="${tab==='bulk'}" class="tab-btn ${tab==='bulk'?'active':''}" data-tab="bulk">🏭 Bulk / B2B</button>
+          <button role="tab" aria-selected="${tab==='orders'}" class="tab-btn ${tab==='orders'?'active':''}" data-tab="orders">📋 My Orders</button>
         `}
       </div>
 
-      <div style="padding-bottom:80px">
+      <div class="pb-nav">
         ${loading ? '<div class="loading"><div class="spinner"></div></div>'
           : tab === 'stores' ? (isSeller ? renderMyStore() : renderStores())
           : tab === 'products' ? (isSeller ? renderMyProducts() : renderBrowseProducts())
+          : tab === 'bulk' ? renderBulkOrder()
           : tab === 'orders' ? renderOrders()
           : tab === 'analytics' ? renderAnalytics()
           : ''}
@@ -140,7 +148,7 @@ export function renderAgriGalaxy(container) {
         <!-- Search -->
         <div style="display:flex;align-items:center;background:white;border:1px solid #E0E0E0;border-radius:10px;padding:8px 12px;margin-bottom:10px">
           <span style="margin-right:8px;font-size:16px">🔍</span>
-          <input id="storeSearch" type="text" placeholder="Search stores by name, location…" value="${searchQ}" style="border:none;outline:none;flex:1;font-size:13px;background:transparent">
+          <input id="storeSearch" type="search" placeholder="Search stores by name, location…" aria-label="Search stores by name, location…" value="${searchQ}" style="border:none;outline:none;flex:1;font-size:13px;background:transparent">
         </div>
 
         <!-- District filter -->
@@ -199,7 +207,7 @@ export function renderAgriGalaxy(container) {
         <!-- Search -->
         <div style="display:flex;align-items:center;background:white;border:1px solid #E0E0E0;border-radius:10px;padding:8px 12px;margin-bottom:10px">
           <span style="margin-right:8px;font-size:16px">🔍</span>
-          <input id="prodSearch" type="text" placeholder="Search seeds, fertilizers, pesticides…" value="${searchQ}" style="border:none;outline:none;flex:1;font-size:13px;background:transparent">
+          <input id="prodSearch" type="search" placeholder="Search seeds, fertilizers, pesticides…" aria-label="Search seeds, fertilizers, pesticides…" value="${searchQ}" style="border:none;outline:none;flex:1;font-size:13px;background:transparent">
         </div>
 
         <!-- Category chips -->
@@ -223,8 +231,9 @@ export function renderAgriGalaxy(container) {
           </div>
         ` : filtered.map(p => {
           const cat = CATEGORIES.find(c => c.id === p.category);
+          const inCompare = compareList.includes(String(p.id));
           return `
-          <div style="background:white;border-radius:12px;margin-bottom:10px;box-shadow:0 2px 6px rgba(0,0,0,0.07);overflow:hidden">
+          <div style="background:white;border-radius:12px;margin-bottom:10px;box-shadow:0 2px 6px rgba(0,0,0,0.07);overflow:hidden;${inCompare?'outline:2px solid #6A1B9A':''}">
             <div style="height:3px;background:${cat?.color || '#6A1B9A'}"></div>
             <div style="padding:12px 14px">
               <div style="display:flex;gap:10px">
@@ -246,12 +255,19 @@ export function renderAgriGalaxy(container) {
               ${p.description ? `<div style="font-size:11px;color:#757575;margin-top:8px;line-height:1.5">${p.description.slice(0,100)}${p.description.length>100?'…':''}</div>` : ''}
               <div style="display:flex;gap:6px;margin-top:10px">
                 <button class="order-btn" data-pid="${p.id}" style="flex:1;padding:8px;background:#6A1B9A;color:white;border:none;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer">🛒 Order Now</button>
+                <button class="compare-btn" data-pid="${p.id}" style="padding:8px 10px;background:${inCompare?'#6A1B9A':'#F3E5F5'};color:${inCompare?'white':'#6A1B9A'};border:none;border-radius:8px;font-size:12px;cursor:pointer" title="${inCompare?'Remove from compare':'Compare'}">${inCompare?'✓ Compare':'⚖️'}</button>
                 <button class="review-prod-btn" data-pid="${p.id}" data-pname="${p.name}" style="padding:8px 10px;background:#FFF8E1;color:#F9A825;border:none;border-radius:8px;font-size:12px;cursor:pointer">⭐</button>
-                <button class="enquire-btn" data-pid="${p.id}" style="padding:8px 12px;background:#F3E5F5;color:#6A1B9A;border:none;border-radius:8px;font-size:12px;cursor:pointer">💬</button>
               </div>
             </div>
           </div>
         `; }).join('')}
+        ${compareList.length >= 2 ? `
+          <div style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:100;background:#4A148C;color:white;border-radius:50px;padding:12px 24px;box-shadow:0 4px 20px rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;white-space:nowrap;max-width:90vw">
+            <span style="font-size:13px;font-weight:700">${compareList.length} products selected</span>
+            <button id="showCompareBtn" style="background:white;color:#4A148C;border:none;border-radius:24px;padding:6px 14px;font-weight:700;font-size:12px;cursor:pointer">Compare →</button>
+            <button id="clearCompareBtn" style="background:rgba(255,255,255,0.2);color:white;border:none;border-radius:24px;padding:6px 10px;font-size:12px;cursor:pointer">✕</button>
+          </div>
+        ` : ''}
       </div>
     `;
   }
@@ -350,6 +366,91 @@ export function renderAgriGalaxy(container) {
             </div>
           </div>
         `; }).join('')}
+      </div>
+    `;
+  }
+
+  // ─── BULK / B2B ORDER ────────────────────────────────────────────────────
+  function renderBulkOrder() {
+    const TIERS = [
+      { label: '100 – 500 kg', min: 100, max: 500, discount: 5, color: '#E8F5E9', badge: '#2E7D32' },
+      { label: '500 kg – 1 Ton', min: 500, max: 1000, discount: 10, color: '#E3F2FD', badge: '#1565C0' },
+      { label: '1 – 5 Tons', min: 1000, max: 5000, discount: 15, color: '#FFF8E1', badge: '#F57F17' },
+      { label: '5+ Tons', min: 5000, max: null, discount: 20, color: '#F3E5F5', badge: '#6A1B9A' },
+    ];
+    const PRODUCTS_LIST = (products.length > 0 ? products : SAMPLE_PRODUCTS);
+    return `
+      <div style="padding:10px 14px 0">
+        <!-- Header card -->
+        <div style="background:linear-gradient(135deg,#4A148C,#6A1B9A);border-radius:14px;padding:16px;color:white;margin-bottom:14px">
+          <div style="font-size:22px;margin-bottom:4px">🏭</div>
+          <div style="font-weight:800;font-size:16px">Bulk & B2B Orders</div>
+          <div style="font-size:11px;opacity:0.85;margin-top:2px">Volume discounts for FPOs, cooperatives & traders</div>
+        </div>
+
+        <!-- Volume tiers -->
+        <div style="background:white;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.07);margin-bottom:12px">
+          <div style="font-weight:700;font-size:13px;margin-bottom:10px">💰 Volume Discount Tiers</div>
+          ${TIERS.map(t => `
+            <div style="display:flex;align-items:center;background:${t.color};border-radius:8px;padding:10px 12px;margin-bottom:6px">
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:12px">${t.label}</div>
+                <div style="font-size:11px;color:#757575;margin-top:2px">Minimum: ${t.min} kg${t.max ? ` · Max: ${t.max} kg` : '+'}</div>
+              </div>
+              <span style="background:${t.badge};color:white;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700">${t.discount}% OFF</span>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Bulk order form -->
+        <div style="background:white;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.07);margin-bottom:12px">
+          <div style="font-weight:700;font-size:13px;margin-bottom:12px">📋 Place Bulk Order</div>
+          <div style="margin-bottom:10px">
+            <label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px">Product *</label>
+            <select id="bulkProduct" style="width:100%;padding:10px;border:1px solid #E0E0E0;border-radius:8px;font-size:13px;background:white">
+              <option value="">Select a product...</option>
+              ${PRODUCTS_LIST.map(p => `<option value="${p.id}" data-price="${p.price}">${p.name} — ₹${Number(p.price||0).toLocaleString()}/kg</option>`).join('')}
+            </select>
+          </div>
+          <div style="margin-bottom:10px">
+            <label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px">Quantity (kg) *</label>
+            <input id="bulkQty" type="number" min="100" step="10" placeholder="e.g. 500" style="width:100%;padding:10px;border:1px solid #E0E0E0;border-radius:8px;font-size:13px;box-sizing:border-box" />
+          </div>
+          <div style="margin-bottom:10px">
+            <label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px">Organisation / FPO Name</label>
+            <input id="bulkOrg" type="text" placeholder="e.g. Andhra Kisan FPO" style="width:100%;padding:10px;border:1px solid #E0E0E0;border-radius:8px;font-size:13px;box-sizing:border-box" />
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px">Payment Terms</label>
+            <select id="bulkTerms" style="width:100%;padding:10px;border:1px solid #E0E0E0;border-radius:8px;font-size:13px;background:white">
+              <option value="advance">100% Advance</option>
+              <option value="50_50">50% Advance + 50% on Delivery</option>
+              <option value="pod">Payment on Delivery (POD)</option>
+              <option value="credit_30">30-Day Credit</option>
+              <option value="credit_60">60-Day Credit</option>
+            </select>
+          </div>
+
+          <!-- Live price calculator -->
+          <div id="bulkPriceCalc" style="display:none;background:#F3E5F5;border-radius:10px;padding:12px;margin-bottom:12px">
+            <div style="font-size:11px;font-weight:600;color:#6A1B9A;margin-bottom:6px">💡 Price Estimate</div>
+            <div id="bulkCalcDetails" style="font-size:12px;color:#333;line-height:1.8"></div>
+          </div>
+
+          <button id="submitBulkOrder" style="width:100%;padding:13px;background:linear-gradient(135deg,#6A1B9A,#4A148C);color:white;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">📦 Submit Bulk Enquiry</button>
+        </div>
+
+        <!-- B2B terms -->
+        <div style="background:#FFF8E1;border-radius:12px;padding:14px;border-left:4px solid #F9A825;margin-bottom:20px">
+          <div style="font-weight:700;font-size:12px;color:#F57F17;margin-bottom:6px">📃 B2B Terms & Conditions</div>
+          <ul style="margin:0;padding-left:16px;font-size:11px;color:#555;line-height:1.8">
+            <li>Minimum bulk order: 100 kg per product</li>
+            <li>Delivery within 3–7 business days</li>
+            <li>Credit terms available for verified FPOs/cooperatives</li>
+            <li>GST invoice issued for all B2B transactions</li>
+            <li>Quality guarantee — returns accepted within 48 hrs of delivery</li>
+          </ul>
+        </div>
       </div>
     `;
   }
@@ -552,6 +653,53 @@ export function renderAgriGalaxy(container) {
     });
   }
 
+  // ─── PRODUCT COMPARISON ──────────────────────────────────────────────────
+  function showComparison() {
+    const items = compareList.map(id => products.find(p => String(p.id) === id)).filter(Boolean);
+    if (items.length < 2) { showToast('Select at least 2 products to compare', 'error'); return; }
+    const fields = [
+      { key: 'price', label: '💰 Price', fmt: v => v ? `₹${Number(v).toLocaleString()}` : '—' },
+      { key: 'unit', label: '📦 Unit', fmt: v => v || '—' },
+      { key: 'brand', label: '🏷️ Brand', fmt: v => v || '—' },
+      { key: 'store_name', label: '🏪 Store', fmt: v => v || '—' },
+      { key: 'in_stock', label: '🟢 Availability', fmt: v => v ? '✅ In Stock' : '❌ Out of Stock' },
+      { key: 'category', label: '📂 Category', fmt: v => { const c = CATEGORIES.find(x=>x.id===v); return c?`${c.icon} ${c.label}`:v||'—'; } },
+    ];
+    // Winner highlights (lowest price gets green highlight)
+    const lowestPrice = Math.min(...items.map(p=>Number(p.price||0)));
+    showModal(`
+      <div class="modal-handle"></div>
+      <h3 style="margin:0 0 12px">⚖️ Product Comparison</h3>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="background:#F3E5F5">
+              <th style="text-align:left;padding:6px 8px;color:#6A1B9A;font-weight:700">Feature</th>
+              ${items.map(p=>`<th style="text-align:center;padding:6px 8px;color:#4A148C;font-weight:700;max-width:100px">${p.name.slice(0,20)}${p.name.length>20?'…':''}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${fields.map(f=>`
+              <tr style="border-bottom:1px solid #F5F5F5">
+                <td style="padding:6px 8px;color:#757575;white-space:nowrap">${f.label}</td>
+                ${items.map(p=>{
+                  const val = f.fmt(p[f.key]);
+                  const isBest = f.key==='price' && Number(p.price||0)===lowestPrice;
+                  return `<td style="padding:6px 8px;text-align:center;font-weight:${isBest?'700':'400'};color:${isBest?'#2E7D32':'inherit'};background:${isBest?'#E8F5E9':''}">${val}</td>`;
+                }).join('')}
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:12px;display:grid;grid-template-columns:repeat(${items.length},1fr);gap:6px">
+        ${items.map(p=>`<button class="cmp-order-btn" data-pid="${p.id}" style="padding:8px;background:#6A1B9A;color:white;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">🛒 Order ${p.name.slice(0,12)}…</button>`).join('')}
+      </div>
+    `);
+    document.querySelectorAll('.cmp-order-btn').forEach(b => {
+      b.addEventListener('click', () => { closeModal(); showOrderModal(b.dataset.pid); });
+    });
+  }
+
   // ─── EVENTS ──────────────────────────────────────────────────────────────
   function attachEvents() {
     // Mode toggle
@@ -575,6 +723,21 @@ export function renderAgriGalaxy(container) {
     container.querySelectorAll('.enquire-btn').forEach(b => { b.addEventListener('click', () => { navigate('chat'); }); });
     container.querySelectorAll('.review-prod-btn').forEach(b => { b.addEventListener('click', () => showReviewsModal({ target_type:'product', target_id:b.dataset.pid, target_name:b.dataset.pname })); });
     container.querySelectorAll('.review-store-btn').forEach(b => { b.addEventListener('click', () => showReviewsModal({ target_type:'store', target_id:b.dataset.sid, target_name:b.dataset.sname })); });
+    // Product compare
+    container.querySelectorAll('.compare-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        const pid = String(b.dataset.pid);
+        if (compareList.includes(pid)) {
+          compareList = compareList.filter(x => x !== pid);
+        } else {
+          if (compareList.length >= 3) { showToast('Max 3 products to compare', 'error'); return; }
+          compareList.push(pid);
+        }
+        render();
+      });
+    });
+    container.querySelector('#showCompareBtn')?.addEventListener('click', showComparison);
+    container.querySelector('#clearCompareBtn')?.addEventListener('click', () => { compareList = []; render(); });
     // Seller: store actions
     container.querySelector('#createStoreBtn')?.addEventListener('click', showCreateStore);
     container.querySelector('#editStoreBtn')?.addEventListener('click', showCreateStore);
@@ -608,6 +771,42 @@ export function renderAgriGalaxy(container) {
       b.addEventListener('click', async () => {
         try { await api.patch(`/agrigalaxy/orders/${b.dataset.oid}`, { status: 'rejected' }); showToast('Order rejected', 'info'); loadData(); } catch(e) { showToast(e.message, 'error'); }
       });
+    });
+    // Bulk order: live price calculator
+    const calcBulkPrice = () => {
+      const prodSel = container.querySelector('#bulkProduct');
+      const qtySel  = container.querySelector('#bulkQty');
+      const calc    = container.querySelector('#bulkPriceCalc');
+      const details = container.querySelector('#bulkCalcDetails');
+      if (!prodSel || !qtySel || !calc || !details) return;
+      const qty = parseInt(qtySel.value) || 0;
+      const pricePerKg = Number(prodSel.options[prodSel.selectedIndex]?.dataset?.price || 0);
+      if (!qty || !pricePerKg || qty < 100) { calc.style.display='none'; return; }
+      let discPct = 0;
+      if (qty >= 5000) discPct = 20;
+      else if (qty >= 1000) discPct = 15;
+      else if (qty >= 500) discPct = 10;
+      else if (qty >= 100) discPct = 5;
+      const base = qty * pricePerKg;
+      const disc = Math.round(base * discPct / 100);
+      const final = base - disc;
+      details.innerHTML = `
+        Base price: ₹${base.toLocaleString()} (${qty} kg × ₹${pricePerKg}/kg)<br>
+        Volume discount (${discPct}%): <span style="color:#C62828">−₹${disc.toLocaleString()}</span><br>
+        <span style="font-weight:700;font-size:14px;color:#6A1B9A">You pay: ₹${final.toLocaleString()}</span>
+      `;
+      calc.style.display = 'block';
+    };
+    container.querySelector('#bulkProduct')?.addEventListener('change', calcBulkPrice);
+    container.querySelector('#bulkQty')?.addEventListener('input', calcBulkPrice);
+    container.querySelector('#submitBulkOrder')?.addEventListener('click', async () => {
+      const productId = container.querySelector('#bulkProduct')?.value;
+      const qty = parseInt(container.querySelector('#bulkQty')?.value) || 0;
+      const org = container.querySelector('#bulkOrg')?.value?.trim();
+      const terms = container.querySelector('#bulkTerms')?.value;
+      if (!productId) { showToast('Please select a product', 'error'); return; }
+      if (qty < 100) { showToast('Minimum bulk order is 100 kg', 'error'); return; }
+      showToast(`✅ Bulk enquiry submitted! Our team will contact ${org ? `"${org}"` : 'you'} within 24 hrs.`, 'success');
     });
   }
 

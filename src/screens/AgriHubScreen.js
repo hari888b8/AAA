@@ -1,7 +1,8 @@
 import { api } from '../api.js';
 import { getRole, getState } from '../store.js';
-import { navigate, showToast } from '../main.js';
+import { navigate, showToast } from '../app-shell.js';
 import { t } from '../i18n.js';
+import { heroBanner } from '../components/ui.js';
 
 /**
  * AgriHub Screen — the "Agri" section of the platform
@@ -47,26 +48,24 @@ export function renderAgriHub(container) {
     const h = HERO[role] || HERO.farmer;
 
     container.innerHTML = `
-      <!-- HEADER -->
-      <div style="background:${h.bg};color:white;padding:16px 16px 14px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-          <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:24px">${h.icon}</div>
-          <div>
-            <div style="font-weight:800;font-size:18px;letter-spacing:-0.3px">${h.title}</div>
-            <div style="font-size:11px;opacity:0.85">${h.sub}</div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px">
-          ${loading ? `
-            ${['Farmers','Listings','Districts','FPOs'].map(l=>`<div style="text-align:center"><div style="height:20px;background:rgba(255,255,255,0.2);border-radius:4px;margin-bottom:2px"></div><div style="font-size:10px;opacity:0.7">${l}</div></div>`).join('')}
-          ` : `
-            <div style="text-align:center"><div style="font-size:18px;font-weight:800">${fmt(stats.farmers)}</div><div style="font-size:10px;opacity:0.8">Farmers</div></div>
-            <div style="text-align:center"><div style="font-size:18px;font-weight:800">${fmt(stats.listings)}</div><div style="font-size:10px;opacity:0.8">Listings</div></div>
-            <div style="text-align:center"><div style="font-size:18px;font-weight:800">${fmt(stats.districts)}</div><div style="font-size:10px;opacity:0.8">Districts</div></div>
-            <div style="text-align:center"><div style="font-size:18px;font-weight:800">${fmt(stats.fpos)}</div><div style="font-size:10px;opacity:0.8">FPOs</div></div>
-          `}
-        </div>
-      </div>
+      <!-- HERO v2 -->
+      ${heroBanner({
+        gradient: h.bg,
+        icon: h.icon,
+        greeting: h.title.split('·')[0]?.trim() || 'Agri',
+        title: h.title.split('·')[1]?.trim() || h.title,
+        subtitle: h.sub,
+        actions: [
+          { icon:'🔔', onClick:'notifications', badge:true },
+          { icon:'💬', onClick:'community' },
+        ],
+        stats: loading ? [] : [
+          { value: fmt(stats.farmers),   label: 'Farmers' },
+          { value: fmt(stats.listings),  label: 'Listings' },
+          { value: fmt(stats.districts), label: 'Districts' },
+          { value: fmt(stats.fpos),      label: 'FPOs' },
+        ],
+      })}
 
       <div style="padding:14px 14px 80px">
         ${isFarmer   ? renderFarmerHub()   :

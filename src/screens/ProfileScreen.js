@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { getState, logout as logoutStore, getRole } from '../store.js';
-import { navigate, showToast, showModal, closeModal } from '../main.js';
+import { navigate, showToast, showModal, closeModal } from '../app-shell.js';
 import { t, getLang, setLang, LANGUAGES } from '../i18n.js';
 
 export function renderProfile(container) {
@@ -17,20 +17,27 @@ export function renderProfile(container) {
   const rm = ROLE_META[role] || ROLE_META.farmer;
 
   container.innerHTML = `
-    <div class="profile-hero" style="background:linear-gradient(135deg,${rm.color},${role==='buyer'?'#F44336':role==='fpo'?'#9C27B0':role==='supplier'?'#E91E63':'#00c9a7'})">
-      <div class="profile-avatar" style="background:rgba(255,255,255,0.25);color:white;font-size:28px;width:70px;height:70px;margin:0 auto 10px">${rm.icon}</div>
-      <div class="ph-name">${user.name || 'User'}</div>
-      <div class="ph-phone">+91 ${user.phone || ''}</div>
-      <div class="ph-role" style="background:rgba(255,255,255,0.2)">${rm.icon} ${rm.label}</div>
-      <div style="font-size:11px;opacity:0.8;margin-top:4px">${rm.tagline}</div>
+    <div class="hero-v2 profile-hero" style="background:linear-gradient(135deg,${rm.color},${role==='buyer'?'#F44336':role==='fpo'?'#9C27B0':role==='supplier'?'#E91E63':'#00c9a7'})" role="banner">
+      <div style="text-align:center">
+        <div class="profile-avatar" style="background:rgba(255,255,255,0.25);color:white;font-size:28px;width:70px;height:70px;margin:0 auto 10px" aria-hidden="true">${rm.icon}</div>
+        <h1 class="ph-name" style="margin:0">${user.name || 'User'}</h1>
+        <div class="ph-phone">+91 ${user.phone || ''}</div>
+        <div class="ph-role" style="background:rgba(255,255,255,0.2)">${rm.icon} ${rm.label}</div>
+        <div style="font-size:11px;opacity:0.8;margin-top:4px">${rm.tagline}</div>
+      </div>
+      <div class="hero-stats" role="list" style="margin-top:12px">
+        <div class="hero-stat-card" role="listitem"><div class="v">${role==='fpo'?'387':'12'}</div><div class="l">${role==='fpo'?'Members':'Listings'}</div></div>
+        <div class="hero-stat-card" role="listitem"><div class="v">${role==='buyer'?'156':'8'}</div><div class="l">${role==='buyer'?'Sourced':'Orders'}</div></div>
+        <div class="hero-stat-card" role="listitem"><div class="v">80%</div><div class="l">Profile</div></div>
+      </div>
     </div>
 
     <!-- ROLE-SPECIFIC PROFILE SETTINGS -->
     <div id="roleProfileSection" style="padding:8px 0"></div>
 
     <!-- PLATFORM ACCESS -->
-    <div style="padding:8px 0">
-      <div style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Platform Access</div>
+    <nav style="padding:8px 0" aria-label="Navigation">
+      <div style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px" aria-hidden="true">Platform Access</div>
       ${role === 'farmer' ? `
         <div class="menu-item" data-nav="intelligence"><div class="mi-icon" style="background:#E8F5E9">📊</div><div class="mi-text"><div class="mi-title">My Dashboard</div><div class="mi-sub">Declarations, Harvests, Inquiries</div></div><span class="mi-arrow">›</span></div>
         <div class="menu-item" data-nav="agriflow"><div class="mi-icon" style="background:#EDE7F6">🌾</div><div class="mi-text"><div class="mi-title">AgriFlow</div><div class="mi-sub">Supply Intelligence</div></div><span class="mi-arrow">›</span></div>
@@ -55,10 +62,11 @@ export function renderProfile(container) {
       <div class="menu-item" data-nav="notifications"><div class="mi-icon" style="background:var(--info-bg)">🔔</div><div class="mi-text"><div class="mi-title">Notifications</div><div class="mi-sub">Alerts & updates</div></div><span class="mi-arrow">›</span></div>
       <div class="menu-item" data-nav="orders"><div class="mi-icon" style="background:var(--accent-light)">📦</div><div class="mi-text"><div class="mi-title">Orders</div><div class="mi-sub">Track purchases</div></div><span class="mi-arrow">›</span></div>
       <div class="menu-item" data-nav="architecture"><div class="mi-icon" style="background:#ECEFF1">🏗️</div><div class="mi-text"><div class="mi-title">Platform Architecture</div><div class="mi-sub">Roadmap & technical stack</div></div><span class="mi-arrow">›</span></div>
+      ${role === 'admin' ? `<div class="menu-item" data-nav="admin"><div class="mi-icon" style="background:#E8EAF6">🛡️</div><div class="mi-text"><div class="mi-title">Admin Dashboard</div><div class="mi-sub">Platform management & stats</div></div><span class="mi-arrow">›</span></div>` : ''}
     </div>
 
     <!-- ACCOUNT SETTINGS -->
-    <div style="padding:8px 0">
+    <nav style="padding:8px 0" aria-label="Navigation">
       <div style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Account</div>
       <div class="menu-item" id="kycBtn">
         <div class="mi-icon" style="background:#E8F5E9">🛡️</div>
@@ -79,6 +87,11 @@ export function renderProfile(container) {
         <div class="mi-icon" style="background:var(--primary-surface)">✏️</div>
         <div class="mi-text"><div class="mi-title">${t('edit_profile')}</div><div class="mi-sub">${user.name || 'Update your name'}</div></div>
         <span class="mi-arrow">›</span>
+      </div>
+      <div class="menu-item" id="darkModeBtn">
+        <div class="mi-icon" style="background:#212121">🌙</div>
+        <div class="mi-text"><div class="mi-title">Dark Mode</div><div class="mi-sub" id="darkModeStatus">${document.documentElement.getAttribute('data-theme')==='dark' ? 'On — tap to switch to light' : 'Off — tap to enable'}</div></div>
+        <span class="mi-arrow" id="darkModeIcon">${document.documentElement.getAttribute('data-theme')==='dark' ? '🌙' : '☀️'}</span>
       </div>
       <div class="menu-item" id="logoutBtn">
         <div class="mi-icon" style="background:#FFEBEE">🚪</div>
@@ -230,6 +243,18 @@ export function renderProfile(container) {
       el.style.color = status === 'verified' ? 'var(--success)' : '';
     }
   }).catch(() => {});
+
+  container.querySelector('#darkModeBtn')?.addEventListener('click', () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const newTheme = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('agri_theme', newTheme);
+    const statusEl = container.querySelector('#darkModeStatus');
+    const iconEl = container.querySelector('#darkModeIcon');
+    if (statusEl) statusEl.textContent = newTheme === 'dark' ? 'On — tap to switch to light' : 'Off — tap to enable';
+    if (iconEl) iconEl.textContent = newTheme === 'dark' ? '🌙' : '☀️';
+    showToast(newTheme === 'dark' ? '🌙 Dark mode enabled' : '☀️ Light mode enabled', 'success');
+  });
 
   container.querySelector('#logoutBtn')?.addEventListener('click', () => {
     if (!confirm('Logout from AgriHub?')) return;

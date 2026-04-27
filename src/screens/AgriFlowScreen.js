@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { navigate, showToast, showModal, closeModal } from '../main.js';
+import { navigate, showToast, showModal, closeModal } from '../app-shell.js';
 import { getRole } from '../store.js';
 import { t } from '../i18n.js';
 
@@ -36,7 +36,7 @@ export function renderAgriFlow(container) {
   // Data
   let listings = [], crops = [], districts = [];
   let myListings = [], declarations = [], inquiries = [];
-  let fpoMembers = [], fpoInventory = [], fpoStats = {};
+  let fpoMembers = [], fpoInventory = [], fpoStats = {}, fpoRecords = [], fpoProcSummary = [];
   let watchlist = [];
   let loading = true;
   let search = '', filterCrop = '';
@@ -83,7 +83,7 @@ export function renderAgriFlow(container) {
 
     container.innerHTML = `
       <!-- HEADER -->
-      <div style="background:${h.bg};color:white;padding:14px 16px 12px">
+      <div class="hero-v2" role="banner" style="background:${h.bg};color:white">
         <div style="font-weight:800;font-size:18px">${h.title}</div>
         <div style="font-size:11px;opacity:0.85;margin-top:2px">${h.sub}</div>
       </div>
@@ -101,21 +101,21 @@ export function renderAgriFlow(container) {
       `}
 
       <!-- TABS -->
-      <div class="tab-bar" style="overflow-x:auto;white-space:nowrap">
+      <div class="tab-bar" role="tablist" style="overflow-x:auto;white-space:nowrap">
         ${isBuyer ? `
-          <button class="tab-btn ${tab==='search'?'active':''}"      data-tab="search">🔍 Search Supply</button>
-          <button class="tab-btn ${tab==='watchlist'?'active':''}"   data-tab="watchlist">⭐ Watchlist</button>
-          <button class="tab-btn ${tab==='inquiries'?'active':''}"   data-tab="inquiries">💬 My Inquiries</button>
-          <button class="tab-btn ${tab==='intelligence'?'active':''}" data-tab="intelligence">📊 Intelligence</button>
+          <button role="tab" aria-selected="${tab==='search'}" class="tab-btn ${tab==='search'?'active':''}"      data-tab="search">🔍 Search Supply</button>
+          <button role="tab" aria-selected="${tab==='watchlist'}" class="tab-btn ${tab==='watchlist'?'active':''}"   data-tab="watchlist">⭐ Watchlist</button>
+          <button role="tab" aria-selected="${tab==='inquiries'}" class="tab-btn ${tab==='inquiries'?'active':''}"   data-tab="inquiries">💬 My Inquiries</button>
+          <button role="tab" aria-selected="${tab==='intelligence'}" class="tab-btn ${tab==='intelligence'?'active':''}" data-tab="intelligence">📊 Intelligence</button>
         ` : isFPO ? `
-          <button class="tab-btn ${tab==='members'?'active':''}"     data-tab="members">👥 Members</button>
-          <button class="tab-btn ${tab==='procurement'?'active':''}" data-tab="procurement">📦 Procurement</button>
-          <button class="tab-btn ${tab==='mysupply'?'active':''}"    data-tab="mysupply">📋 My Supply</button>
-          <button class="tab-btn ${tab==='inquiries'?'active':''}"   data-tab="inquiries">💬 Inquiries</button>
+          <button role="tab" aria-selected="${tab==='members'}" class="tab-btn ${tab==='members'?'active':''}"     data-tab="members">👥 Members</button>
+          <button role="tab" aria-selected="${tab==='procurement'}" class="tab-btn ${tab==='procurement'?'active':''}" data-tab="procurement">📦 Procurement</button>
+          <button role="tab" aria-selected="${tab==='mysupply'}" class="tab-btn ${tab==='mysupply'?'active':''}"    data-tab="mysupply">📋 My Supply</button>
+          <button role="tab" aria-selected="${tab==='inquiries'}" class="tab-btn ${tab==='inquiries'?'active':''}"   data-tab="inquiries">💬 Inquiries</button>
         ` : `
-          <button class="tab-btn ${tab==='mycrops'?'active':''}"    data-tab="mycrops">🌾 My Crops</button>
-          <button class="tab-btn ${tab==='inquiries'?'active':''}"  data-tab="inquiries">💬 Inquiries</button>
-          <button class="tab-btn ${tab==='prices'?'active':''}"     data-tab="prices">💰 Mandi Prices</button>
+          <button role="tab" aria-selected="${tab==='mycrops'}" class="tab-btn ${tab==='mycrops'?'active':''}"    data-tab="mycrops">🌾 My Crops</button>
+          <button role="tab" aria-selected="${tab==='inquiries'}" class="tab-btn ${tab==='inquiries'?'active':''}"  data-tab="inquiries">💬 Inquiries</button>
+          <button role="tab" aria-selected="${tab==='prices'}" class="tab-btn ${tab==='prices'?'active':''}"     data-tab="prices">💰 Mandi Prices</button>
         `}
       </div>
 
@@ -308,7 +308,7 @@ export function renderAgriFlow(container) {
       <div style="padding:12px 14px 0">
         <div style="display:flex;align-items:center;background:white;border:1px solid #E0E0E0;border-radius:10px;padding:8px 12px;margin-bottom:8px">
           <span style="margin-right:8px">🔍</span>
-          <input id="searchInput" type="text" placeholder="Search by crop, district…" value="${search}" style="border:none;outline:none;flex:1;font-size:13px;background:transparent">
+          <input id="searchInput" type="search" placeholder="Search by crop, district…" aria-label="Search by crop, district…" value="${search}" style="border:none;outline:none;flex:1;font-size:13px;background:transparent">
         </div>
         <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px">
           <button data-crop="" style="flex-shrink:0;padding:5px 12px;border-radius:20px;border:none;font-size:12px;cursor:pointer;background:${!filterCrop?'#E65100':'#F5F5F5'};color:${!filterCrop?'white':'#616161'}">All Crops</button>
@@ -437,28 +437,62 @@ export function renderAgriFlow(container) {
   }
 
   function renderFPOProcurement() {
+    const totalKg = fpoRecords.reduce((s,r) => s + Number(r.quantity_kg||0), 0);
+    const totalVal = fpoRecords.reduce((s,r) => s + Number(r.gross_amount||r.price_per_kg*r.quantity_kg||0), 0);
+    const pendingVal = fpoRecords.filter(r=>r.payment_status!=='paid').reduce((s,r) => s + Number(r.net_payable||0), 0);
+    const paidVal = fpoRecords.filter(r=>r.payment_status==='paid').reduce((s,r) => s + Number(r.net_payable||0), 0);
     return `
       <div style="padding:12px 14px 0">
+        <!-- Stats bar -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+          <div style="background:#E8F5E9;border-radius:10px;padding:10px;text-align:center">
+            <div style="font-weight:800;font-size:15px;color:#2E7D32">${Number(totalKg).toLocaleString()} kg</div>
+            <div style="font-size:10px;color:#558B2F">Total Procured</div>
+          </div>
+          <div style="background:#E3F2FD;border-radius:10px;padding:10px;text-align:center">
+            <div style="font-weight:800;font-size:15px;color:#1565C0">₹${(totalVal/1000).toFixed(0)}K</div>
+            <div style="font-size:10px;color:#1565C0">Total Value</div>
+          </div>
+          <div style="background:#FFF3E0;border-radius:10px;padding:10px;text-align:center">
+            <div style="font-weight:800;font-size:15px;color:#E65100">₹${(pendingVal/1000).toFixed(0)}K</div>
+            <div style="font-size:10px;color:#E65100">Pending Pay</div>
+          </div>
+        </div>
+        <!-- Crop-wise summary -->
+        ${fpoProcSummary.length > 0 ? `
+          <div style="background:white;border-radius:10px;padding:10px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+            <div style="font-weight:700;font-size:12px;color:#1565C0;margin-bottom:8px">📊 Crop-wise Summary</div>
+            ${fpoProcSummary.slice(0,4).map(s=>`
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #F5F5F5">
+                <span style="font-size:11px;font-weight:600">${s.crop_name||'Unknown'}</span>
+                <span style="font-size:11px;color:#757575">${Number(s.total_kg||0).toLocaleString()} kg</span>
+                <span style="font-size:11px;color:#1565C0">₹${Number(s.avg_price_per_kg||0).toFixed(0)}/kg</span>
+                <span style="font-size:10px;background:${Number(s.pending_amount||0)>0?'#FFF3E0':'#E8F5E9'};color:${Number(s.pending_amount||0)>0?'#E65100':'#2E7D32'};padding:2px 6px;border-radius:6px">${Number(s.pending_amount||0)>0?'Pending':'Settled'}</span>
+              </div>`).join('')}
+          </div>
+        ` : ''}
         <button id="recordProcBtn" style="width:100%;padding:12px;background:#1565C0;color:white;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px">+ Record Procurement</button>
-        ${fpoInventory.length === 0 ? `
+        ${fpoRecords.length === 0 ? `
           <div style="text-align:center;padding:40px 20px">
             <div style="font-size:40px;margin-bottom:8px">📦</div>
             <div style="font-weight:700;margin-bottom:4px">No procurement recorded</div>
             <div style="font-size:12px;color:#757575">Record crop purchases from your member farmers</div>
           </div>
-        ` : fpoInventory.map(i=>`
+        ` : fpoRecords.map(r=>`
           <div style="background:white;border-radius:10px;margin-bottom:6px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
             <div style="display:flex;justify-content:space-between;align-items:flex-start">
               <div>
-                <div style="font-weight:700;font-size:13px">${i.crop_name||'Crop'}</div>
-                <div style="font-size:11px;color:#757575">${Number(i.quantity_kg||0).toLocaleString()} kg · from ${i.farmer_name||'Farmer'}</div>
-                <div style="font-size:10px;color:#757575">${i.created_at?new Date(i.created_at).toLocaleDateString('en-IN'):''}</div>
+                <div style="font-weight:700;font-size:13px">${r.crop_name||'Crop'}</div>
+                <div style="font-size:11px;color:#757575">${Number(r.quantity_kg||0).toLocaleString()} kg · Grade ${r.quality_grade||'A'} · from ${r.farmer_name||r.farmer_name_fallback||'Farmer'}</div>
+                <div style="font-size:10px;color:#757575">${r.procurement_date||r.created_at?new Date(r.procurement_date||r.created_at).toLocaleDateString('en-IN'):''}</div>
               </div>
               <div style="text-align:right">
-                <div style="font-weight:700;color:#1565C0">₹${Number(i.price_per_kg||0).toFixed(0)}/kg</div>
-                <div style="font-size:10px;color:#757575">₹${Number((i.price_per_kg||0)*(i.quantity_kg||0)).toLocaleString()} total</div>
+                <div style="font-weight:700;color:#1565C0">₹${Number(r.price_per_kg||0).toFixed(0)}/kg</div>
+                <div style="font-size:10px;color:#757575">₹${Number(r.gross_amount||(r.price_per_kg*r.quantity_kg)||0).toLocaleString()} total</div>
+                <span style="font-size:10px;background:${r.payment_status==='paid'?'#E8F5E9':'#FFF3E0'};color:${r.payment_status==='paid'?'#2E7D32':'#E65100'};padding:2px 7px;border-radius:8px;font-weight:700">${r.payment_status==='paid'?'✓ Paid':'⏳ Pending'}</span>
               </div>
             </div>
+            ${r.payment_status!=='paid' ? `<button class="mark-paid-btn" data-rid="${r.id}" style="width:100%;margin-top:8px;padding:7px;background:#E8F5E9;color:#2E7D32;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">✓ Mark as Paid (₹${Number(r.net_payable||0).toLocaleString()})</button>` : ''}
           </div>`).join('')}
       </div>
     `;
@@ -591,6 +625,14 @@ export function renderAgriFlow(container) {
         try { await api.createSupplyListing({crop_id:Number(document.querySelector('#slCrop').value),quantity_kg:Number(document.querySelector('#slQty').value),price_per_kg:Number(document.querySelector('#slPrice').value),available_from:document.querySelector('#slDate').value}); showToast('Published!','success'); closeModal(); loadData(); } catch(e){showToast(e.message,'error');}
       });
     });
+
+    // FPO: Mark procurement payment as paid
+    container.querySelectorAll('.mark-paid-btn').forEach(b => b.addEventListener('click', async () => {
+      try {
+        await api.updateFPOProcurement(b.dataset.rid, { payment_status: 'paid' });
+        showToast('Payment marked as paid!', 'success'); loadData();
+      } catch(e) { showToast(e.message, 'error'); }
+    }));
   }
 
   // ─── MODALS ───────────────────────────────────────────────────────────────
@@ -693,9 +735,14 @@ export function renderAgriFlow(container) {
         watchlist = Array.isArray(wl) ? wl : (wl.watchlist||[]);
       }
       if (isFPO) {
-        const [memRes,invRes] = await Promise.all([api.getFPOMembers().catch(()=>[]),api.getFPOInventory().catch(()=>[])]);
+        const [memRes,recRes,summRes] = await Promise.all([
+          api.getFPOMembers().catch(()=>[]),
+          api.getFPOProcurement().catch(()=>[]),
+          api.get('/fpo/procurement/summary').catch(()=>({})),
+        ]);
         fpoMembers  = Array.isArray(memRes) ? memRes : (memRes.members||[]);
-        fpoInventory= Array.isArray(invRes) ? invRes : (invRes.inventory||[]);
+        fpoRecords  = Array.isArray(recRes) ? recRes : (recRes.records||[]);
+        fpoProcSummary = Array.isArray(summRes) ? summRes : (summRes.summary||[]);
       }
       const [ml,dl,iq] = await Promise.all([
         (isFPO ? api.getFPOSupplyListings() : api.getMyListings()).catch(()=>[]),

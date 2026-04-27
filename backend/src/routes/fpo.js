@@ -109,22 +109,84 @@ router.get('/procurement', async (req, res) => {
 
 router.post('/procurement', async (req, res) => {
   try {
-    const { farmer_id, crop_id, quantity_kg, quality_grade, moisture_content,
-            price_per_kg, deduction_transport, deduction_other, collection_center, notes } = req.body;
+    const { farmer_id, farmer_phone, farmer_name, crop_id, quantity_kg, quality_grade,
+            moisture_content, price_per_kg, deduction_transport, deduction_other,
+            collection_center, notes } = req.body;
     const fpo = await pool.query('SELECT id FROM fpo_profiles WHERE user_id = $1', [req.user.id]);
     if (fpo.rows.length === 0) return res.status(400).json({ error: 'FPO profile not found' });
-    const gross = quantity_kg * price_per_kg;
+
+    // Resolve farmer_id from phone if not provided
+    let resolvedFarmerId = farmer_id;
+    if (!resolvedFarmerId && farmer_phone) {
+      const fu = await pool.query('SELECT id FROM users WHERE phone = $1', [farmer_phone]);
+      resolvedFarmerId = fu.rows[0]?.id || null;
+    }
+
+    const gross = (quantity_kg || 0) * (price_per_kg || 0);
     const net = gross - (deduction_transport || 0) - (deduction_other || 0);
     const { rows } = await pool.query(
-      `INSERT INTO procurement_records (fpo_id, farmer_id, crop_id, quantity_kg, quality_grade, 
-        moisture_content, price_per_kg, gross_amount, deduction_transport, deduction_other, 
-        net_payable, collection_center, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
-      [fpo.rows[0].id, farmer_id, crop_id, quantity_kg, quality_grade || 'ungraded',
+      `INSERT INTO procurement_records (fpo_id, farmer_id, crop_id, quantity_kg, quality_grade,
+        moisture_content, price_per_kg, gross_amount, deduction_transport, deduction_other,
+        net_payable, collection_center, notes, farmer_name_fallback)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+      [fpo.rows[0].id, resolvedFarmerId, crop_id, quantity_kg, quality_grade || 'A',
        moisture_content, price_per_kg, gross, deduction_transport || 0, deduction_other || 0,
-       net, collection_center, notes]
+       net, collection_center, notes, farmer_name || null]
     );
     res.json({ record: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /fpo/procurement/:id — update payment or grade
+router.patch('/procurement/:id', async (req, res) => {
+  try {
+    const { payment_status, notes } = req.body;
+    const fpo = await pool.query('SELECT id FROM fpo_profiles WHERE user_id = $1', [req.user.id]);
+    if (fpo.rows.length === 0) return res.status(400).json({ error: 'FPO profile not found' });
+    const allowed = ['pending', 'paid', 'partial'];
+    if (payment_status && !allowed.includes(payment_status))
+      return res.status(400).json({ error: `payment_status must be one of: ${allowed.join(', ')}` });
+    const updates = [];
+    const params = [];
+    let i = 1;
+    if (payment_status) { updates.push(`payment_status = $${i++}`); params.push(payment_status); }
+    if (notes !== undefined) { updates.push(`notes = $${i++}`); params.push(notes); }
+    if (!updates.length) return res.status(400).json({ error: 'Nothing to update' });
+    updates.push(`updated_at = NOW()`);
+    params.push(req.params.id, fpo.rows[0].id);
+    const { rows } = await pool.query(
+      `UPDATE procurement_records SET ${updates.join(', ')} WHERE id = $${i++} AND fpo_id = $${i++} RETURNING *`,
+      params
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Record not found' });
+    res.json({ record: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /fpo/procurement/summary — crop-wise aggregation
+router.get('/procurement/summary', async (req, res) => {
+  try {
+    const fpo = await pool.query('SELECT id FROM fpo_profiles WHERE user_id = $1', [req.user.id]);
+    if (fpo.rows.length === 0) return res.json({ summary: [] });
+    const { rows } = await pool.query(
+      `SELECT c.name as crop_name, 
+              COUNT(*) as record_count,
+              COALESCE(SUM(pr.quantity_kg),0) as total_kg,
+              COALESCE(SUM(pr.gross_amount),0) as total_value,
+              COALESCE(SUM(CASE WHEN pr.payment_status='paid' THEN pr.net_payable ELSE 0 END),0) as paid_amount,
+              COALESCE(SUM(CASE WHEN pr.payment_status!='paid' THEN pr.net_payable ELSE 0 END),0) as pending_amount,
+              ROUND(AVG(pr.price_per_kg),2) as avg_price_per_kg
+       FROM procurement_records pr
+       LEFT JOIN crop_catalog c ON pr.crop_id = c.id
+       WHERE pr.fpo_id = $1
+       GROUP BY c.name ORDER BY total_kg DESC`,
+      [fpo.rows[0].id]
+    );
+    res.json({ summary: rows });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -2,6 +2,7 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { query } = require('../db/pool');
 const { authMiddleware } = require('../middleware/auth');
+const { createNotification } = require('./pushnotifications');
 
 const router = express.Router();
 
@@ -69,7 +70,25 @@ router.patch('/:id/status', authMiddleware, async (req, res) => {
 
     const result = await query(`UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`, [status, req.params.id]);
     if (!result.rows.length) return res.status(404).json({ error: 'Order not found' });
-    res.json({ order: result.rows[0] });
+    const order = result.rows[0];
+
+    // Notify buyer of status change
+    const statusMessages = {
+      confirmed: '✅ Order Confirmed — your order is being processed.',
+      in_transit: '🚚 Order Shipped — your order is on the way!',
+      delivered: '📦 Order Delivered — enjoy your purchase!',
+      cancelled: '❌ Order Cancelled — your order has been cancelled.',
+    };
+    if (statusMessages[status] && order.buyer_id) {
+      await createNotification(
+        order.buyer_id, 'order',
+        statusMessages[status].split('—')[0].trim(),
+        statusMessages[status],
+        { order_id: order.id, status }
+      ).catch(() => {});
+    }
+
+    res.json({ order });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -161,6 +161,7 @@ class ApiClient {
   getFPOProcurement() { return this.get('/fpo/procurement'); }
   recordProcurement(d) { return this.post('/fpo/procurement', d); }
   getFPOInventory() { return this.get('/fpo/inventory'); }
+  updateFPOProcurement(id, d) { return this.patch(`/fpo/procurement/${id}`, d); }
   addInventory(d) { return this.post('/fpo/inventory', d); }
   getFPOSupplyListings() { return this.get('/fpo/supply-listings'); }
   createSupplyListing(d) { return this.post('/fpo/supply-listings', d); }
@@ -322,6 +323,7 @@ class ApiClient {
   getPaymentReceipt(id) { return this.get(`/payments/receipt/${id}`); }
   getWallet() { return this.get('/payments/wallet'); }
   addWalletMoney(d) { return this.post('/payments/wallet/add', d); }
+  requestRefund(d) { return this.post('/payments/refund', d); }
 
   // KYC
   getKYCStatus() { return this.get('/auth/kyc'); }
@@ -349,6 +351,9 @@ class ApiClient {
   getOrderTracking(type, id) { return this.get(`/tracking/${type}/${id}`); }
   addTrackingEvent(d) { return this.post('/tracking', d); }
   getMyTracking() { return this.get('/tracking/my/all'); }
+
+  // Equipment Availability
+  getEquipmentAvailability(id, year, month) { return this.get(`/kisanconnect/equipment/${id}/availability?year=${year}&month=${month}`); }
 }
 
 export const api = new ApiClient();

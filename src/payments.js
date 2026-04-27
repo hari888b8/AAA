@@ -2,7 +2,7 @@
 // Provides showCheckout() for all marketplace screens (AgriGalaxy, KisanConnect, BhoomiOS, AquaOS)
 
 import { api } from './api.js';
-import { showModal, closeModal, showToast } from './main.js';
+import { showModal, closeModal, showToast } from './app-shell.js';
 import { t } from './i18n.js';
 
 /**

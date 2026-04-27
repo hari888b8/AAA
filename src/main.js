@@ -3,6 +3,8 @@ import './styles/app.css';
 import { api } from './api.js';
 import { getState, setState, subscribe, getRole } from './store.js';
 import { t, getLang, setLang, LANGUAGES } from './i18n.js';
+import { activateLazyImages } from './utils/perf.js';
+import { installErrorBoundary } from './utils/errors.js';
 import { renderLogin } from './screens/LoginScreen.js';
 import { renderHome } from './screens/HomeScreen.js';
 import { renderAgriHub } from './screens/AgriHubScreen.js';
@@ -20,6 +22,11 @@ import { renderArchitecture } from './screens/ArchitectureScreen.js';
 import { renderAgriGalaxy } from './screens/AgriGalaxyScreen.js';
 import { renderBhoomiOS } from './screens/BhoomiOSScreen.js';
 import { renderChat } from './screens/ChatScreen.js';
+import { renderAdmin } from './screens/AdminScreen.js';
+import { renderFarmDiary } from './screens/FarmDiaryScreen.js';
+import { renderSchemes } from './screens/SchemesScreen.js';
+import { renderJobs } from './screens/JobsScreen.js';
+import { renderTraining } from './screens/TrainingScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -51,6 +58,11 @@ const ROUTES = {
   orders:        { title: 'Orders',        icon: '📦', render: renderOrders,       back: 'profile' },
   chat:          { title: 'Messages',      icon: '💬', render: renderChat,         back: 'home'    },
   architecture:  { title: 'Platform Map',  icon: '🏗️', render: renderArchitecture, back: 'home'   },
+  admin:         { title: 'Admin',         icon: '🛡️', render: renderAdmin,        back: 'profile' },
+  farmdiary:     { title: 'Farm Diary',    icon: '📓', render: renderFarmDiary,    back: 'home'    },
+  schemes:       { title: 'Schemes',       icon: '🏛️', render: renderSchemes,      back: 'home'    },
+  jobs:          { title: 'Agri Jobs',     icon: '👷', render: renderJobs,         back: 'home'    },
+  training:      { title: 'Training',      icon: '🎓', render: renderTraining,     back: 'home'    },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────
@@ -72,34 +84,16 @@ function getNavTabs() {
 let currentRoute = 'home';
 let appEl;
 
-// ===== PUBLIC API =====
+// ===== PUBLIC API (re-exported from app-shell) =====
+export { showToast, showModal, closeModal } from './app-shell.js';
+import { _registerNavigator } from './app-shell.js';
+
 export function navigate(route) {
   if (!getState().isLoggedIn && route !== 'login') route = 'login';
   currentRoute = route;
   renderApp();
 }
-
-export function showToast(msg, type = 'info') {
-  const t = document.createElement('div');
-  t.className = `toast toast-${type}`;
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3200);
-}
-
-export function showModal(html) {
-  closeModal();
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.id = 'modalOverlay';
-  overlay.innerHTML = `<div class="modal-sheet">${html}</div>`;
-  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
-  document.body.appendChild(overlay);
-}
-
-export function closeModal() {
-  document.querySelector('#modalOverlay')?.remove();
-}
+_registerNavigator(navigate);
 
 // ===== RENDER =====
 function renderApp() {
@@ -162,7 +156,7 @@ function renderApp() {
         </div>
       </div>
     </div>
-    <nav class="bottom-nav">
+    <nav class="bottom-nav bottom-nav-v2">
       ${navTabs.map(key => {
         const r = ROUTES[key];
         const agriSubRoutes = ['agri', 'agriflow', 'intelligence', 'weather', 'community'];
@@ -212,12 +206,18 @@ function renderApp() {
   const content = appEl.querySelector('#screenContent');
   if (content && route.render) {
     route.render(content);
+    requestAnimationFrame(() => activateLazyImages(content));
   }
 }
 
 // ===== INIT =====
 async function init() {
+  installErrorBoundary();
   appEl = document.getElementById('app');
+
+  // Restore saved theme preference
+  const savedTheme = localStorage.getItem('agri_theme');
+  if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
 
   // Check existing auth
   if (getState().isLoggedIn && api.token) {

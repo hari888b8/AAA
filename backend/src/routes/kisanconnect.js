@@ -2,6 +2,7 @@ const express = require('express');
 const { query } = require('../db/pool');
 const { authMiddleware, optionalAuth } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
+const { createNotification } = require('./pushnotifications');
 const router = express.Router();
 
 // GET /api/kisanconnect/equipment
@@ -78,7 +79,26 @@ router.post('/equipment/:id/book', authMiddleware, async (req, res) => {
       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *
     `, [uuidv4(), req.params.id, req.user.id, start_date, end_date, total_amount, notes]);
 
-    res.status(201).json({ booking: result.rows[0], total_amount });
+    const booking = result.rows[0];
+    const eq = equip.rows[0];
+    // Notify renter (confirmation)
+    await createNotification(
+      req.user.id, 'booking',
+      '🚜 Booking Confirmed',
+      `${eq.name} booked for ${days} day(s). Total: ₹${total_amount.toLocaleString()}`,
+      { booking_id: booking.id, equipment_id: eq.id }
+    );
+    // Notify owner
+    if (eq.owner_id && eq.owner_id !== req.user.id) {
+      await createNotification(
+        eq.owner_id, 'booking',
+        '🚜 Equipment Booking Request',
+        `Your ${eq.name} has been booked for ${days} day(s). Earnings: ₹${total_amount.toLocaleString()}`,
+        { booking_id: booking.id, equipment_id: eq.id }
+      );
+    }
+
+    res.status(201).json({ booking, total_amount });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -213,6 +233,44 @@ router.patch('/bookings/:id', authMiddleware, async (req, res) => {
       await query(`UPDATE equipment SET status = 'available' WHERE id = $1`, [result.rows[0].equipment_id]);
     }
     res.json({ booking: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/kisanconnect/equipment/:id/availability — booked date ranges
+router.get('/equipment/:id/availability', optionalAuth, async (req, res) => {
+  try {
+    const { year, month } = req.query;
+    const targetYear  = parseInt(year)  || new Date().getFullYear();
+    const targetMonth = parseInt(month) || new Date().getMonth() + 1;
+    const firstDay = `${targetYear}-${String(targetMonth).padStart(2,'0')}-01`;
+    const lastDay  = new Date(targetYear, targetMonth, 0).toISOString().split('T')[0];
+
+    const result = await query(`
+      SELECT start_date, end_date, status
+      FROM equipment_bookings
+      WHERE equipment_id = $1
+        AND status IN ('confirmed', 'pending')
+        AND start_date <= $2 AND end_date >= $3
+      ORDER BY start_date
+    `, [req.params.id, lastDay, firstDay]);
+
+    // Build a set of booked dates
+    const bookedDates = new Set();
+    result.rows.forEach(b => {
+      const s = new Date(b.start_date);
+      const e = new Date(b.end_date);
+      for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+        bookedDates.add(d.toISOString().split('T')[0]);
+      }
+    });
+
+    res.json({
+      equipment_id: req.params.id,
+      year: targetYear,
+      month: targetMonth,
+      bookings: result.rows,
+      booked_dates: Array.from(bookedDates),
+    });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

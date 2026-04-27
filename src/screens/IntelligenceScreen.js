@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { getRole } from '../store.js';
-import { showToast, showModal, closeModal } from '../main.js';
+import { showToast, showModal, closeModal } from '../app-shell.js';
 import { t } from '../i18n.js';
 
 export function renderIntelligence(container) {
@@ -24,7 +24,7 @@ export function renderIntelligence(container) {
 
   function render() {
     container.innerHTML = `
-      <div class="app-brand-header" style="padding:14px 16px 10px;background:linear-gradient(135deg,#e63946 0%,#9b59b6 100%);color:#fff">
+      <div class="hero-v2" role="banner" style="background:linear-gradient(135deg,#e63946 0%,#9b59b6 100%);color:#fff">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:28px">📊</span>
           <div>
@@ -33,7 +33,7 @@ export function renderIntelligence(container) {
           </div>
         </div>
       </div>
-      <div class="tab-bar" style="overflow-x:auto;white-space:nowrap">
+      <div class="tab-bar" role="tablist" style="overflow-x:auto;white-space:nowrap">
         ${isFPO ? renderFPOTabs() : isBuyer ? renderBuyerTabs() : renderFarmerTabs()}
       </div>
       ${loading ? '<div class="loading"><div class="spinner"></div></div>' : renderTab()}
@@ -43,36 +43,36 @@ export function renderIntelligence(container) {
 
   function renderFarmerTabs() {
     return `
-      <button class="tab-btn ${tab==='farmer-dashboard'?'active':''}" data-tab="farmer-dashboard">📊 Dashboard</button>
-      <button class="tab-btn ${tab==='declarations'?'active':''}" data-tab="declarations">🌾 Declarations</button>
-      <button class="tab-btn ${tab==='harvest-listings'?'active':''}" data-tab="harvest-listings">📦 My Harvests</button>
-      <button class="tab-btn ${tab==='my-inquiries'?'active':''}" data-tab="my-inquiries">📩 Inquiries</button>
-      <button class="tab-btn ${tab==='calendar'?'active':''}" data-tab="calendar">📅 Calendar</button>
-      <button class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 Prices</button>
-      <button class="tab-btn ${tab==='plans'?'active':''}" data-tab="plans">💎 Plans</button>
+      <button role="tab" aria-selected="${tab==='farmer-dashboard'}" class="tab-btn ${tab==='farmer-dashboard'?'active':''}" data-tab="farmer-dashboard">📊 Dashboard</button>
+      <button role="tab" aria-selected="${tab==='declarations'}" class="tab-btn ${tab==='declarations'?'active':''}" data-tab="declarations">🌾 Declarations</button>
+      <button role="tab" aria-selected="${tab==='harvest-listings'}" class="tab-btn ${tab==='harvest-listings'?'active':''}" data-tab="harvest-listings">📦 My Harvests</button>
+      <button role="tab" aria-selected="${tab==='my-inquiries'}" class="tab-btn ${tab==='my-inquiries'?'active':''}" data-tab="my-inquiries">📩 Inquiries</button>
+      <button role="tab" aria-selected="${tab==='calendar'}" class="tab-btn ${tab==='calendar'?'active':''}" data-tab="calendar">📅 Calendar</button>
+      <button role="tab" aria-selected="${tab==='prices'}" class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 Prices</button>
+      <button role="tab" aria-selected="${tab==='plans'}" class="tab-btn ${tab==='plans'?'active':''}" data-tab="plans">💎 Plans</button>
     `;
   }
   function renderFPOTabs() {
     return `
-      <button class="tab-btn ${tab==='fpo-dashboard'?'active':''}" data-tab="fpo-dashboard">📊 Dashboard</button>
-      <button class="tab-btn ${tab==='members'?'active':''}" data-tab="members">👥 Members</button>
-      <button class="tab-btn ${tab==='procurement'?'active':''}" data-tab="procurement">📥 Procurement</button>
-      <button class="tab-btn ${tab==='inventory'?'active':''}" data-tab="inventory">📦 Inventory</button>
-      <button class="tab-btn ${tab==='fpo-listings'?'active':''}" data-tab="fpo-listings">🛒 Supply Listings</button>
-      <button class="tab-btn ${tab==='supply'?'active':''}" data-tab="supply">⚖️ Market</button>
-      <button class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 Prices</button>
+      <button role="tab" aria-selected="${tab==='fpo-dashboard'}" class="tab-btn ${tab==='fpo-dashboard'?'active':''}" data-tab="fpo-dashboard">📊 Dashboard</button>
+      <button role="tab" aria-selected="${tab==='members'}" class="tab-btn ${tab==='members'?'active':''}" data-tab="members">👥 Members</button>
+      <button role="tab" aria-selected="${tab==='procurement'}" class="tab-btn ${tab==='procurement'?'active':''}" data-tab="procurement">📥 Procurement</button>
+      <button role="tab" aria-selected="${tab==='inventory'}" class="tab-btn ${tab==='inventory'?'active':''}" data-tab="inventory">📦 Inventory</button>
+      <button role="tab" aria-selected="${tab==='fpo-listings'}" class="tab-btn ${tab==='fpo-listings'?'active':''}" data-tab="fpo-listings">🛒 Supply Listings</button>
+      <button role="tab" aria-selected="${tab==='supply'}" class="tab-btn ${tab==='supply'?'active':''}" data-tab="supply">⚖️ Market</button>
+      <button role="tab" aria-selected="${tab==='prices'}" class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 Prices</button>
     `;
   }
   function renderBuyerTabs() {
     return `
-      <button class="tab-btn ${tab==='buyer-search'?'active':''}" data-tab="buyer-search">🔎 Supply Search</button>
-      <button class="tab-btn ${tab==='buyer-intelligence'?'active':''}" data-tab="buyer-intelligence">🧠 Intelligence</button>
-      <button class="tab-btn ${tab==='watchlist'?'active':''}" data-tab="watchlist">⭐ Watchlist</button>
-      <button class="tab-btn ${tab==='buyer-inquiries'?'active':''}" data-tab="buyer-inquiries">📩 My Inquiries</button>
-      <button class="tab-btn ${tab==='districts'?'active':''}" data-tab="districts">🗺️ Districts</button>
-      <button class="tab-btn ${tab==='forecast'?'active':''}" data-tab="forecast">📈 Forecast</button>
-      <button class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 Prices</button>
-      <button class="tab-btn ${tab==='plans'?'active':''}" data-tab="plans">💎 Plans</button>
+      <button role="tab" aria-selected="${tab==='buyer-search'}" class="tab-btn ${tab==='buyer-search'?'active':''}" data-tab="buyer-search">🔎 Supply Search</button>
+      <button role="tab" aria-selected="${tab==='buyer-intelligence'}" class="tab-btn ${tab==='buyer-intelligence'?'active':''}" data-tab="buyer-intelligence">🧠 Intelligence</button>
+      <button role="tab" aria-selected="${tab==='watchlist'}" class="tab-btn ${tab==='watchlist'?'active':''}" data-tab="watchlist">⭐ Watchlist</button>
+      <button role="tab" aria-selected="${tab==='buyer-inquiries'}" class="tab-btn ${tab==='buyer-inquiries'?'active':''}" data-tab="buyer-inquiries">📩 My Inquiries</button>
+      <button role="tab" aria-selected="${tab==='districts'}" class="tab-btn ${tab==='districts'?'active':''}" data-tab="districts">🗺️ Districts</button>
+      <button role="tab" aria-selected="${tab==='forecast'}" class="tab-btn ${tab==='forecast'?'active':''}" data-tab="forecast">📈 Forecast</button>
+      <button role="tab" aria-selected="${tab==='prices'}" class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 Prices</button>
+      <button role="tab" aria-selected="${tab==='plans'}" class="tab-btn ${tab==='plans'?'active':''}" data-tab="plans">💎 Plans</button>
     `;
   }
 
@@ -233,6 +233,25 @@ export function renderIntelligence(container) {
   // ═══ FPO VIEWS ═══
   function renderFPODashboard() {
     const s = fpoStats;
+    const totalProcKg = procurement.reduce((sum,p)=>sum+Number(p.quantity_kg||0),0);
+    const totalProcVal = procurement.reduce((sum,p)=>sum+Number(p.gross_amount||0),0);
+    const pendingPayments = procurement.filter(p=>p.payment_status==='pending').reduce((sum,p)=>sum+Number(p.net_payable||0),0);
+    // Crop-wise procurement analytics
+    const cropGroups = {};
+    procurement.forEach(p => {
+      const k = p.crop_name||'Unknown';
+      if (!cropGroups[k]) cropGroups[k] = {kg:0, val:0};
+      cropGroups[k].kg += Number(p.quantity_kg||0);
+      cropGroups[k].val += Number(p.gross_amount||0);
+    });
+    const cropEntries = Object.entries(cropGroups).sort((a,b)=>b[1].kg-a[1].kg).slice(0,5);
+    const maxKg = Math.max(...cropEntries.map(([,v])=>v.kg), 1);
+    // Monthly trend (simple)
+    const monthlyProcurement = {};
+    procurement.forEach(p => {
+      const m = new Date(p.procurement_date||p.created_at).toLocaleString('default',{month:'short'});
+      monthlyProcurement[m] = (monthlyProcurement[m]||0) + Number(p.quantity_kg||0);
+    });
     return `<div class="section" style="padding-top:8px">
       <div class="card" style="padding:14px;margin-bottom:12px;background:linear-gradient(135deg,#2196F3 0%,#9C27B0 100%);color:white">
         <div class="fw-700">${fpoProfile?.fpo_name || 'Set Up Your FPO'}</div>
@@ -244,16 +263,121 @@ export function renderIntelligence(container) {
         <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-value">${inventory.length}</div><div class="stat-label">Stock Items</div></div>
         <div class="stat-card"><div class="stat-icon">🛒</div><div class="stat-value">${fpoListings.length}</div><div class="stat-label">Listings</div></div>
       </div>
+
+      <!-- Financial KPIs -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="background:#E3F2FD;border-radius:10px;padding:12px">
+          <div style="font-size:10px;color:#1565C0;font-weight:600;margin-bottom:2px">TOTAL PROCURED</div>
+          <div style="font-size:18px;font-weight:800;color:#0D47A1">${(totalProcKg/1000).toFixed(1)}T</div>
+          <div style="font-size:10px;color:#1565C0">₹${(totalProcVal/1000).toFixed(0)}K value</div>
+        </div>
+        <div style="background:#FFF3E0;border-radius:10px;padding:12px">
+          <div style="font-size:10px;color:#E65100;font-weight:600;margin-bottom:2px">PENDING PAYMENTS</div>
+          <div style="font-size:18px;font-weight:800;color:#BF360C">₹${(pendingPayments/1000).toFixed(1)}K</div>
+          <div style="font-size:10px;color:#E65100">${procurement.filter(p=>p.payment_status!=='paid').length} records pending</div>
+        </div>
+      </div>
+
+      <!-- Crop-wise Bar Chart -->
+      ${cropEntries.length > 0 ? `
+        <div style="background:white;border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06);margin-bottom:12px">
+          <div style="font-weight:700;font-size:13px;margin-bottom:10px">📊 Procurement by Crop (kg)</div>
+          ${cropEntries.map(([crop, data]) => `
+            <div style="margin-bottom:8px">
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px">
+                <span style="font-weight:600">${crop}</span>
+                <span style="color:#1565C0;font-weight:700">${Number(data.kg).toLocaleString()} kg</span>
+              </div>
+              <div style="background:#E8EAF6;border-radius:4px;height:8px;overflow:hidden">
+                <div style="background:linear-gradient(90deg,#1565C0,#42A5F5);height:100%;border-radius:4px;width:${Math.round((data.kg/maxKg)*100)}%;transition:width 0.5s ease"></div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+
+      <!-- Operations Snapshot -->
       <div class="card" style="padding:14px;margin-bottom:8px">
-        <div class="fw-700" style="margin-bottom:8px">📊 Operations Snapshot</div>
+        <div class="fw-700" style="margin-bottom:8px">⚡ Operations Snapshot</div>
         ${[
-          { label: 'Total Procured Volume', val: `${(procurement.reduce((s,p)=>s+Number(p.quantity_kg||0),0)/1000).toFixed(1)}T` },
-          { label: 'Total Procurement Value', val: `₹${procurement.reduce((s,p)=>s+Number(p.gross_amount||0),0).toLocaleString()}` },
+          { label: 'Total Procured Volume', val: `${(totalProcKg/1000).toFixed(1)}T` },
+          { label: 'Total Procurement Value', val: `₹${totalProcVal.toLocaleString()}` },
           { label: 'Pending Payments', val: procurement.filter(p=>p.payment_status==='pending').length },
           { label: 'Active Inventory', val: `${(inventory.reduce((s,i)=>s+Number(i.quantity_kg||0),0)/1000).toFixed(1)}T` },
+          { label: 'Avg Price/kg', val: totalProcKg>0?`₹${(totalProcVal/totalProcKg).toFixed(0)}`:'—' },
         ].map(r => `<div class="flex-between" style="padding:6px 0;border-bottom:1px solid var(--border)"><span class="text-sm">${r.label}</span><span class="fw-700">${r.val}</span></div>`).join('')}
       </div>
+
+      <!-- Export Report Button -->
+      <button id="exportFPOReport" style="width:100%;padding:13px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:white;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:16px">📄 Export FPO Report (PDF)</button>
     </div>`;
+  }
+
+  function exportFPOReport() {
+    const s = fpoStats;
+    const fpoName = fpoProfile?.fpo_name || 'FPO Report';
+    const totalProcKg = procurement.reduce((sum,p)=>sum+Number(p.quantity_kg||0),0);
+    const totalProcVal = procurement.reduce((sum,p)=>sum+Number(p.gross_amount||0),0);
+    const pendingPayments = procurement.filter(p=>p.payment_status==='pending').reduce((sum,p)=>sum+Number(p.net_payable||0),0);
+    const cropGroups = {};
+    procurement.forEach(p => {
+      const k = p.crop_name||'Unknown';
+      if (!cropGroups[k]) cropGroups[k] = { kg:0, val:0 };
+      cropGroups[k].kg += Number(p.quantity_kg||0);
+      cropGroups[k].val += Number(p.gross_amount||0);
+    });
+    const cropRows = Object.entries(cropGroups).sort((a,b)=>b[1].kg-a[1].kg)
+      .map(([crop, d]) => `<tr><td>${crop}</td><td>${Number(d.kg).toLocaleString()} kg</td><td>₹${Number(d.val).toLocaleString()}</td><td>₹${d.kg>0?(d.val/d.kg).toFixed(0):0}/kg</td></tr>`).join('');
+    const memberRows = fpoMembers.slice(0,20).map((m,i) =>
+      `<tr><td>${i+1}</td><td>${m.name||'—'}</td><td>${m.village||'—'}</td><td>${m.total_land_acres||0} ac</td><td>${(m.primary_crops||[]).join(', ')||'—'}</td><td>${m.status||'active'}</td></tr>`
+    ).join('');
+    const procRows = procurement.slice(0,30).map(p =>
+      `<tr><td>${p.farmer_name||p.farmer_id||'—'}</td><td>${p.crop_name||'—'}</td><td>${Number(p.quantity_kg||0).toLocaleString()}</td><td>₹${Number(p.gross_amount||0).toLocaleString()}</td><td><span style="color:${p.payment_status==='paid'?'green':'#E65100'}">${p.payment_status||'pending'}</span></td></tr>`
+    ).join('');
+    const now = new Date().toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' });
+    const html = `<!DOCTYPE html><html>
+<head><meta charset="UTF-8"><title>${fpoName} — FPO Report</title>
+<style>
+  body{font-family:Arial,sans-serif;padding:30px;color:#333;max-width:900px;margin:auto}
+  h1{color:#1B5E20;margin:0 0 4px} h2{color:#2E7D32;font-size:15px;margin:20px 0 8px;border-bottom:2px solid #E8F5E9;padding-bottom:4px}
+  .meta{font-size:12px;color:#777;margin-bottom:20px} .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+  .kpi{background:#E8F5E9;border-radius:8px;padding:12px;text-align:center} .kpi .val{font-size:22px;font-weight:800;color:#1B5E20} .kpi .lbl{font-size:11px;color:#555;margin-top:2px}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px}
+  th{background:#2E7D32;color:white;padding:8px;text-align:left} td{padding:7px 8px;border-bottom:1px solid #E0E0E0}
+  tr:nth-child(even){background:#F9FBE7}
+  .footer{text-align:center;font-size:11px;color:#999;margin-top:30px;border-top:1px solid #eee;padding-top:12px}
+  @media print{button{display:none!important}}
+</style></head>
+<body>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div><h1>🌾 ${fpoName}</h1><div class="meta">FPO Report · Generated on ${now} · ${fpoProfile?.district_name||''} ${fpoProfile?.state||''}</div></div>
+    <button onclick="window.print()" style="padding:10px 18px;background:#2E7D32;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">🖨 Print / Save PDF</button>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="val">${fpoMembers.length}</div><div class="lbl">Total Members</div></div>
+    <div class="kpi"><div class="val">${(totalProcKg/1000).toFixed(1)}T</div><div class="lbl">Total Procured</div></div>
+    <div class="kpi"><div class="val">₹${(totalProcVal/1000).toFixed(0)}K</div><div class="lbl">Procurement Value</div></div>
+    <div class="kpi"><div class="val">${inventory.length}</div><div class="lbl">Inventory Items</div></div>
+    <div class="kpi"><div class="val">₹${(pendingPayments/1000).toFixed(1)}K</div><div class="lbl">Pending Payments</div></div>
+    <div class="kpi"><div class="val">${totalProcKg>0?'₹'+(totalProcVal/totalProcKg).toFixed(0):'—'}</div><div class="lbl">Avg Price / kg</div></div>
+  </div>
+
+  <h2>📊 Crop-wise Procurement Summary</h2>
+  ${cropRows ? `<table><thead><tr><th>Crop</th><th>Total Volume</th><th>Total Value</th><th>Avg Price</th></tr></thead><tbody>${cropRows}</tbody></table>` : '<p style="color:#777;font-size:12px">No procurement data available</p>'}
+
+  <h2>👥 Member List (Top 20)</h2>
+  ${memberRows ? `<table><thead><tr><th>#</th><th>Name</th><th>Village</th><th>Land</th><th>Crops</th><th>Status</th></tr></thead><tbody>${memberRows}</tbody></table>` : '<p style="color:#777;font-size:12px">No members yet</p>'}
+
+  <h2>📥 Procurement Records (Last 30)</h2>
+  ${procRows ? `<table><thead><tr><th>Farmer</th><th>Crop</th><th>Qty (kg)</th><th>Amount</th><th>Payment</th></tr></thead><tbody>${procRows}</tbody></table>` : '<p style="color:#777;font-size:12px">No records yet</p>'}
+
+  <div class="footer">This report is auto-generated by AgriHub Intelligence Platform · ${fpoName}</div>
+</body></html>`;
+    const w = window.open('', '_blank');
+    if (!w) { showToast('Allow pop-ups to export report', 'error'); return; }
+    w.document.write(html);
+    w.document.close();
   }
 
   function renderFPOMembers() {
@@ -334,10 +458,10 @@ export function renderIntelligence(container) {
     return `<div class="section" style="padding-top:8px">
       <div class="card" style="padding:12px;margin-bottom:12px">
         <div class="fw-700" style="margin-bottom:8px">🔎 Search Crop Supply Across India</div>
-        <div class="form-group" style="margin-bottom:8px"><input class="form-input" id="bsCrop" placeholder="Crop (tomato, onion, rice…)" value="${searchFilters.crop||''}"></div>
+        <div class="form-group" style="margin-bottom:8px"><input class="form-input" type="search" id="bsCrop" aria-label="Search by crop" placeholder="Crop (tomato, onion, rice…)" value="${searchFilters.crop||''}"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-          <input class="form-input" id="bsState" placeholder="State" value="${searchFilters.state||''}">
-          <input class="form-input" id="bsDist" placeholder="District" value="${searchFilters.district||''}">
+          <input class="form-input" id="bsState" aria-label="Filter by state" placeholder="State" value="${searchFilters.state||''}">
+          <input class="form-input" id="bsDist" aria-label="Filter by district" placeholder="District" value="${searchFilters.district||''}">
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
           <input class="form-input" type="number" id="bsDays" placeholder="Harvest within (days)" value="${searchFilters.harvest_within_days||30}">
@@ -541,6 +665,7 @@ export function renderIntelligence(container) {
     container.querySelector('#addProcBtn')?.addEventListener('click', showAddProcurement);
     container.querySelector('#addInvBtn')?.addEventListener('click', showAddInventory);
     container.querySelector('#addFpoListBtn')?.addEventListener('click', showAddSupplyListing);
+    container.querySelector('#exportFPOReport')?.addEventListener('click', exportFPOReport);
     container.querySelector('#bsSearch')?.addEventListener('click', () => {
       searchFilters = {
         crop: document.querySelector('#bsCrop')?.value,

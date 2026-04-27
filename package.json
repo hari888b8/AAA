@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "agriculture",
@@ -19,7 +21,8 @@
   "license": "ISC",
   "description": "Agriculture Ecosystem Super-App — Consolidated multi-app hub",
   "devDependencies": {
-    "vite": "^6.3.3"
+    "vite": "^6.3.3",
+    "vitest": "^2.1.9"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.3"

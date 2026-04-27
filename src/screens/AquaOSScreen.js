@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { showToast, showModal, closeModal } from '../main.js';
+import { showToast, showModal, closeModal } from '../app-shell.js';
 import { getRole } from '../store.js';
 import { t } from '../i18n.js';
 
@@ -58,7 +58,7 @@ export function renderAquaOS(container) {
   function render() {
     const subtitle = isSupplier ? 'Sell feed · medicine · equipment to aqua farmers' : isBuyer ? 'Search aqua harvests · Make offers · Source from AP' : 'Aquaculture operating system · Pond management + Advisory';
     container.innerHTML = `
-      <div class="app-brand-header" style="padding:14px 16px 10px;background:linear-gradient(135deg,#2f80ed 0%,#00c9a7 100%);color:#fff">
+      <div class="hero-v2" role="banner" style="background:linear-gradient(135deg,#2f80ed 0%,#00c9a7 100%);color:#fff">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:28px">🐟</span>
           <div style="flex:1">
@@ -70,33 +70,34 @@ export function renderAquaOS(container) {
           </div>
         </div>
       </div>
-      <div class="tab-bar" style="overflow-x:auto;white-space:nowrap">
+      <div class="tab-bar" role="tablist" style="overflow-x:auto;white-space:nowrap">
         ${isSupplier ? `
-          <button class="tab-btn ${tab==='myproducts'?'active':''}" data-tab="myproducts">📦 ${t('my_products')}</button>
-          <button class="tab-btn ${tab==='leads'?'active':''}" data-tab="leads">📋 ${t('leads')}</button>
-          <button class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 ${t('prices')}</button>
-          <button class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
+          <button role="tab" aria-selected="${tab==='myproducts'}" class="tab-btn ${tab==='myproducts'?'active':''}" data-tab="myproducts">📦 ${t('my_products')}</button>
+          <button role="tab" aria-selected="${tab==='leads'}" class="tab-btn ${tab==='leads'?'active':''}" data-tab="leads">📋 ${t('leads')}</button>
+          <button role="tab" aria-selected="${tab==='prices'}" class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 ${t('prices')}</button>
+          <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         ` : isBuyer ? `
-          <button class="tab-btn ${tab==='marketplace'?'active':''}" data-tab="marketplace">🛒 ${t('harvest_mkt').split(' ')[0]}</button>
-          <button class="tab-btn ${tab==='saved'?'active':''}" data-tab="saved">🔖 Saved</button>
-          <button class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 ${t('prices')}</button>
-          <button class="tab-btn ${tab==='supply'?'active':''}" data-tab="supply">📊 ${t('supply')}</button>
-          <button class="tab-btn ${tab==='myoffers'?'active':''}" data-tab="myoffers">📋 ${t('my_offers')}</button>
-          <button class="tab-btn ${tab==='chats'?'active':''}" data-tab="chats">💬 ${t('chats')}</button>
-          <button class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
+          <button role="tab" aria-selected="${tab==='marketplace'}" class="tab-btn ${tab==='marketplace'?'active':''}" data-tab="marketplace">🛒 ${t('harvest_mkt').split(' ')[0]}</button>
+          <button role="tab" aria-selected="${tab==='saved'}" class="tab-btn ${tab==='saved'?'active':''}" data-tab="saved">🔖 Saved</button>
+          <button role="tab" aria-selected="${tab==='prices'}" class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 ${t('prices')}</button>
+          <button role="tab" aria-selected="${tab==='supply'}" class="tab-btn ${tab==='supply'?'active':''}" data-tab="supply">📊 ${t('supply')}</button>
+          <button role="tab" aria-selected="${tab==='myoffers'}" class="tab-btn ${tab==='myoffers'?'active':''}" data-tab="myoffers">📋 ${t('my_offers')}</button>
+          <button role="tab" aria-selected="${tab==='chats'}" class="tab-btn ${tab==='chats'?'active':''}" data-tab="chats">💬 ${t('chats')}</button>
+          <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         ` : `
-          <button class="tab-btn ${tab==='dashboard'?'active':''}" data-tab="dashboard">📊 ${t('dashboard')}</button>
-          <button class="tab-btn ${tab==='farms'?'active':''}" data-tab="farms">🏡 ${t('farms')}</button>
-          <button class="tab-btn ${tab==='ponds'?'active':''}" data-tab="ponds">🐟 ${t('ponds')}</button>
-          <button class="tab-btn ${tab==='feed'?'active':''}" data-tab="feed">🍽️ ${t('feed')}</button>
-          <button class="tab-btn ${tab==='advisory'?'active':''}" data-tab="advisory">🧠 ${t('advisory')}</button>
-          <button class="tab-btn ${tab==='marketplace'?'active':''}" data-tab="marketplace">🛒 ${t('market')}</button>
-          <button class="tab-btn ${tab==='chats'?'active':''}" data-tab="chats">💬 ${t('chats')}</button>
-          <button class="tab-btn ${tab==='shop'?'active':''}" data-tab="shop">🛍️ ${t('shop')}</button>
-          <button class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 ${t('prices')}</button>
-          <button class="tab-btn ${tab==='community'?'active':''}" data-tab="community">🌐 ${t('community')}</button>
-          <button class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📈 ${t('analytics')}</button>
-          <button class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
+          <button role="tab" aria-selected="${tab==='dashboard'}" class="tab-btn ${tab==='dashboard'?'active':''}" data-tab="dashboard">📊 ${t('dashboard')}</button>
+          <button role="tab" aria-selected="${tab==='farms'}" class="tab-btn ${tab==='farms'?'active':''}" data-tab="farms">🏡 ${t('farms')}</button>
+          <button role="tab" aria-selected="${tab==='ponds'}" class="tab-btn ${tab==='ponds'?'active':''}" data-tab="ponds">🐟 ${t('ponds')}</button>
+          <button role="tab" aria-selected="${tab==='sensors'}" class="tab-btn ${tab==='sensors'?'active':''}" data-tab="sensors">🌡️ IoT Sensors</button>
+          <button role="tab" aria-selected="${tab==='feed'}" class="tab-btn ${tab==='feed'?'active':''}" data-tab="feed">🍽️ ${t('feed')}</button>
+          <button role="tab" aria-selected="${tab==='advisory'}" class="tab-btn ${tab==='advisory'?'active':''}" data-tab="advisory">🧠 ${t('advisory')}</button>
+          <button role="tab" aria-selected="${tab==='marketplace'}" class="tab-btn ${tab==='marketplace'?'active':''}" data-tab="marketplace">🛒 ${t('market')}</button>
+          <button role="tab" aria-selected="${tab==='chats'}" class="tab-btn ${tab==='chats'?'active':''}" data-tab="chats">💬 ${t('chats')}</button>
+          <button role="tab" aria-selected="${tab==='shop'}" class="tab-btn ${tab==='shop'?'active':''}" data-tab="shop">🛍️ ${t('shop')}</button>
+          <button role="tab" aria-selected="${tab==='prices'}" class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 ${t('prices')}</button>
+          <button role="tab" aria-selected="${tab==='community'}" class="tab-btn ${tab==='community'?'active':''}" data-tab="community">🌐 ${t('community')}</button>
+          <button role="tab" aria-selected="${tab==='analytics'}" class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📈 ${t('analytics')}</button>
+          <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         `}
       </div>
       ${loading ? '<div class="loading"><div class="spinner"></div></div>' : renderTab()}
@@ -109,6 +110,7 @@ export function renderAquaOS(container) {
       case 'dashboard': return renderDashboard();
       case 'farms': return renderFarms();
       case 'ponds': return renderPonds();
+      case 'sensors': return renderIoTSensors();
       case 'feed': return renderFeedSection();
       case 'advisory': return renderAdvisory();
       case 'marketplace': return renderMarketplace();
@@ -254,6 +256,126 @@ export function renderAquaOS(container) {
     </div>`;
   }
 
+  // IOT SENSOR DASHBOARD
+  function renderIoTSensors() {
+    // Generate realistic mock sensor readings for up to 3 ponds
+    const pondList = ponds.length > 0 ? ponds.slice(0, 3) : [
+      { id: 'demo1', name: 'Pond A' },
+      { id: 'demo2', name: 'Pond B' },
+    ];
+
+    const THRESHOLDS = {
+      temperature: { min: 24, max: 32, unit: '°C', icon: '🌡️', label: 'Temperature' },
+      ph:          { min: 7.0, max: 8.5, unit: '', icon: '⚗️', label: 'pH' },
+      do:          { min: 5, max: 9, unit: 'mg/L', icon: '💧', label: 'Dissolved O₂' },
+      turbidity:   { min: 20, max: 40, unit: 'NTU', icon: '🌫️', label: 'Turbidity' },
+      salinity:    { min: 0, max: 5, unit: 'ppt', icon: '🧂', label: 'Salinity' },
+      ammonia:     { min: 0, max: 0.5, unit: 'mg/L', icon: '⚠️', label: 'Ammonia' },
+    };
+
+    // Deterministic mock values per pond
+    const mockReading = (pondIdx, param) => {
+      const seeds = {
+        temperature: [28.4, 29.1, 27.8],
+        ph:          [7.6, 7.9, 8.1],
+        do:          [6.8, 5.2, 7.4],
+        turbidity:   [28, 42, 22],
+        salinity:    [2.1, 3.4, 1.8],
+        ammonia:     [0.12, 0.48, 0.05],
+      };
+      return seeds[param]?.[pondIdx % 3] ?? 0;
+    };
+
+    // Last 7 "hours" trend for a param (mock)
+    const trendData = (pondIdx, param) => {
+      const base = mockReading(pondIdx, param);
+      return Array.from({ length: 7 }, (_, i) => +(base + (Math.sin(i + pondIdx) * base * 0.05)).toFixed(2));
+    };
+
+    const statusColor = (val, min, max) => {
+      if (val < min || val > max) return { bg: '#FFEBEE', text: '#C62828', badge: '🔴 ALERT' };
+      const pct = (val - min) / (max - min);
+      if (pct < 0.15 || pct > 0.85) return { bg: '#FFF8E1', text: '#F57F17', badge: '🟡 WARN' };
+      return { bg: '#E8F5E9', text: '#2E7D32', badge: '🟢 OK' };
+    };
+
+    return `
+      <div style="padding:10px 14px 0">
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#006064,#00838F);border-radius:14px;padding:16px;color:white;margin-bottom:14px">
+          <div style="font-size:22px;margin-bottom:4px">🌡️</div>
+          <div style="font-weight:800;font-size:16px">IoT Sensor Dashboard</div>
+          <div style="font-size:11px;opacity:0.85;margin-top:2px">Real-time water quality monitoring · ${pondList.length} pond${pondList.length>1?'s':''} connected</div>
+          <div style="margin-top:10px;font-size:10px;opacity:0.7;background:rgba(255,255,255,0.15);padding:6px 10px;border-radius:6px;display:inline-block">🔄 Last updated: ${new Date().toLocaleTimeString()}</div>
+        </div>
+
+        ${pondList.map((pond, pIdx) => `
+          <div style="background:white;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:16px;overflow:hidden">
+            <div style="background:linear-gradient(90deg,#00838F,#006064);color:white;padding:12px 14px;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center">
+              🐟 ${pond.name || `Pond ${pIdx+1}`}
+              <span style="font-size:10px;background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:6px">${pond.species || 'Shrimp/Vannamei'}</span>
+            </div>
+            <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              ${Object.entries(THRESHOLDS).map(([param, cfg]) => {
+                const val = mockReading(pIdx, param);
+                const trend = trendData(pIdx, param);
+                const st = statusColor(val, cfg.min, cfg.max);
+                const maxTrend = Math.max(...trend);
+                return `
+                  <div style="background:${st.bg};border-radius:10px;padding:10px">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+                      <div>
+                        <div style="font-size:10px;color:#555;font-weight:600">${cfg.icon} ${cfg.label}</div>
+                        <div style="font-size:20px;font-weight:800;color:${st.text}">${val}${cfg.unit}</div>
+                        <div style="font-size:9px;color:#777">Range: ${cfg.min}–${cfg.max}${cfg.unit}</div>
+                      </div>
+                      <span style="font-size:10px;font-weight:700;color:${st.text}">${st.badge}</span>
+                    </div>
+                    <!-- Mini sparkline -->
+                    <div style="display:flex;align-items:flex-end;gap:2px;height:20px;margin-top:6px">
+                      ${trend.map(v => `<div style="flex:1;background:${st.text};border-radius:2px 2px 0 0;height:${Math.round((v/maxTrend)*100)}%;opacity:0.6;min-height:2px"></div>`).join('')}
+                    </div>
+                    <div style="font-size:9px;color:#999;margin-top:2px;text-align:right">7h trend</div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Alert summary for pond -->
+            ${Object.entries(THRESHOLDS).some(([p, cfg]) => {
+              const v = mockReading(pIdx, p);
+              return v < cfg.min || v > cfg.max;
+            }) ? `
+              <div style="margin:0 12px 12px;background:#FFEBEE;border-radius:8px;padding:10px;border-left:4px solid #C62828">
+                <div style="font-size:11px;font-weight:700;color:#C62828;margin-bottom:4px">⚠️ Action Required</div>
+                ${Object.entries(THRESHOLDS).filter(([p, cfg]) => {
+                  const v = mockReading(pIdx, p);
+                  return v < cfg.min || v > cfg.max;
+                }).map(([p, cfg]) => {
+                  const v = mockReading(pIdx, p);
+                  return `<div style="font-size:11px;color:#B71C1C">• ${cfg.label}: ${v}${cfg.unit} (${v < cfg.min ? 'below min '+cfg.min : 'above max '+cfg.max}${cfg.unit})</div>`;
+                }).join('')}
+              </div>
+            ` : `
+              <div style="margin:0 12px 12px;background:#E8F5E9;border-radius:8px;padding:8px;text-align:center;font-size:11px;color:#2E7D32;font-weight:600">✅ All parameters within optimal range</div>
+            `}
+          </div>
+        `).join('')}
+
+        <!-- Legend -->
+        <div style="background:#F5F5F5;border-radius:10px;padding:12px;margin-bottom:20px">
+          <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:6px">📡 Sensor Status Legend</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="font-size:11px">🟢 OK — within range</div>
+            <div style="font-size:11px">🟡 WARN — near limit</div>
+            <div style="font-size:11px">🔴 ALERT — out of range</div>
+          </div>
+          <div style="font-size:10px;color:#9E9E9E;margin-top:6px">Note: Showing simulated sensor data. Connect real IoT devices via Settings → Sensor Config</div>
+        </div>
+      </div>
+    `;
+  }
+
   // ADVISORY ENGINE
   function renderAdvisory() {
     const recs = advisoryData.recommendations || [];
@@ -353,8 +475,8 @@ export function renderAquaOS(container) {
       <div class="card" style="padding:12px;margin-bottom:10px">
         <div class="fw-700 text-sm" style="margin-bottom:8px">🔍 Filter + Save Search</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-          <input class="form-input" id="bfSpecies" placeholder="Species (shrimp, rohu…)" value="${buyerFilters.species}">
-          <input class="form-input" id="bfDistrict" placeholder="District" value="${buyerFilters.district}">
+          <input class="form-input" type="search" id="bfSpecies" aria-label="Filter by species" placeholder="Species (shrimp, rohu…)" value="${buyerFilters.species}">
+          <input class="form-input" id="bfDistrict" aria-label="Filter by district" placeholder="District" value="${buyerFilters.district}">
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
           <input class="form-input" type="number" id="bfMinQty" placeholder="Min qty (kg)" value="${buyerFilters.min_qty||''}">

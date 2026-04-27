@@ -1,11 +1,19 @@
 import { api } from '../api.js';
-import { showToast } from '../main.js';
+import { showToast, showModal, closeModal } from '../app-shell.js';
 import { t } from '../i18n.js';
 
 export function renderWeather(container) {
   let forecast = null, advisories = [], cropHealth = [], marketOutlook = {}, districts = [];
   let loading = true, selectedDistrict = '';
   let tab = 'forecast';
+
+  // Price Watchlist state
+  const WATCHLIST = [
+    { id:'w1', crop:'Paddy (Sona Masoori)', market:'Guntur', current:2180, target:2400, unit:'Qtl', alert:'above', icon:'🌾' },
+    { id:'w2', crop:'Cotton (DCH-32)', market:'Adilabad', current:6850, target:6500, unit:'Qtl', alert:'below', icon:'🪴' },
+    { id:'w3', crop:'Tomato', market:'Madanapalle', current:1420, target:2000, unit:'Qtl', alert:'above', icon:'🍅' },
+    { id:'w4', crop:'Chilli (Teja)', market:'Khammam', current:14500, target:16000, unit:'Qtl', alert:'above', icon:'🌶️' },
+  ];
 
   const SAMPLE_FORECAST = {
     location: { district: 'Guntur, AP' },
@@ -48,30 +56,45 @@ export function renderWeather(container) {
 
   function render() {
     container.innerHTML = loading ? '<div class="loading"><div class="spinner"></div></div>' : `
-      <div class="app-brand-header" style="padding:14px 16px 10px;background:linear-gradient(135deg,#2196F3 0%,#00BCD4 100%);color:#fff">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:28px">🌤️</span>
-          <div><div style="font-size:18px;font-weight:800;letter-spacing:-0.3px">Weather & Crop Health</div><div style="font-size:11px;opacity:0.85">IMD + Satellite Monitoring · District-level Intelligence</div></div>
+      <div class="hero-v2" style="background:linear-gradient(135deg,#2196F3 0%,#00BCD4 100%);color:#fff" role="banner">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="hero-avatar" aria-hidden="true">🌤️</div>
+          <div style="flex:1">
+            <h1 style="font-weight:800;font-size:18px;margin:0;color:white">Weather & Crop Health</h1>
+            <div style="font-size:11px;opacity:0.85;color:white">IMD + Satellite · District Intelligence</div>
+          </div>
         </div>
       </div>
-      <div style="padding:8px 16px">
-        <select class="form-input" id="districtSelect" style="margin-bottom:8px">
+      <div class="sticky-search" role="search">
+        <input class="search-input-v2" id="weatherSearch" type="search" placeholder="Search district or crop…" aria-label="Search weather" autocomplete="off" enterkeyhint="search">
+      </div>
+      <div style="padding:4px 16px 8px">
+        <select class="form-input" id="districtSelect" aria-label="Select district" style="margin-bottom:4px">
           <option value="">All Districts</option>
           ${districts.map(d => `<option value="${d.id}" ${selectedDistrict == d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
         </select>
       </div>
-      <div class="tab-bar">
-        <button class="tab-btn ${tab === 'forecast' ? 'active' : ''}" data-tab="forecast">🌤️ Forecast</button>
-        <button class="tab-btn ${tab === 'crop' ? 'active' : ''}" data-tab="crop">🌱 Crop Health</button>
-        <button class="tab-btn ${tab === 'market' ? 'active' : ''}" data-tab="market">📊 Market</button>
+      <div class="tab-bar" role="tablist">
+        <button role="tab" aria-selected="${tab === 'forecast'}" class="tab-btn ${tab === 'forecast' ? 'active' : ''}" data-tab="forecast">🌤️ Forecast</button>
+        <button role="tab" aria-selected="${tab === 'crop'}" class="tab-btn ${tab === 'crop' ? 'active' : ''}" data-tab="crop">🌱 Crop Health</button>
+        <button role="tab" aria-selected="${tab === 'advisory'}" class="tab-btn ${tab === 'advisory' ? 'active' : ''}" data-tab="advisory">🧑‍🌾 Advisory</button>
+        <button role="tab" aria-selected="${tab === 'market'}" class="tab-btn ${tab === 'market' ? 'active' : ''}" data-tab="market">📊 Market</button>
+        <button role="tab" aria-selected="${tab === 'watchlist'}" class="tab-btn ${tab === 'watchlist' ? 'active' : ''}" data-tab="watchlist">🔔 Watchlist</button>
       </div>
-      ${tab === 'forecast' ? renderForecast() : tab === 'crop' ? renderCropHealth() : renderMarketOutlook()}
+      ${tab === 'forecast' ? renderForecast() : tab === 'crop' ? renderCropHealth() : tab === 'advisory' ? renderCropAdvisory() : tab === 'watchlist' ? renderWatchlist() : renderMarketOutlook()}
     `;
     container.querySelector('#districtSelect')?.addEventListener('change', e => {
       selectedDistrict = e.target.value;
       loadData();
     });
     container.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; render(); }));
+    container.querySelector('#addWatchBtn')?.addEventListener('click', showAddWatch);
+    container.querySelector('#addWatchBtn2')?.addEventListener('click', showAddWatch);
+    container.querySelectorAll('.del-watch-btn').forEach(b => b.addEventListener('click', () => {
+      const idx = WATCHLIST.findIndex(w => w.id === b.dataset.wid);
+      if (idx > -1) WATCHLIST.splice(idx, 1);
+      render();
+    }));
   }
 
   function renderForecast() {
@@ -154,6 +177,204 @@ export function renderWeather(container) {
         <div class="text-sm text-muted" style="margin-top:4px">Crop health is monitored using NDVI from satellite imagery, soil moisture sensors, and weather correlation analysis.</div>
       </div>
     </div>`;
+  }
+
+  function renderCropAdvisory() {
+    const curr = forecast?.current || {};
+    const temp = curr.temperature || curr.temp || 30;
+    const rain = curr.rain_chance_pct || curr.rain_chance || 20;
+    const humidity = curr.humidity || 65;
+    const month = new Date().getMonth() + 1; // 1-12
+
+    // Season detection
+    const isMonsoon = month >= 6 && month <= 9;
+    const isRabi = month >= 10 || month <= 2;
+    const isKharif = month >= 3 && month <= 5;
+    const season = isMonsoon ? 'Kharif (Monsoon)' : isRabi ? 'Rabi (Winter)' : 'Zaid (Summer)';
+
+    // Crop recommendations based on conditions
+    const CROP_ADVISORY = [
+      {
+        crop: 'Paddy (BPT 5204)', icon: '🌾', season: 'kharif',
+        ideal_temp: [22, 35], ideal_rain: [70, 100], ideal_humidity: [60, 85],
+        suitable: isMonsoon && temp >= 22 && temp <= 35,
+        tips: 'Transplant 21-25 day old seedlings. Maintain 2-5cm water depth. Apply basal fertilizer before transplanting.'
+      },
+      {
+        crop: 'Wheat', icon: '🌿', season: 'rabi',
+        ideal_temp: [15, 25], ideal_rain: [20, 40], ideal_humidity: [40, 65],
+        suitable: isRabi && temp >= 15 && temp <= 25,
+        tips: 'Sow after October 15. Apply irrigation at crown root initiation stage. Recommended dose: 120-60-40 kg NPK/ha.'
+      },
+      {
+        crop: 'Cotton', icon: '☁️', season: 'kharif',
+        ideal_temp: [25, 38], ideal_rain: [30, 60], ideal_humidity: [40, 75],
+        suitable: (isMonsoon || isKharif) && temp >= 25 && temp <= 38,
+        tips: 'Sow May–July depending on rains. Deep drilled rows 90-120cm apart. Watch for bollworm after 30 DAS.'
+      },
+      {
+        crop: 'Groundnut', icon: '🥜', season: 'kharif/rabi',
+        ideal_temp: [25, 32], ideal_rain: [40, 60], ideal_humidity: [50, 75],
+        suitable: temp >= 25 && temp <= 32,
+        tips: 'Pod-bearing requires calcium. Apply gypsum at pegging. Avoid water-logging during last 30 days.'
+      },
+      {
+        crop: 'Tomato', icon: '🍅', season: 'all',
+        ideal_temp: [20, 30], ideal_rain: [20, 40], ideal_humidity: [55, 75],
+        suitable: temp >= 20 && temp <= 30 && humidity >= 55,
+        tips: 'High-value crop needing consistent moisture. Stake plants at 30 DAS. Watch for early blight in humid weather.'
+      },
+      {
+        crop: 'Maize', icon: '🌽', season: 'kharif/rabi',
+        ideal_temp: [21, 33], ideal_rain: [40, 70], ideal_humidity: [50, 80],
+        suitable: temp >= 21 && temp <= 33,
+        tips: 'Apply top dressing urea at knee-high stage. Maintain 60-75cm row spacing for mechanized harvest.'
+      },
+      {
+        crop: 'Onion', icon: '🧅', season: 'rabi',
+        ideal_temp: [13, 24], ideal_rain: [20, 30], ideal_humidity: [40, 65],
+        suitable: isRabi && temp >= 13 && temp <= 24,
+        tips: 'Stop irrigation 10 days before harvest for better storability. Harvest when tops fall over naturally.'
+      },
+      {
+        crop: 'Chilli', icon: '🌶️', season: 'rabi',
+        ideal_temp: [20, 30], ideal_rain: [25, 45], ideal_humidity: [50, 70],
+        suitable: (isRabi || isKharif) && temp >= 20 && temp <= 30,
+        tips: 'Thrips-sensitive. Install yellow sticky traps. Avoid over-irrigation which causes root rot.'
+      },
+    ];
+
+    const suitableCrops = CROP_ADVISORY.filter(c => c.suitable);
+    const partialCrops = CROP_ADVISORY.filter(c => !c.suitable);
+
+    return `<div class="section" style="padding-top:8px">
+      <!-- Current conditions summary -->
+      <div style="background:linear-gradient(135deg,#1B5E20,#2E7D32);border-radius:12px;padding:14px;margin-bottom:14px;color:white">
+        <div style="font-weight:700;font-size:14px;margin-bottom:8px">🧑‍🌾 Weather-Crop Advisory Engine</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div style="text-align:center;background:rgba(255,255,255,0.15);border-radius:8px;padding:8px">
+            <div style="font-size:18px;font-weight:800">${temp}°C</div>
+            <div style="font-size:10px;opacity:0.8">Temperature</div>
+          </div>
+          <div style="text-align:center;background:rgba(255,255,255,0.15);border-radius:8px;padding:8px">
+            <div style="font-size:18px;font-weight:800">${humidity}%</div>
+            <div style="font-size:10px;opacity:0.8">Humidity</div>
+          </div>
+          <div style="text-align:center;background:rgba(255,255,255,0.15);border-radius:8px;padding:8px">
+            <div style="font-size:18px;font-weight:800">${rain}%</div>
+            <div style="font-size:10px;opacity:0.8">Rain Chance</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.15);border-radius:8px;padding:8px;font-size:12px">
+          <strong>🗓️ Current Season:</strong> ${season} · Month: ${new Date().toLocaleString('default',{month:'long'})}
+        </div>
+      </div>
+
+      <!-- Recommended crops -->
+      <div style="font-weight:700;color:#2E7D32;font-size:14px;margin-bottom:8px">✅ Ideal to Plant Now (${suitableCrops.length})</div>
+      ${suitableCrops.length === 0 ? `
+        <div style="background:#F5F5F5;border-radius:10px;padding:14px;text-align:center;margin-bottom:12px">
+          <div style="font-size:11px;color:#757575">No optimal crops for current conditions. Check back as conditions change.</div>
+        </div>
+      ` : suitableCrops.map(c => `
+        <div style="background:white;border-radius:12px;margin-bottom:8px;box-shadow:0 2px 6px rgba(0,0,0,0.07);overflow:hidden">
+          <div style="height:3px;background:#2E7D32"></div>
+          <div style="padding:12px 14px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+              <span style="font-size:28px">${c.icon}</span>
+              <div>
+                <div style="font-weight:700;font-size:14px">${c.crop}</div>
+                <div style="font-size:11px;color:#2E7D32;font-weight:600">✅ Conditions favourable</div>
+              </div>
+              <span style="margin-left:auto;background:#E8F5E9;color:#2E7D32;padding:3px 8px;border-radius:8px;font-size:10px;font-weight:700">PLANT NOW</span>
+            </div>
+            <div style="background:#F1F8E9;border-radius:8px;padding:8px;font-size:11px;color:#33691E;line-height:1.6">
+              💡 ${c.tips}
+            </div>
+            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+              <span style="background:#F5F5F5;padding:3px 8px;border-radius:8px;font-size:10px">Ideal Temp: ${c.ideal_temp[0]}–${c.ideal_temp[1]}°C</span>
+              <span style="background:#F5F5F5;padding:3px 8px;border-radius:8px;font-size:10px">Rain Need: ${c.ideal_rain[0]}–${c.ideal_rain[1]}mm</span>
+              <span style="background:#F5F5F5;padding:3px 8px;border-radius:8px;font-size:10px">Season: ${c.season}</span>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+
+      <!-- Other crops (sub-optimal) -->
+      <div style="font-weight:700;color:#757575;font-size:13px;margin:12px 0 8px">⚠️ Possible with irrigation (${partialCrops.length})</div>
+      ${partialCrops.map(c => `
+        <div style="background:white;border-radius:12px;margin-bottom:6px;padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.05)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:20px">${c.icon}</span>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:12px">${c.crop}</div>
+              <div style="font-size:10px;color:#E65100">⚠️ Conditions not ideal — requires extra irrigation/protection</div>
+            </div>
+            <span style="font-size:10px;background:#FFF3E0;color:#E65100;padding:2px 8px;border-radius:8px">Marginal</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  function renderWatchlist() {
+    return `<div class="section" style="padding-top:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div>
+          <div class="section-title" style="margin-bottom:2px">🔔 Price Alert Watchlist</div>
+          <div style="font-size:11px;color:var(--text3,#9E9E9E)">Get alerted when market price reaches your target</div>
+        </div>
+        <button id="addWatchBtn" style="background:#1565C0;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">+ Add Alert</button>
+      </div>
+      ${WATCHLIST.map(w => {
+        const triggered = w.alert === 'above' ? w.current >= w.target : w.current <= w.target;
+        const pct = Math.round(Math.abs(w.current - w.target) / w.target * 100);
+        return `<div style="background:${triggered?'#E8F5E9':'var(--card,white)'};border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.07);border-left:4px solid ${triggered?'#2E7D32':'#90CAF9'}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:700;font-size:13px">${w.icon} ${w.crop}</div>
+            ${triggered?`<span style="background:#2E7D32;color:white;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700">🔔 Alert Triggered!</span>`:`<span style="background:#E3F2FD;color:#1565C0;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:600">${pct}% away</span>`}
+          </div>
+          <div style="font-size:11px;color:var(--text3,#757575);margin-bottom:8px">📍 ${w.market} APMC</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+            <div style="background:#F5F5F5;border-radius:8px;padding:6px">
+              <div style="font-size:11px;color:#757575">Current</div>
+              <div style="font-weight:800;font-size:14px;color:#333">₹${w.current.toLocaleString()}</div>
+            </div>
+            <div style="background:#F5F5F5;border-radius:8px;padding:6px">
+              <div style="font-size:11px;color:#757575">Target</div>
+              <div style="font-weight:800;font-size:14px;color:#1565C0">₹${w.target.toLocaleString()}</div>
+            </div>
+            <div style="background:#F5F5F5;border-radius:8px;padding:6px">
+              <div style="font-size:11px;color:#757575">Alert</div>
+              <div style="font-weight:700;font-size:12px;color:${w.alert==='above'?'#2E7D32':'#C62828'}">${w.alert==='above'?'📈 ≥ target':'📉 ≤ target'}</div>
+            </div>
+          </div>
+          <button data-wid="${w.id}" class="del-watch-btn" style="margin-top:8px;background:transparent;border:1px solid #BDBDBD;border-radius:6px;padding:4px 10px;font-size:10px;color:#757575;cursor:pointer;float:right">Remove</button>
+        </div>`;
+      }).join('')}
+      ${WATCHLIST.length === 0 ? `<div class="empty-state"><div class="es-icon">🔔</div><div class="es-title">No watchlist alerts</div><div class="es-text">Add crop price alerts to get notified when market prices hit your targets</div><button id="addWatchBtn2" class="btn btn-primary btn-small mt">+ Add First Alert</button></div>` : ''}
+    </div>`;
+  }
+
+  function showAddWatch() {
+    showModal(`<div class="modal-handle"></div>
+      <h3>Add Price Alert</h3>
+      <div class="form-group"><label>Crop</label><input class="form-input" id="wCrop" placeholder="e.g. Paddy, Cotton, Tomato"></div>
+      <div class="form-group"><label>Market (APMC)</label><input class="form-input" id="wMarket" placeholder="e.g. Guntur, Adilabad"></div>
+      <div class="form-group"><label>Target Price (₹/Qtl)</label><input class="form-input" id="wTarget" type="number" placeholder="e.g. 2400"></div>
+      <div class="form-group"><label>Alert When Price Is</label>
+        <select class="form-input" id="wAlert"><option value="above">📈 Above target (sell time)</option><option value="below">📉 Below target (buy time)</option></select>
+      </div>
+      <button class="btn btn-primary" id="submitWatch">Set Alert</button>`);
+    document.querySelector('#submitWatch')?.addEventListener('click', () => {
+      const crop = document.querySelector('#wCrop')?.value?.trim();
+      const market = document.querySelector('#wMarket')?.value?.trim();
+      const target = Number(document.querySelector('#wTarget')?.value);
+      if (!crop || !market || !target) { showToast('Fill all fields', 'error'); return; }
+      WATCHLIST.push({ id:'w'+Date.now(), crop, market, current:0, target, unit:'Qtl', alert:document.querySelector('#wAlert')?.value||'above', icon:'🌾' });
+      showToast('Price alert added!', 'success');
+      closeModal(); tab = 'watchlist'; render();
+    });
   }
 
   function renderMarketOutlook() {

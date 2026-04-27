@@ -3,7 +3,7 @@
  * Usage: import { showReviewModal, renderReviewSummary, renderReviewsList } from '../reviews.js';
  */
 import { api } from './api.js';
-import { showModal, closeModal, showToast } from './main.js';
+import { showModal, closeModal, showToast } from './app-shell.js';
 import { t } from './i18n.js';
 
 // ─── Show Review Submission Modal ──────────────────────────────────────────

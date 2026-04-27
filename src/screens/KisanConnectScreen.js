@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { showToast, showModal, closeModal, navigate } from '../main.js';
+import { showToast, showModal, closeModal, navigate } from '../app-shell.js';
 import { getRole, getState } from '../store.js';
 import { t } from '../i18n.js';
 import { showCheckout } from '../payments.js';
@@ -46,7 +46,7 @@ export function renderKisan(container) {
 
   function render() {
     container.innerHTML = `
-      <div style="background:linear-gradient(135deg,#E65100,#BF360C);color:white;padding:14px 16px 12px">
+      <div class="hero-v2" role="banner" style="background:linear-gradient(135deg,#E65100,#BF360C);color:white">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:28px">🚜</span>
           <div style="flex:1">
@@ -56,10 +56,11 @@ export function renderKisan(container) {
         </div>
       </div>
 
-      <div class="mode-toggle-bar" style="display:flex;margin:10px 14px 6px;background:#F5F5F5;border-radius:12px;padding:3px;border:1px solid #E0E0E0">
-        <button data-kmode="rent" style="flex:1;padding:9px 4px;border-radius:10px;font-size:12px;font-weight:700;border:none;cursor:pointer;${mode==='rent'?'background:#0277BD;color:white;box-shadow:0 2px 8px rgba(2,119,189,0.3)':'background:transparent;color:#757575'}">🔑 Rent</button>
-        <button data-kmode="buy" style="flex:1;padding:9px 4px;border-radius:10px;font-size:12px;font-weight:700;border:none;cursor:pointer;${mode==='buy'?'background:#2E7D32;color:white;box-shadow:0 2px 8px rgba(46,125,50,0.3)':'background:transparent;color:#757575'}">💰 Buy</button>
-        <button data-kmode="sell" style="flex:1;padding:9px 4px;border-radius:10px;font-size:12px;font-weight:700;border:none;cursor:pointer;${mode==='sell'?'background:#E65100;color:white;box-shadow:0 2px 8px rgba(230,81,0,0.3)':'background:transparent;color:#757575'}">🏷️ Sell / List</button>
+      <div class="mode-toggle-bar" role="tablist" aria-label="Browse mode" style="display:flex;margin:10px 14px 6px;background:#F5F5F5;border-radius:12px;padding:3px;border:1px solid #E0E0E0">
+        <button role="tab" aria-selected="${mode==='rent'}" data-kmode="rent" style="flex:1;padding:9px 4px;border-radius:10px;font-size:11px;font-weight:700;border:none;cursor:pointer;${mode==='rent'?'background:#0277BD;color:white;box-shadow:0 2px 8px rgba(2,119,189,0.3)':'background:transparent;color:#757575'}">🔑 Rent</button>
+        <button role="tab" aria-selected="${mode==='buy'}" data-kmode="buy" style="flex:1;padding:9px 4px;border-radius:10px;font-size:11px;font-weight:700;border:none;cursor:pointer;${mode==='buy'?'background:#2E7D32;color:white;box-shadow:0 2px 8px rgba(46,125,50,0.3)':'background:transparent;color:#757575'}">💰 Buy</button>
+        <button role="tab" aria-selected="${mode==='sell'}" data-kmode="sell" style="flex:1;padding:9px 4px;border-radius:10px;font-size:11px;font-weight:700;border:none;cursor:pointer;${mode==='sell'?'background:#E65100;color:white;box-shadow:0 2px 8px rgba(230,81,0,0.3)':'background:transparent;color:#757575'}">🏷️ List</button>
+        <button role="tab" aria-selected="${mode==='services'}" data-kmode="services" style="flex:1;padding:9px 4px;border-radius:10px;font-size:11px;font-weight:700;border:none;cursor:pointer;${mode==='services'?'background:#6A1B9A;color:white;box-shadow:0 2px 8px rgba(106,27,154,0.3)':'background:transparent;color:#757575'}">🔧 Services</button>
       </div>
 
       <div style="padding:0 14px 80px">
@@ -71,8 +72,62 @@ export function renderKisan(container) {
 
   function renderContent() {
     if (mode === 'sell') return renderSellMode();
+    if (mode === 'services') return renderServicesMode();
     return renderBrowseMode();
   }
+
+  const AGRI_SERVICES = [
+    { id:'sv1', type:'spraying', icon:'💊', name:'Crop Spraying Service', provider:'Ravi Agri Services', location:'Guntur, AP', rate:'₹400/acre', min_acres:1, rating:4.7, reviews:89, tags:['Pesticide','Fungicide','Foliar spray'], avail:'Available Mon-Sat', phone:'9876543210' },
+    { id:'sv2', type:'plowing', icon:'🚜', name:'Custom Plowing (Rotavator)', provider:'Vinod Farm Works', location:'Krishna, AP', rate:'₹800/acre', min_acres:2, rating:4.8, reviews:134, tags:['Land preparation','Rotavator','Power tiller'], avail:'Available now', phone:'9988776655' },
+    { id:'sv3', type:'harvesting', icon:'🌾', name:'Paddy Combine Harvesting', provider:'Sri Lakshmi Harvesting', location:'West Godavari, AP', rate:'₹1,200/acre', min_acres:3, rating:4.9, reviews:212, tags:['Paddy','Combine','Threshing'], avail:'Oct–Jan season', phone:'9112233445' },
+    { id:'sv4', type:'soil_testing', icon:'🔬', name:'Soil Testing & Advisory', provider:'AgriLab Solutions', location:'Hyderabad, TS', rate:'₹250/sample', min_acres:null, rating:4.6, reviews:67, tags:['NPK','Micronutrients','Report in 3 days'], avail:'Walk-in or home collection', phone:'9001234567' },
+    { id:'sv5', type:'consultancy', icon:'👨‍🌾', name:'Farm Consultancy Visit', provider:'Dr. KR Reddy', location:'Nellore, AP', rate:'₹500/visit', min_acres:null, rating:5.0, reviews:44, tags:['Expert visit','Crop plan','Soil health'], avail:'Weekends only', phone:'9234567890' },
+    { id:'sv6', type:'transplanting', icon:'🌱', name:'Paddy Transplanting', provider:'Sai Labour Group', location:'Guntur, AP', rate:'₹1,500/acre', min_acres:1, rating:4.5, reviews:78, tags:['Labour','Transplanting','Paddy'], avail:'June–July only', phone:'9876512345' },
+    { id:'sv7', type:'drone', icon:'🚁', name:'Drone Spraying Service', provider:'AgroAir Drones', location:'Vijayawada, AP', rate:'₹600/acre', min_acres:5, rating:4.8, reviews:52, tags:['Drone','Precision','GPS mapping'], avail:'Available now', phone:'9445566778' },
+    { id:'sv8', type:'storage', icon:'🏪', name:'Cold Storage Facility', provider:'CoolAgro Logistics', location:'Madanapalle, AP', rate:'₹12/quintal/day', min_acres:null, rating:4.4, reviews:31, tags:['Cold chain','Vegetables','Flowers'], avail:'Year round', phone:'9558899001' },
+  ];
+  const SVC_CATS = ['All','Spraying','Plowing','Harvesting','Soil Testing','Consultancy','Drone','Storage'];
+  let svcCat = 'All';
+
+  function renderServicesMode() {
+    const filtered = svcCat === 'All' ? AGRI_SERVICES : AGRI_SERVICES.filter(s => s.type.toLowerCase().includes(svcCat.toLowerCase()) || s.name.toLowerCase().includes(svcCat.toLowerCase()));
+    return `
+      <div style="margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3,#9E9E9E);text-transform:uppercase;margin-bottom:8px">Filter by Service</div>
+        <div style="overflow-x:auto;white-space:nowrap;margin:-2px -2px 4px">
+          ${SVC_CATS.map(c=>`<button data-svc="${c}" style="display:inline-block;padding:6px 12px;border-radius:20px;border:none;font-size:11px;font-weight:600;cursor:pointer;margin:2px;${svcCat===c?'background:#6A1B9A;color:white':'background:#EDE7F6;color:#6A1B9A'}">${c}</button>`).join('')}
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:12px;color:var(--text3,#9E9E9E)">${filtered.length} services available</div>
+        <button id="offerServiceBtn" style="background:#6A1B9A;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">+ Offer Service</button>
+      </div>
+      ${filtered.map(sv => `
+        <div style="background:var(--card,white);border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.07)">
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:44px;height:44px;border-radius:10px;background:#EDE7F6;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${sv.icon}</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:13px">${sv.name}</div>
+              <div style="font-size:11px;color:var(--text3,#757575);margin-top:2px">📍 ${sv.provider} · ${sv.location}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">
+                ${sv.tags.map(tag=>`<span style="background:#F3E5F5;color:#6A1B9A;border-radius:8px;padding:2px 7px;font-size:9px;font-weight:600">${tag}</span>`).join('')}
+              </div>
+              <div style="display:flex;gap:14px;margin-top:8px;align-items:center">
+                <span style="font-size:13px;font-weight:800;color:#2E7D32">${sv.rate}</span>
+                <span style="font-size:11px;color:var(--text3,#9E9E9E)">⭐ ${sv.rating} (${sv.reviews} reviews)</span>
+              </div>
+              <div style="font-size:10px;color:#1565C0;margin-top:4px">🕐 ${sv.avail}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <a href="tel:+91${sv.phone}" style="flex:1;background:#E8F5E9;color:#2E7D32;text-align:center;padding:8px;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none">📞 Call</a>
+            <button data-svid="${sv.id}" class="book-svc-btn" style="flex:2;background:#6A1B9A;color:white;border:none;border-radius:8px;padding:8px;font-size:11px;font-weight:700;cursor:pointer">Book Service</button>
+          </div>
+        </div>
+      `).join('')}
+    `;
+  }
+
 
   function renderBrowseMode() {
     const isRent = mode === 'rent';
@@ -107,7 +162,7 @@ export function renderKisan(container) {
 
       <div style="display:flex;align-items:center;background:white;border:1px solid #E0E0E0;border-radius:10px;padding:8px 12px;margin-bottom:8px">
         <span style="margin-right:8px">🔍</span>
-        <input id="eqSearch" type="text" placeholder="Search tractor, harvester, location…" value="${eqSearch}" style="border:none;outline:none;flex:1;font-size:13px;background:transparent">
+        <input id="eqSearch" type="search" aria-label="Search equipment" placeholder="Search tractor, harvester, location…" aria-label="Search tractor, harvester, location…" value="${eqSearch}" style="border:none;outline:none;flex:1;font-size:13px;background:transparent">
       </div>
 
       <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px">
@@ -164,7 +219,20 @@ export function renderKisan(container) {
             </div>
           </div>
           ${e.description?`<div style="font-size:11px;color:#757575;margin-top:8px;line-height:1.5">${e.description.slice(0,120)}${e.description.length>120?'…':''}</div>`:''}
-          <div style="display:flex;gap:6px;margin-top:10px">
+          ${e.condition_report && Object.keys(e.condition_report).length > 0 ? (() => {
+            const cr = e.condition_report;
+            const goodCount = Object.values(cr).filter(v=>v==='good').length;
+            const total = Object.values(cr).filter(v=>v!=='not_checked').length;
+            const pct = total ? Math.round((goodCount/total)*100) : 0;
+            const color = pct >= 80 ? '#2E7D32' : pct >= 50 ? '#E65100' : '#C62828';
+            const label = pct >= 80 ? 'Good Condition' : pct >= 50 ? 'Fair Condition' : 'Needs Attention';
+            return `<div style="margin-top:6px;display:flex;align-items:center;gap:6px">
+              <div style="flex:1;background:#E0E0E0;border-radius:4px;height:6px;overflow:hidden">
+                <div style="background:${color};height:100%;width:${pct}%;border-radius:4px"></div>
+              </div>
+              <span style="font-size:10px;color:${color};font-weight:600">${label} (${pct}%)</span>
+            </div>`;
+          })() : ''}          <div style="display:flex;gap:6px;margin-top:10px">
             ${mode==='rent'&&isRent&&e.status==='available'?`<button class="book-btn" data-id="${e.id}" style="flex:1;padding:9px;background:#0277BD;color:white;border:none;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer">📅 Book Now</button>`:''}
             ${mode==='buy'&&isSale?`<button class="contact-buy-btn" data-id="${e.id}" style="flex:1;padding:9px;background:#2E7D32;color:white;border:none;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer">� Contact Seller</button>`:''}
             <button class="review-eq-btn" data-id="${e.id}" data-name="${e.name}" style="padding:9px 10px;background:#FFF8E1;color:#F9A825;border:none;border-radius:8px;font-size:12px;cursor:pointer">⭐</button>
@@ -175,6 +243,16 @@ export function renderKisan(container) {
   }
 
   function showListEquipment() {
+    const CHECKLIST = [
+      { id:'engine', label:'Engine/Motor', icon:'⚙️' },
+      { id:'tyres', label:'Tyres/Tracks', icon:'🔲' },
+      { id:'hydraulics', label:'Hydraulics', icon:'💧' },
+      { id:'battery', label:'Battery/Electrical', icon:'🔋' },
+      { id:'body', label:'Body/Structure', icon:'🏗️' },
+      { id:'brakes', label:'Brakes', icon:'🛑' },
+      { id:'cabin', label:'Cabin/Seat', icon:'🪑' },
+      { id:'attachments', label:'Attachments/Implements', icon:'🔧' },
+    ];
     showModal(`
       <div class="modal-handle"></div><h3>🚜 List Equipment</h3>
       <div class="form-group"><label>Name *</label><input class="form-input" id="eqName" placeholder="e.g. John Deere 5310"></div>
@@ -184,14 +262,76 @@ export function renderKisan(container) {
       <div class="form-group"><label>Sale Price (₹)</label><input class="form-input" type="number" id="eqPrice" placeholder="450000"></div>
       <div class="form-group"><label>Year</label><input class="form-input" type="number" id="eqYear" placeholder="2021"></div>
       <div class="form-group"><label>Location</label><input class="form-input" id="eqLoc" placeholder="Guntur, AP"></div>
-      <div class="form-group"><label>Description</label><textarea class="form-input" id="eqDesc" rows="2"></textarea></div>
+      <div class="form-group"><label>Brand / Model</label><input class="form-input" id="eqBrand" placeholder="e.g. Mahindra 475 DI"></div>
+      <div class="form-group"><label>Total Hours Used</label><input class="form-input" type="number" id="eqHours" placeholder="e.g. 1200"></div>
+
+      <!-- Condition Checklist -->
+      <div style="margin-bottom:12px">
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px">🔍 Condition Checklist</div>
+        <div style="font-size:11px;color:#757575;margin-bottom:8px">Rate each component to build trust with renters/buyers</div>
+        <div id="conditionChecklist">
+          ${CHECKLIST.map(item => `
+            <div style="display:flex;align-items:center;gap:8px;padding:8px;background:#F8F9FA;border-radius:8px;margin-bottom:4px">
+              <span style="font-size:16px">${item.icon}</span>
+              <span style="flex:1;font-size:12px;font-weight:600">${item.label}</span>
+              <div style="display:flex;gap:4px">
+                <label style="cursor:pointer"><input type="radio" name="cond_${item.id}" value="good" class="cond-radio sr-only"> <span class="cond-opt" data-item="${item.id}" data-val="good" style="padding:3px 7px;border-radius:6px;font-size:10px;font-weight:700;background:#E8F5E9;color:#2E7D32;cursor:pointer">✓ Good</span></label>
+                <label style="cursor:pointer"><input type="radio" name="cond_${item.id}" value="fair" class="cond-radio sr-only"> <span class="cond-opt" data-item="${item.id}" data-val="fair" style="padding:3px 7px;border-radius:6px;font-size:10px;font-weight:700;background:#FFF3E0;color:#E65100;cursor:pointer">~ Fair</span></label>
+                <label style="cursor:pointer"><input type="radio" name="cond_${item.id}" value="needs_repair" class="cond-radio sr-only"> <span class="cond-opt" data-item="${item.id}" data-val="needs_repair" style="padding:3px 7px;border-radius:6px;font-size:10px;font-weight:700;background:#FFEBEE;color:#C62828;cursor:pointer">✗ Repair</span></label>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="form-group"><label>Description</label><textarea class="form-input" id="eqDesc" rows="2" placeholder="Engine specs, usage history, included accessories…"></textarea></div>
       <button id="submitEq" style="width:100%;padding:12px;background:#E65100;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">List Equipment</button>
     `);
+
+    // Highlight selected condition options
+    document.querySelectorAll('.cond-radio').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        const item = e.target.closest('[id^="conditionChecklist"]')?.querySelectorAll(`[name="${e.target.name}"]`) ||
+                     document.querySelectorAll(`[name="${e.target.name}"]`);
+        document.querySelectorAll(`.cond-opt[data-item="${e.target.name.replace('cond_','')}"]`).forEach(opt => {
+          const colors = {good:'#E8F5E9 / #2E7D32', fair:'#FFF3E0 / #E65100', needs_repair:'#FFEBEE / #C62828'};
+          const isSelected = opt.dataset.val === e.target.value;
+          const style = {good:{bg:'#2E7D32',fg:'white'}, fair:{bg:'#E65100',fg:'white'}, needs_repair:{bg:'#C62828',fg:'white'}};
+          if (isSelected) {
+            const s = style[opt.dataset.val];
+            opt.style.background = s.bg; opt.style.color = s.fg;
+          } else {
+            const defaults = {good:{bg:'#E8F5E9',fg:'#2E7D32'}, fair:{bg:'#FFF3E0',fg:'#E65100'}, needs_repair:{bg:'#FFEBEE',fg:'#C62828'}};
+            const d = defaults[opt.dataset.val];
+            opt.style.background = d.bg; opt.style.color = d.fg;
+          }
+        });
+      });
+    });
+
     document.querySelector('#submitEq')?.addEventListener('click', async () => {
       const name = document.querySelector('#eqName')?.value?.trim();
       if (!name) return showToast('Name required','error');
+      // Collect condition ratings
+      const conditionReport = {};
+      CHECKLIST.forEach(item => {
+        const selected = document.querySelector(`input[name="cond_${item.id}"]:checked`);
+        conditionReport[item.id] = selected?.value || 'not_checked';
+      });
       try {
-        await api.createEquipment({ name, equipment_type:document.querySelector('#eqTypeS').value, listing_type:document.querySelector('#eqLT').value, daily_rate:Number(document.querySelector('#eqRate').value)||null, sale_price:Number(document.querySelector('#eqPrice').value)||null, year_of_manufacture:Number(document.querySelector('#eqYear').value)||null, location_label:document.querySelector('#eqLoc').value, description:document.querySelector('#eqDesc').value });
+        await api.createEquipment({
+          name,
+          equipment_type: document.querySelector('#eqTypeS').value,
+          listing_type: document.querySelector('#eqLT').value,
+          daily_rate: Number(document.querySelector('#eqRate').value)||null,
+          sale_price: Number(document.querySelector('#eqPrice').value)||null,
+          year_of_manufacture: Number(document.querySelector('#eqYear').value)||null,
+          location_label: document.querySelector('#eqLoc').value,
+          brand: document.querySelector('#eqBrand')?.value || '',
+          hours_used: Number(document.querySelector('#eqHours')?.value)||null,
+          description: document.querySelector('#eqDesc').value,
+          condition_report: conditionReport,
+        });
         showToast('Listed!','success'); closeModal(); loadData();
       } catch(e) { showToast(e.message,'error'); }
     });
@@ -200,15 +340,130 @@ export function renderKisan(container) {
   function showBookingModal(id) {
     const e = equipment.find(x=>x.id==id);
     if (!e) return;
-    showModal(`<div class="modal-handle"></div><h3>📅 Book — ${e.name}</h3>
-      <div style="background:#E3F2FD;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px">${e.equipment_type?.replace('_',' ')} · ${e.location_label} · ₹${Number(e.daily_rate||0).toLocaleString()}/day${e.operator_included?' · +Operator':''}</div>
-      <div class="form-group"><label>Start</label><input class="form-input" type="date" id="bkS"></div>
-      <div class="form-group"><label>End</label><input class="form-input" type="date" id="bkE"></div>
-      <div class="form-group"><label>Notes</label><textarea class="form-input" id="bkN" rows="2" placeholder="Purpose, location…"></textarea></div>
-      <button id="submitBk" style="width:100%;padding:12px;background:#0277BD;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Confirm Booking</button>`);
+
+    const now = new Date();
+    let calYear = now.getFullYear(), calMonth = now.getMonth() + 1;
+    let bookedDates = new Set();
+    let startDate = '', endDate = '';
+
+    function renderCalendar() {
+      const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+      const firstDow = new Date(calYear, calMonth - 1, 1).getDay();
+      const monthName = new Date(calYear, calMonth - 1, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+      const today = now.toISOString().split('T')[0];
+      let cells = '';
+      for (let i = 0; i < firstDow; i++) cells += `<div></div>`;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const isBooked = bookedDates.has(dateStr);
+        const isPast = dateStr < today;
+        const isStart = dateStr === startDate;
+        const isEnd = dateStr === endDate;
+        const inRange = startDate && endDate && dateStr > startDate && dateStr < endDate;
+        let bg = '#F5F5F5', color = '#424242', cursor = 'pointer';
+        if (isPast) { bg = '#FAFAFA'; color = '#BDBDBD'; cursor = 'not-allowed'; }
+        else if (isBooked) { bg = '#FFEBEE'; color = '#C62828'; cursor = 'not-allowed'; }
+        else if (isStart || isEnd) { bg = '#0277BD'; color = 'white'; }
+        else if (inRange) { bg = '#E3F2FD'; color = '#0277BD'; }
+        cells += `<div data-date="${dateStr}" style="text-align:center;padding:6px 2px;border-radius:6px;background:${bg};color:${color};cursor:${cursor};font-size:11px;font-weight:${isStart||isEnd?'700':'400'}">${d}</div>`;
+      }
+      const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+      const daysHeader = days.map(d=>`<div style="text-align:center;font-size:10px;color:#9E9E9E;padding:4px 0;font-weight:600">${d}</div>`).join('');
+
+      const s = document.querySelector('#bkS'), en = document.querySelector('#bkE');
+      if (s) s.value = startDate;
+      if (en) en.value = endDate;
+
+      const calEl = document.querySelector('#calGrid');
+      if (!calEl) return;
+      document.querySelector('#calMonth').textContent = monthName;
+      calEl.innerHTML = daysHeader + cells;
+
+      const days2 = document.querySelectorAll('[data-date]');
+      days2.forEach(el => {
+        el.addEventListener('click', () => {
+          const d = el.dataset.date;
+          if (d < today || bookedDates.has(d)) return;
+          if (!startDate || (startDate && endDate)) { startDate = d; endDate = ''; }
+          else if (d < startDate) { endDate = startDate; startDate = d; }
+          else { endDate = d; }
+          // Check for booked dates in range
+          if (startDate && endDate) {
+            let cur = new Date(startDate);
+            const end = new Date(endDate);
+            let conflict = false;
+            while (cur <= end) {
+              if (bookedDates.has(cur.toISOString().split('T')[0])) { conflict = true; break; }
+              cur.setDate(cur.getDate() + 1);
+            }
+            if (conflict) { showToast('Selected range includes booked dates', 'error'); endDate = ''; }
+          }
+          updateSummary();
+          renderCalendar();
+        });
+      });
+    }
+
+    function updateSummary() {
+      const s = document.querySelector('#bkS'), en = document.querySelector('#bkE');
+      if (s) s.value = startDate;
+      if (en) en.value = endDate;
+      if (startDate && endDate) {
+        const days = Math.ceil((new Date(endDate) - new Date(startDate)) / 86400000) + 1;
+        const total = days * Number(e.daily_rate || 0);
+        const sumEl = document.querySelector('#bkSummary');
+        if (sumEl) sumEl.innerHTML = `<div style="font-weight:700;color:#0277BD">📅 ${days} day${days>1?'s':''} · ₹${total.toLocaleString()} total</div>`;
+      }
+    }
+
+    showModal(`
+      <div class="modal-handle"></div>
+      <h3 style="margin:0 0 8px">📅 Book — ${e.name}</h3>
+      <div style="background:#E3F2FD;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px">${e.equipment_type?.replace('_',' ')} · ${e.location_label} · <strong>₹${Number(e.daily_rate||0).toLocaleString()}/day</strong>${e.operator_included?' · +Operator':''}</div>
+
+      <!-- Calendar -->
+      <div style="background:#F9F9F9;border-radius:12px;padding:12px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <button id="calPrev" style="background:#E0E0E0;border:none;border-radius:6px;padding:4px 10px;cursor:pointer">‹</button>
+          <div id="calMonth" style="font-weight:700;font-size:13px"></div>
+          <button id="calNext" style="background:#E0E0E0;border:none;border-radius:6px;padding:4px 10px;cursor:pointer">›</button>
+        </div>
+        <div id="calGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
+        <div style="display:flex;gap:10px;margin-top:8px;font-size:10px;color:#757575">
+          <span><span style="display:inline-block;width:10px;height:10px;background:#FFEBEE;border-radius:2px;margin-right:3px"></span>Booked</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#0277BD;border-radius:2px;margin-right:3px"></span>Selected</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#E3F2FD;border-radius:2px;margin-right:3px"></span>Range</span>
+        </div>
+      </div>
+
+      <div id="bkSummary" style="min-height:20px;margin-bottom:8px;font-size:12px;color:#9E9E9E">Select start and end dates</div>
+      <input type="hidden" id="bkS"><input type="hidden" id="bkE">
+      <div class="form-group"><label>Notes</label><textarea class="form-input" id="bkN" rows="2" placeholder="Purpose, location, special requirements…"></textarea></div>
+      <button id="submitBk" style="width:100%;padding:12px;background:#0277BD;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Confirm Booking</button>
+    `);
+
+    // Load availability data
+    api.getEquipmentAvailability(e.id, calYear, calMonth)
+      .then(res => { bookedDates = new Set(res.booked_dates || []); renderCalendar(); })
+      .catch(() => renderCalendar());
+    renderCalendar();
+
+    document.querySelector('#calPrev')?.addEventListener('click', () => {
+      calMonth--; if (calMonth < 1) { calMonth = 12; calYear--; }
+      api.getEquipmentAvailability(e.id, calYear, calMonth)
+        .then(res => { bookedDates = new Set(res.booked_dates || []); renderCalendar(); })
+        .catch(() => renderCalendar());
+    });
+    document.querySelector('#calNext')?.addEventListener('click', () => {
+      calMonth++; if (calMonth > 12) { calMonth = 1; calYear++; }
+      api.getEquipmentAvailability(e.id, calYear, calMonth)
+        .then(res => { bookedDates = new Set(res.booked_dates || []); renderCalendar(); })
+        .catch(() => renderCalendar());
+    });
+
     document.querySelector('#submitBk')?.addEventListener('click', async ()=>{
-      const s=document.querySelector('#bkS').value, en=document.querySelector('#bkE').value;
-      if(!s||!en) return showToast('Select dates','error');
+      const s = startDate, en = endDate;
+      if(!s||!en) return showToast('Select start and end dates','error');
       const d=Math.ceil((new Date(en)-new Date(s))/86400000)+1;
       const total=d*Number(e.daily_rate||0);
       closeModal();
@@ -231,10 +486,52 @@ export function renderKisan(container) {
     container.querySelector('#eqSearch')?.addEventListener('input',e=>{eqSearch=e.target.value;render();});
     container.querySelector('#listEquipBtn')?.addEventListener('click',showListEquipment);
     container.querySelectorAll('.book-btn').forEach(b=>b.addEventListener('click',()=>showBookingModal(b.dataset.id)));
-    container.querySelectorAll('.contact-buy-btn').forEach(b=>b.addEventListener('click',()=>{
-      navigate('chat');
-    }));
+    container.querySelectorAll('.contact-buy-btn').forEach(b=>b.addEventListener('click',()=>{ navigate('chat'); }));
     container.querySelectorAll('.review-eq-btn').forEach(b=>b.addEventListener('click',()=>showReviewsModal({target_type:'equipment',target_id:b.dataset.id,target_name:b.dataset.name})));
+    // Services tab events
+    container.querySelectorAll('[data-svc]').forEach(b=>b.addEventListener('click',()=>{svcCat=b.dataset.svc;render();}));
+    container.querySelector('#offerServiceBtn')?.addEventListener('click',showOfferService);
+    container.querySelectorAll('.book-svc-btn').forEach(b=>b.addEventListener('click',()=>showBookService(b.dataset.svid)));
+  }
+
+  function showBookService(svid) {
+    const sv = AGRI_SERVICES.find(s=>s.id===svid); if(!sv) return;
+    showModal(`<div class="modal-handle"></div>
+      <h3>Book: ${sv.name}</h3>
+      <div style="background:#F3E5F5;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px">
+        <div>👤 ${sv.provider} · 📍 ${sv.location}</div>
+        <div>💰 ${sv.rate} · ⭐ ${sv.rating}</div>
+      </div>
+      <div class="form-group"><label>Farm Location</label><input class="form-input" id="svcLoc" placeholder="Village, District"></div>
+      ${sv.min_acres?`<div class="form-group"><label>Acres (min ${sv.min_acres})</label><input class="form-input" id="svcAcres" type="number" min="${sv.min_acres}" placeholder="${sv.min_acres}"></div>`:''}
+      <div class="form-group"><label>Preferred Date</label><input class="form-input" id="svcDate" type="date" min="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="form-group"><label>Notes</label><textarea class="form-input" id="svcNotes" placeholder="Crop details, special requirements…" style="height:80px"></textarea></div>
+      <button class="btn btn-primary" id="confirmSvc">Confirm Booking Request</button>`);
+    document.querySelector('#confirmSvc')?.addEventListener('click',()=>{
+      const loc=document.querySelector('#svcLoc')?.value?.trim();
+      if(!loc){showToast('Please enter your farm location','error');return;}
+      api.post('/kisanconnect/services/book',{service_id:svid,location:loc,acres:document.querySelector('#svcAcres')?.value,date:document.querySelector('#svcDate')?.value,notes:document.querySelector('#svcNotes')?.value}).catch(()=>null);
+      showToast('Booking request sent! Provider will contact you shortly.','success');
+      closeModal();
+    });
+  }
+
+  function showOfferService() {
+    showModal(`<div class="modal-handle"></div>
+      <h3>Offer Your Service</h3>
+      <div class="form-group"><label>Service Type</label><select class="form-input" id="svType"><option>Crop Spraying</option><option>Plowing / Tillage</option><option>Combine Harvesting</option><option>Transplanting</option><option>Soil Testing</option><option>Farm Consultancy</option><option>Drone Spraying</option><option>Other</option></select></div>
+      <div class="form-group"><label>Service Name</label><input class="form-input" id="svName" placeholder="e.g. Paddy Transplanting Labour"></div>
+      <div class="form-group"><label>Rate</label><input class="form-input" id="svRate" placeholder="e.g. ₹1,200/acre or ₹500/day"></div>
+      <div class="form-group"><label>Coverage Area</label><input class="form-input" id="svArea" placeholder="Districts / Mandals covered"></div>
+      <div class="form-group"><label>Contact Number</label><input class="form-input" id="svPhone" type="tel" placeholder="10-digit mobile"></div>
+      <button class="btn btn-primary" id="submitSvc">Submit Listing</button>`);
+    document.querySelector('#submitSvc')?.addEventListener('click',()=>{
+      const name=document.querySelector('#svName')?.value?.trim();
+      if(!name){showToast('Please fill service name','error');return;}
+      api.post('/kisanconnect/services',{type:document.querySelector('#svType')?.value,name,rate:document.querySelector('#svRate')?.value,area:document.querySelector('#svArea')?.value,phone:document.querySelector('#svPhone')?.value}).catch(()=>null);
+      showToast('Service listed successfully!','success');
+      closeModal();
+    });
   }
 
   async function loadData() {

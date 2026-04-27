@@ -33,6 +33,11 @@ const paymentsRouter = require('./routes/payments');
 const reviewsRouter = require('./routes/reviews');
 const chatRouter = require('./routes/chat');
 const trackingRouter = require('./routes/tracking');
+const adminRouter = require('./routes/admin');
+const farmdiaryRouter = require('./routes/farmdiary');
+const jobsRouter = require('./routes/jobs');
+const trainingRouter = require('./routes/training');
+const schemesRouter = require('./routes/schemes');
 const path = require('path');
 
 const app = express();
@@ -86,6 +91,11 @@ app.use('/api/payments', paymentsRouter);
 app.use('/api/reviews', reviewsRouter);
 app.use('/api/chat', chatRouter);
 app.use('/api/tracking', trackingRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/farmdiary', farmdiaryRouter);
+app.use('/api/jobs', jobsRouter);
+app.use('/api/training', trainingRouter);
+app.use('/api/schemes', schemesRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

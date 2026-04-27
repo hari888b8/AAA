@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { setState } from '../store.js';
-import { navigate, showToast } from '../main.js';
+import { navigate, showToast } from '../app-shell.js';
 import { t, getLang, setLang, LANGUAGES } from '../i18n.js';
 
 // ─── PLATFORM STRUCTURE ───────────────────────────────────────────────────
@@ -73,14 +73,14 @@ export function renderLogin(container) {
   function render() {
     container.innerHTML = `
       <div class="login-screen">
-        <div class="login-logo">
-          <div class="icon">🌾</div>
+        <div class="login-logo hero-v2" role="banner" style="background:linear-gradient(135deg,#2E7D32,#00c9a7)">
+          <div class="icon" aria-hidden="true">🌾</div>
           <h1>AgriHub</h1>
           <p>India's Agriculture Super-Platform</p>
-          <div style="display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap">
-            <span style="background:rgba(255,255,255,0.15);padding:3px 8px;border-radius:12px;font-size:10px">🐟 AquaOS</span>
-            <span style="background:rgba(255,255,255,0.15);padding:3px 8px;border-radius:12px;font-size:10px">🌾 AgriFlow</span>
-            <span style="background:rgba(255,255,255,0.15);padding:3px 8px;border-radius:12px;font-size:10px">🚜 KisanConnect</span>
+          <div style="display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap" role="list" aria-label="Available platforms">
+            <span role="listitem" style="background:rgba(255,255,255,0.15);padding:3px 8px;border-radius:12px;font-size:10px">🐟 AquaOS</span>
+            <span role="listitem" style="background:rgba(255,255,255,0.15);padding:3px 8px;border-radius:12px;font-size:10px">🌾 AgriFlow</span>
+            <span role="listitem" style="background:rgba(255,255,255,0.15);padding:3px 8px;border-radius:12px;font-size:10px">🚜 KisanConnect</span>
           </div>
         </div>
         <div class="login-form">
@@ -101,7 +101,7 @@ export function renderLogin(container) {
         <label>${t('enter_phone')}</label>
         <div class="phone-input">
           <span class="prefix">🇮🇳 +91</span>
-          <input type="tel" id="phone" maxlength="10" placeholder="9876543210" value="${phone}" inputmode="numeric" pattern="[0-9]*" autocomplete="tel">
+          <input type="tel" id="phone" maxlength="10" placeholder="9876543210" value="${phone}" inputmode="numeric" pattern="[0-9]*" autocomplete="tel" aria-label="Enter 10-digit mobile number">
         </div>
       </div>
       <button class="btn btn-primary" id="sendOtp" ${loading ? 'disabled' : ''}>
@@ -119,12 +119,12 @@ export function renderLogin(container) {
       <div class="form-group">
         <label>OTP Code</label>
         <div class="otp-input" id="otpContainer">
-          ${[0,1,2,3,4,5].map(i => `<input type="tel" maxlength="1" data-idx="${i}" value="${otp[i]||''}" inputmode="numeric" pattern="[0-9]*">`).join('')}
+          ${[0,1,2,3,4,5].map(i => `<input type="tel" maxlength="1" data-idx="${i}" value="${otp[i]||''}" inputmode="numeric" pattern="[0-9]*" aria-label="OTP digit ${i+1}">`).join('')}
         </div>
       </div>
       <div class="form-group">
         <label>Your Name</label>
-        <input class="form-input" type="text" id="name" placeholder="Enter your name" value="${name}">
+        <input class="form-input" type="text" id="name" placeholder="Enter your name" value="${name}" aria-label="Enter your name">
       </div>
       <div class="form-group">
         <label>I am a…</label>

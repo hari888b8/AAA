@@ -1,4 +1,4 @@
-import { navigate, showToast, showModal, closeModal } from '../main.js';
+import { navigate, showToast, showModal, closeModal } from '../app-shell.js';
 import { api } from '../api.js';
 import { getRole } from '../store.js';
 import { t } from '../i18n.js';
@@ -58,7 +58,7 @@ export function renderBhoomiOS(container) {
 
     container.innerHTML = `
       <!-- HEADER -->
-      <div style="background:linear-gradient(135deg,#795548,#4E342E);color:white;padding:14px 16px 10px">
+      <div class="hero-v2" role="banner" style="background:linear-gradient(135deg,#795548,#4E342E);color:white">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:28px">🏡</span>
           <div>
@@ -76,23 +76,27 @@ export function renderBhoomiOS(container) {
       </div>
 
       <!-- TABS -->
-      <div class="tab-bar" style="overflow-x:auto;white-space:nowrap">
+      <div class="tab-bar" role="tablist" style="overflow-x:auto;white-space:nowrap">
         ${isOwner ? `
-          <button class="tab-btn ${tab==='listings'?'active':''}" data-tab="listings">🏡 My Listings</button>
-          <button class="tab-btn ${tab==='enquiries'?'active':''}" data-tab="enquiries">📋 Enquiries</button>
-          <button class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📊 Stats</button>
+          <button role="tab" aria-selected="${tab==='listings'}" class="tab-btn ${tab==='listings'?'active':''}" data-tab="listings">🏡 My Listings</button>
+          <button role="tab" aria-selected="${tab==='enquiries'}" class="tab-btn ${tab==='enquiries'?'active':''}" data-tab="enquiries">📋 Enquiries</button>
+          <button role="tab" aria-selected="${tab==='documents'}" class="tab-btn ${tab==='documents'?'active':''}" data-tab="documents">📄 Documents</button>
+          <button role="tab" aria-selected="${tab==='analytics'}" class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📊 Stats</button>
         ` : `
-          <button class="tab-btn ${tab==='listings'?'active':''}" data-tab="listings">${isRentMode ? '🔑 Lands for Rent' : '💰 Lands for Sale'}</button>
-          <button class="tab-btn ${tab==='saved'?'active':''}" data-tab="saved">⭐ Saved</button>
-          <button class="tab-btn ${tab==='enquiries'?'active':''}" data-tab="enquiries">📋 My Enquiries</button>
+          <button role="tab" aria-selected="${tab==='listings'}" class="tab-btn ${tab==='listings'?'active':''}" data-tab="listings">${isRentMode ? '🔑 Lands for Rent' : '💰 Lands for Sale'}</button>
+          <button role="tab" aria-selected="${tab==='map'}" class="tab-btn ${tab==='map'?'active':''}" data-tab="map">🗺️ Map View</button>
+          <button role="tab" aria-selected="${tab==='saved'}" class="tab-btn ${tab==='saved'?'active':''}" data-tab="saved">⭐ Saved</button>
+          <button role="tab" aria-selected="${tab==='enquiries'}" class="tab-btn ${tab==='enquiries'?'active':''}" data-tab="enquiries">📋 My Enquiries</button>
         `}
       </div>
 
       <div style="padding-bottom:80px">
         ${loading ? '<div class="loading"><div class="spinner"></div></div>'
           : tab === 'listings' ? (isOwner ? renderMyListings() : renderBrowse())
+          : tab === 'map' ? renderMapView()
           : tab === 'enquiries' ? renderEnquiries()
           : tab === 'saved' ? renderSaved()
+          : tab === 'documents' ? renderDocumentVault()
           : tab === 'analytics' ? renderOwnerAnalytics()
           : ''}
       </div>
@@ -137,7 +141,7 @@ export function renderBhoomiOS(container) {
         <!-- Search -->
         <div style="display:flex;align-items:center;background:white;border:1px solid #E0E0E0;border-radius:10px;padding:8px 12px;margin-bottom:10px">
           <span style="margin-right:8px;font-size:16px">🔍</span>
-          <input id="landSearch" type="text" placeholder="Search by district, mandal, village…" value="${searchQ}" style="border:none;outline:none;flex:1;font-size:13px;background:transparent">
+          <input id="landSearch" type="search" placeholder="Search by district, mandal, village…" aria-label="Search by district, mandal, village…" value="${searchQ}" style="border:none;outline:none;flex:1;font-size:13px;background:transparent">
         </div>
 
         <!-- Filters -->
@@ -271,6 +275,90 @@ export function renderBhoomiOS(container) {
     `;
   }
 
+  // ─── MAP VIEW ────────────────────────────────────────────────────────────
+  function renderMapView() {
+    const mapId = 'bhoomi-leaflet-map';
+    // District centroid coords for AP/TS sample data
+    const DISTRICT_COORDS = {
+      'Krishna':    [16.61, 80.81],
+      'Guntur':     [16.30, 80.45],
+      'Chittoor':   [13.22, 79.10],
+      'Kurnool':    [15.83, 78.05],
+      'Nellore':    [14.44, 79.99],
+      'East Godavari': [17.00, 82.24],
+      'West Godavari': [16.95, 81.33],
+      'Warangal':   [18.00, 79.58],
+      'Medak':      [18.05, 78.26],
+      'Rangareddy': [17.36, 78.49],
+    };
+
+    setTimeout(() => {
+      // Inject Leaflet CSS if missing
+      if (!document.getElementById('leaflet-css')) {
+        const link = document.createElement('link');
+        link.id = 'leaflet-css';
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(link);
+      }
+
+      const initMap = () => {
+        const container = document.getElementById(mapId);
+        if (!container || container._leaflet_id) return;
+        const map = window.L.map(mapId).setView([16.5, 80.6], 7);
+        window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+          maxZoom: 18
+        }).addTo(map);
+
+        const allListings = [...(listings || []), ...(myListings || [])];
+        allListings.forEach(l => {
+          const dist = l.district || l.location || '';
+          let coords = null;
+          for (const [key, val] of Object.entries(DISTRICT_COORDS)) {
+            if (dist.toLowerCase().includes(key.toLowerCase())) { coords = val; break; }
+          }
+          if (!coords) coords = [16.5 + (Math.random()-0.5)*2, 80.6 + (Math.random()-0.5)*3];
+          const marker = window.L.marker(coords).addTo(map);
+          const price = l.price ? `₹${(l.price/100000).toFixed(1)}L` : (l.rent_per_month ? `₹${l.rent_per_month}/mo` : 'N/A');
+          marker.bindPopup(`
+            <div style="min-width:160px">
+              <div style="font-weight:700;font-size:13px;margin-bottom:4px">${l.title || l.description?.slice(0,40) || 'Land Listing'}</div>
+              <div style="font-size:12px;color:#555">${l.area_acres || l.acres || '?'} acres • ${l.district || l.location || ''}</div>
+              <div style="font-size:13px;font-weight:700;color:${l.listing_type==='rent'?'#0277BD':'#2E7D32'};margin-top:4px">${price}</div>
+              <div style="font-size:11px;margin-top:2px;background:${l.listing_type==='rent'?'#E3F2FD':'#E8F5E9'};padding:2px 6px;border-radius:6px;display:inline-block">${l.listing_type==='rent'?'For Rent':'For Sale'}</div>
+            </div>
+          `);
+        });
+
+        if (allListings.length === 0) {
+          window.L.popup().setLatLng([16.5, 80.6]).setContent('<div style="font-size:13px">No listings to show yet</div>').openOn(map);
+        }
+      };
+
+      if (window.L) {
+        initMap();
+      } else {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        script.onload = initMap;
+        document.head.appendChild(script);
+      }
+    }, 50);
+
+    return `
+      <div style="padding:10px 14px 0">
+        <div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+          <div style="padding:10px 14px;font-weight:700;font-size:13px;background:#795548;color:white;display:flex;align-items:center;gap:6px">
+            🗺️ Land Listings Map <span style="font-size:11px;font-weight:400;opacity:0.85">&nbsp;— AP / Telangana</span>
+          </div>
+          <div id="${mapId}" style="height:420px;width:100%"></div>
+        </div>
+        <div style="padding:10px 0 4px;font-size:11px;color:#9E9E9E;text-align:center">Tap a marker to view listing details • Data from OpenStreetMap</div>
+      </div>
+    `;
+  }
+
   // ─── SAVED ───────────────────────────────────────────────────────────────
   function renderSaved() {
     return `
@@ -280,6 +368,65 @@ export function renderBhoomiOS(container) {
         <div style="font-size:12px;color:#757575">Save interesting land listings to review later.<br>Tap ⭐ on any listing to save it.</div>
       </div>
     `;
+  }
+
+  // ─── DOCUMENT VAULT ──────────────────────────────────────────────────────
+  const DOC_VAULT = [
+    { id:'dv1', name:'Pattadar Passbook', land:'Survey 45/2, Guntur', type:'pattadar', uploaded:'2025-12-10', expires:null, size:'1.2 MB', status:'verified', icon:'📗' },
+    { id:'dv2', name:'7-12 Extract', land:'Survey 45/2, Guntur', type:'extract', uploaded:'2026-01-15', expires:'2026-07-15', size:'0.8 MB', status:'valid', icon:'📋' },
+    { id:'dv3', name:'Sale Deed', land:'Survey 12, Kurnool', type:'sale_deed', uploaded:'2024-08-03', expires:null, size:'3.4 MB', status:'verified', icon:'📜' },
+    { id:'dv4', name:'Survey / Adangal', land:'Survey 45/2, Guntur', type:'survey', uploaded:'2026-03-01', expires:'2027-03-01', size:'0.5 MB', status:'valid', icon:'🗺️' },
+  ];
+  const DOC_TYPES = ['Pattadar Passbook','7-12 Extract','Sale Deed','Gift Deed','Mutation Records','Survey / Adangal','Encumbrance Certificate','NOC','Other'];
+
+  function renderDocumentVault() {
+    const today = new Date();
+    return `<div style="padding:10px 14px 0">
+      <div style="background:linear-gradient(135deg,#4527A0,#311b92);border-radius:14px;padding:16px;color:white;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:800;margin-bottom:4px">📄 Land Document Vault</div>
+        <div style="font-size:11px;opacity:0.85">Securely store & manage your land ownership documents</div>
+        <div style="display:flex;gap:14px;margin-top:12px">
+          <div><div style="font-weight:800;font-size:20px">${DOC_VAULT.length}</div><div style="font-size:10px;opacity:0.8">Documents</div></div>
+          <div><div style="font-weight:800;font-size:20px">${DOC_VAULT.filter(d=>d.status==='verified').length}</div><div style="font-size:10px;opacity:0.8">Verified</div></div>
+          <div><div style="font-weight:800;font-size:20px">${DOC_VAULT.filter(d=>d.expires && new Date(d.expires)<new Date(today.getTime()+30*86400000)).length}</div><div style="font-size:10px;opacity:0.8">Expiring Soon</div></div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--text3,#9E9E9E)">MY DOCUMENTS</div>
+        <button id="uploadDocBtn" style="background:#4527A0;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">+ Upload</button>
+      </div>
+
+      ${DOC_VAULT.map(doc => {
+        const expiring = doc.expires && new Date(doc.expires) < new Date(today.getTime()+30*86400000);
+        return `<div style="background:var(--card,white);border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.07);border-left:4px solid ${doc.status==='verified'?'#2E7D32':expiring?'#E65100':'#90CAF9'}">
+          <div style="display:flex;gap:10px;align-items:center">
+            <div style="font-size:26px">${doc.icon}</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:13px">${doc.name}</div>
+              <div style="font-size:11px;color:var(--text3,#757575);margin-top:2px">🏡 ${doc.land}</div>
+              <div style="display:flex;gap:10px;margin-top:6px;align-items:center">
+                <span style="background:${doc.status==='verified'?'#E8F5E9':'#E3F2FD'};color:${doc.status==='verified'?'#2E7D32':'#1565C0'};border-radius:8px;padding:2px 8px;font-size:10px;font-weight:700">${doc.status==='verified'?'✓ Verified':'✓ Uploaded'}</span>
+                ${expiring?`<span style="background:#FFF3E0;color:#E65100;border-radius:8px;padding:2px 8px;font-size:10px;font-weight:700">⚠️ Expires ${doc.expires}</span>`:''}
+                <span style="font-size:10px;color:var(--text3,#9E9E9E)">${doc.size}</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <button data-docid="${doc.id}" class="view-doc-btn" style="background:#E8EAF6;color:#3949AB;border:none;border-radius:6px;padding:5px 8px;font-size:10px;cursor:pointer">👁️ View</button>
+              <button data-docid="${doc.id}" class="share-doc-btn" style="background:#E8F5E9;color:#2E7D32;border:none;border-radius:6px;padding:5px 8px;font-size:10px;cursor:pointer">📤 Share</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+
+      <div style="background:#F3E5F5;border-radius:12px;padding:14px;margin-top:4px">
+        <div style="font-size:12px;font-weight:700;color:#4527A0;margin-bottom:8px">📌 Required Land Documents Checklist</div>
+        ${['Pattadar Passbook','7-12 Extract','Survey Map','Sale/Gift Deed','Encumbrance Certificate','Mutation Records'].map(d => {
+          const have = DOC_VAULT.some(dv => dv.name.toLowerCase().includes(d.toLowerCase().split(' ')[0]));
+          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:14px">${have?'✅':'⬜'}</span><span style="font-size:12px;color:${have?'#2E7D32':'#555'}">${d}</span></div>`;
+        }).join('')}
+      </div>
+    </div>`;
   }
 
   // ─── OWNER ANALYTICS ─────────────────────────────────────────────────────
@@ -431,6 +578,38 @@ export function renderBhoomiOS(container) {
       });
     });
     container.querySelectorAll('.enq-respond').forEach(b => { b.addEventListener('click', () => showToast('📞 Call the buyer to respond!', 'info')); });
+    // Document vault actions
+    container.querySelector('#uploadDocBtn')?.addEventListener('click', showUploadDoc);
+    container.querySelectorAll('.view-doc-btn').forEach(b => b.addEventListener('click', () => showToast('📄 Document viewer — launching...', 'info')));
+    container.querySelectorAll('.share-doc-btn').forEach(b => b.addEventListener('click', () => showToast('📤 Share link copied to clipboard!', 'success')));
+  }
+
+  function showUploadDoc() {
+    showModal(`<div class="modal-handle"></div>
+      <h3>📄 Upload Land Document</h3>
+      <div class="form-group"><label>Document Type</label>
+        <select class="form-input" id="docType">
+          ${DOC_TYPES.map(d=>`<option>${d}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label>Land / Survey Number</label><input class="form-input" id="docLand" placeholder="e.g. Survey No. 45/2, Guntur"></div>
+      <div class="form-group"><label>Issue Date</label><input class="form-input" id="docDate" type="date"></div>
+      <div class="form-group"><label>Expiry Date (if applicable)</label><input class="form-input" id="docExp" type="date"></div>
+      <div class="form-group" style="background:#F5F5F5;border-radius:10px;padding:16px;text-align:center;border:2px dashed #BDBDBD;cursor:pointer">
+        <div style="font-size:24px;margin-bottom:8px">📎</div>
+        <div style="font-size:13px;font-weight:600">Tap to upload document</div>
+        <div style="font-size:11px;color:#9E9E9E;margin-top:4px">PDF, JPG, PNG up to 10MB</div>
+        <input type="file" id="docFile" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
+      </div>
+      <button class="btn btn-primary" id="submitDoc" style="margin-top:12px">Upload Document</button>`);
+    document.querySelector('#submitDoc')?.addEventListener('click', () => {
+      const docType = document.querySelector('#docType')?.value;
+      const land = document.querySelector('#docLand')?.value?.trim();
+      if (!land) { showToast('Please enter land/survey number', 'error'); return; }
+      DOC_VAULT.push({ id:'dv'+Date.now(), name:docType, land, type:docType.toLowerCase().replace(/\s/g,'_'), uploaded:new Date().toISOString().slice(0,10), expires:document.querySelector('#docExp')?.value||null, size:'Uploading...', status:'valid', icon:'📄' });
+      showToast('Document uploaded successfully!', 'success');
+      closeModal(); tab='documents'; render();
+    });
   }
 
   // ─── DATA ────────────────────────────────────────────────────────────────

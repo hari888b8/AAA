@@ -3,6 +3,7 @@ const router = express.Router();
 const crypto = require('crypto');
 const { pool } = require('../db/pool');
 const { authMiddleware: auth } = require('../middleware/auth');
+const { createNotification } = require('./pushnotifications');
 
 // Razorpay config (uses test keys in dev, live keys in production)
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_demo';
@@ -93,6 +94,14 @@ router.post('/verify', auth, async (req, res) => {
       `INSERT INTO transactions (user_id, payment_order_id, amount, type, status, description)
        VALUES ($1,$2,$3,'payment','completed',$4)`,
       [req.user.id, paymentOrder.id, paymentOrder.amount, paymentOrder.description || 'Payment']
+    );
+
+    // Notify user of successful payment
+    await createNotification(
+      req.user.id, 'payment',
+      '✅ Payment Successful',
+      `₹${Number(paymentOrder.amount).toLocaleString()} paid successfully. Order #${paymentOrder.order_number}`,
+      { payment_order_id: paymentOrder.id, amount: paymentOrder.amount }
     );
 
     res.json({ verified: true, payment: paymentOrder });
@@ -201,6 +210,42 @@ router.post('/webhook', async (req, res) => {
     }
 
     res.json({ status: 'ok' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── POST /refund — Request refund for a payment ────────────────
+router.post('/refund', auth, async (req, res) => {
+  try {
+    const { payment_order_id, reason } = req.body;
+    if (!payment_order_id || !reason) return res.status(400).json({ error: 'payment_order_id and reason required' });
+
+    const { rows } = await pool.query(
+      `SELECT * FROM payment_orders WHERE id=$1 AND user_id=$2`,
+      [payment_order_id, req.user.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Payment order not found' });
+    const p = rows[0];
+    if (p.status !== 'paid') return res.status(400).json({ error: 'Only paid orders can be refunded' });
+    if (p.refund_status === 'refunded') return res.status(400).json({ error: 'Already refunded' });
+
+    await pool.query(
+      `UPDATE payment_orders SET refund_status='requested', refund_reason=$1, updated_at=NOW() WHERE id=$2`,
+      [reason, payment_order_id]
+    );
+    // Credit refund to wallet
+    await pool.query(
+      `INSERT INTO transactions (user_id, payment_order_id, amount, type, status, description)
+       VALUES ($1,$2,$3,'credit','completed',$4)`,
+      [req.user.id, payment_order_id, p.amount, `Refund: ${reason}`]
+    );
+    // Mark linked order as refunded
+    if (p.reference_id) {
+      await pool.query(
+        `UPDATE orders SET status='refunded', payment_status='refunded', updated_at=NOW() WHERE id=$1`,
+        [p.reference_id]
+      ).catch(() => {});
+    }
+    res.json({ success: true, message: `₹${p.amount} refunded to your wallet`, refunded_amount: p.amount });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
