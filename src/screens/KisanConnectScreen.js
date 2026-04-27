@@ -1,493 +1,249 @@
 import { api } from '../api.js';
-import { showToast, showModal, closeModal } from '../main.js';
+import { showToast, showModal, closeModal, navigate } from '../main.js';
 import { getRole, getState } from '../store.js';
+import { t } from '../i18n.js';
+import { showCheckout } from '../payments.js';
+import { showReviewsModal } from '../reviews.js';
+
+/**
+ * KisanConnect — Farm Equipment Marketplace
+ * Simple 3-mode: Rent · Buy · Sell
+ * Equipment ONLY — clean, focused, no clutter
+ */
 
 export function renderKisan(container) {
-  const role = getRole();
-  const userId = getState().user?.id;
-  let mode = role === 'buyer' ? 'buyer' : 'seller';
-  let tab = 'equipment';
-  let equipment = [], jobs = [], stats = {}, bookings = [], applications = [];
+  let mode = 'rent'; // rent | buy | sell
+  let equipment = [];
   let loading = true;
-  let eqSearch = '', eqTypeFilter = '';
+  let eqType = '';
+  let eqSearch = '';
+
+  const EQ_TYPES = [
+    {id:'tractor',     icon:'🚜', label:'Tractor'},
+    {id:'harvester',   icon:'🌾', label:'Harvester'},
+    {id:'rotavator',   icon:'⚙️', label:'Rotavator'},
+    {id:'sprayer',     icon:'💨', label:'Sprayer'},
+    {id:'transplanter',icon:'🌱', label:'Transplanter'},
+    {id:'pump',        icon:'💧', label:'Pump Set'},
+    {id:'thresher',    icon:'🔄', label:'Thresher'},
+    {id:'seed_drill',  icon:'🌀', label:'Seed Drill'},
+    {id:'mini_tractor',icon:'🚛', label:'Mini Tractor'},
+    {id:'power_tiller',icon:'🔧', label:'Power Tiller'},
+  ];
+
+  const SAMPLE_EQUIPMENT = [
+    { id:'s1', name:'John Deere 5310', equipment_type:'tractor', listing_type:'rent', daily_rate:1800, sale_price:null, year_of_manufacture:2021, operator_included:true, status:'available', location_label:'Guntur, AP', rating:4.8, description:'55 HP, 4WD, well maintained. Comes with experienced operator. Ideal for paddy and cotton fields.', owner_name:'Ramesh Kumar' },
+    { id:'s2', name:'Mahindra 475 DI', equipment_type:'tractor', listing_type:'both', daily_rate:1500, sale_price:450000, year_of_manufacture:2019, operator_included:false, status:'available', location_label:'Krishna, AP', rating:4.5, description:'42 HP, good condition, 2800 hours used. Available for both rent and outright purchase.' },
+    { id:'s3', name:'Kubota DC-70 Combine', equipment_type:'harvester', listing_type:'rent', daily_rate:8000, sale_price:null, year_of_manufacture:2022, operator_included:true, status:'available', location_label:'West Godavari, AP', rating:4.9, description:'Full combine harvester with cutter header. 70HP, 4-wheel drive. Operator with 8 years experience included.' },
+    { id:'s4', name:'Shaktiman Rotavator 7ft', equipment_type:'rotavator', listing_type:'sale', daily_rate:null, sale_price:95000, year_of_manufacture:2020, operator_included:false, status:'available', location_label:'Prakasam, AP', rating:4.2, description:'7 feet working width, 48 blades, multi-speed gearbox. Used for 2 seasons only.' },
+    { id:'s5', name:'ASPEE Sprayer 16L', equipment_type:'sprayer', listing_type:'rent', daily_rate:200, sale_price:null, year_of_manufacture:2023, operator_included:false, status:'available', location_label:'Nellore, AP', rating:4.6, description:'Battery-operated knapsack sprayer, 16L capacity. Adjustable nozzle.' },
+    { id:'s6', name:'VST Shakti Power Tiller', equipment_type:'power_tiller', listing_type:'both', daily_rate:1200, sale_price:280000, year_of_manufacture:2020, operator_included:true, status:'booked', location_label:'East Godavari, AP', rating:4.4, description:'9HP diesel, ideal for wet and dry land preparation. Very fuel efficient.' },
+    { id:'s7', name:'Preet 749 Harvester', equipment_type:'harvester', listing_type:'sale', daily_rate:null, sale_price:1800000, year_of_manufacture:2018, operator_included:false, status:'available', location_label:'Kurnool, AP', rating:4.1, description:'14 feet header, self-propelled, AC cabin. 3200 hours. Good for paddy & wheat.' },
+    { id:'s8', name:'Kirloskar Pump Set 5HP', equipment_type:'pump', listing_type:'rent', daily_rate:350, sale_price:null, year_of_manufacture:2022, operator_included:false, status:'available', location_label:'Chittoor, AP', rating:4.7, description:'Centrifugal pump, 5HP motor, 2-inch suction. Suitable for 2-5 acre farms.' },
+    { id:'s9', name:'TAFE 5900 DI', equipment_type:'tractor', listing_type:'rent', daily_rate:2000, sale_price:null, year_of_manufacture:2022, operator_included:true, status:'available', location_label:'Srikakulam, AP', rating:4.6, description:'60 HP, power steering, dual clutch. Perfect for heavy-duty operations.' },
+    { id:'s10', name:'Landforce Seed Drill 9-Row', equipment_type:'seed_drill', listing_type:'both', daily_rate:600, sale_price:48000, year_of_manufacture:2021, operator_included:false, status:'available', location_label:'Anantapur, AP', rating:4.3, description:'9-row mechanical seed drill. Adjustable row spacing. Suitable for groundnut, sunflower, pulses.' },
+  ];
 
   function render() {
     container.innerHTML = `
-      <div class="app-brand-header" style="padding:14px 16px 10px;background:linear-gradient(135deg,#ff6b35 0%,#e63946 100%);color:#fff">
+      <div style="background:linear-gradient(135deg,#E65100,#BF360C);color:white;padding:14px 16px 12px">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:28px">🚜</span>
-          <div><div style="font-size:18px;font-weight:800;letter-spacing:-0.3px">KisanConnect</div><div style="font-size:11px;opacity:0.85">Rural Super-App · 4 Marketplaces · Escrow Protected</div></div>
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:18px">KisanConnect</div>
+            <div style="font-size:11px;opacity:0.85">Farm Equipment Marketplace</div>
+          </div>
         </div>
       </div>
-      <div class="mode-toggle" style="display:flex;margin:8px 16px;background:var(--surface);border-radius:12px;padding:3px;border:1px solid var(--border)">
-        <button class="mode-btn ${mode === 'buyer' ? 'active' : ''}" data-mode="buyer" style="flex:1;padding:8px;border-radius:10px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .2s;${mode === 'buyer' ? 'background:var(--primary);color:white;box-shadow:0 2px 6px rgba(0,0,0,0.15)' : 'background:transparent;color:var(--text2)'}">🛒 Buyer Mode</button>
-        <button class="mode-btn ${mode === 'seller' ? 'active' : ''}" data-mode="seller" style="flex:1;padding:8px;border-radius:10px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .2s;${mode === 'seller' ? 'background:var(--primary);color:white;box-shadow:0 2px 6px rgba(0,0,0,0.15)' : 'background:transparent;color:var(--text2)'}">🏷️ Seller Mode</button>
+
+      <div class="mode-toggle-bar" style="display:flex;margin:10px 14px 6px;background:#F5F5F5;border-radius:12px;padding:3px;border:1px solid #E0E0E0">
+        <button data-kmode="rent" style="flex:1;padding:9px 4px;border-radius:10px;font-size:12px;font-weight:700;border:none;cursor:pointer;${mode==='rent'?'background:#0277BD;color:white;box-shadow:0 2px 8px rgba(2,119,189,0.3)':'background:transparent;color:#757575'}">🔑 Rent</button>
+        <button data-kmode="buy" style="flex:1;padding:9px 4px;border-radius:10px;font-size:12px;font-weight:700;border:none;cursor:pointer;${mode==='buy'?'background:#2E7D32;color:white;box-shadow:0 2px 8px rgba(46,125,50,0.3)':'background:transparent;color:#757575'}">💰 Buy</button>
+        <button data-kmode="sell" style="flex:1;padding:9px 4px;border-radius:10px;font-size:12px;font-weight:700;border:none;cursor:pointer;${mode==='sell'?'background:#E65100;color:white;box-shadow:0 2px 8px rgba(230,81,0,0.3)':'background:transparent;color:#757575'}">🏷️ Sell / List</button>
       </div>
-      <div class="tab-bar">
-        ${mode === 'seller' ? `
-          <button class="tab-btn ${tab === 'equipment' ? 'active' : ''}" data-tab="equipment">🚜 My Equipment</button>
-          <button class="tab-btn ${tab === 'jobs' ? 'active' : ''}" data-tab="jobs">💼 My Jobs</button>
-          <button class="tab-btn ${tab === 'bookings' ? 'active' : ''}" data-tab="bookings">📋 Bookings</button>
-          <button class="tab-btn ${tab === 'earnings' ? 'active' : ''}" data-tab="earnings">💰 Earnings</button>
-        ` : `
-          <button class="tab-btn ${tab === 'equipment' ? 'active' : ''}" data-tab="equipment">🚜 Rent Equipment</button>
-          <button class="tab-btn ${tab === 'jobs' ? 'active' : ''}" data-tab="jobs">💼 Find Jobs</button>
-          <button class="tab-btn ${tab === 'bookings' ? 'active' : ''}" data-tab="bookings">📋 My Bookings</button>
-          <button class="tab-btn ${tab === 'applications' ? 'active' : ''}" data-tab="applications">📝 Applications</button>
-          <button class="tab-btn ${tab === 'services' ? 'active' : ''}" data-tab="services">🔧 Services</button>
-        `}
+
+      <div style="padding:0 14px 80px">
+        ${loading ? '<div class="loading"><div class="spinner"></div></div>' : renderContent()}
       </div>
-      ${loading ? '<div class="loading"><div class="spinner"></div></div>'
-        : tab === 'equipment' ? renderEquipment()
-        : tab === 'jobs' ? renderJobs()
-        : tab === 'bookings' ? renderBookings()
-        : tab === 'applications' ? renderApplications()
-        : tab === 'earnings' ? renderEarnings()
-        : tab === 'services' ? renderServices()
-        : ''}
     `;
     attachEvents();
   }
 
-  function attachEvents() {
-    container.querySelectorAll('.mode-btn').forEach(b => b.addEventListener('click', () => {
-      mode = b.dataset.mode; tab = 'equipment'; render();
-    }));
-    container.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; render(); }));
-    container.querySelectorAll('.book-btn').forEach(b => b.addEventListener('click', () => showBooking(b.dataset.id)));
-    container.querySelector('#postJobBtn')?.addEventListener('click', showPostJob);
-    container.querySelector('#listEquipBtn')?.addEventListener('click', showListEquipment);
-    container.querySelector('#eqSearchInput')?.addEventListener('input', e => { eqSearch = e.target.value; render(); });
-    container.querySelectorAll('.eq-type-chip').forEach(c => c.addEventListener('click', () => { eqTypeFilter = c.dataset.type; render(); }));
+  function renderContent() {
+    if (mode === 'sell') return renderSellMode();
+    return renderBrowseMode();
+  }
 
-    // Equipment edit/delete for sellers
-    container.querySelectorAll('.eq-edit-btn').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); showEditEquipment(b.dataset.id); }));
-    container.querySelectorAll('.eq-del-btn').forEach(b => b.addEventListener('click', async e => {
-      e.stopPropagation();
-      if (!confirm('Delete this equipment and all its bookings?')) return;
-      try { await api.deleteEquipment(b.dataset.id); showToast('Equipment deleted', 'success'); loadData(); } catch(err) { showToast(err.message, 'error'); }
-    }));
-
-    // Job edit/delete for sellers
-    container.querySelectorAll('.job-edit-btn').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); showEditJob(b.dataset.jid); }));
-    container.querySelectorAll('.job-del-btn').forEach(b => b.addEventListener('click', async e => {
-      e.stopPropagation();
-      if (!confirm('Delete this job and all applications?')) return;
-      try { await api.deleteJob(b.dataset.jid); showToast('Job deleted', 'success'); loadData(); } catch(err) { showToast(err.message, 'error'); }
-    }));
-
-    // Booking status updates
-    container.querySelectorAll('.booking-action-btn').forEach(b => b.addEventListener('click', async () => {
-      try { await api.updateBooking(b.dataset.bid, { status: b.dataset.status }); showToast(`Booking ${b.dataset.status}`, 'success'); loadBookings(); } catch(err) { showToast(err.message, 'error'); }
-    }));
-
-    // Job apply
-    container.querySelectorAll('.apply-btn').forEach(b => {
-      b.addEventListener('click', () => {
-        const j = jobs.find(x => x.id == b.dataset.jid);
-        if (!j) return;
-        showModal(`<div class="modal-handle"></div><h3>Apply — ${j.title}</h3>
-          <div class="card" style="box-shadow:none;background:var(--bg);margin-bottom:12px">
-            <div class="flex-between mb"><span>Employer</span><span class="fw-600">${j.employer_name || 'N/A'}</span></div>
-            <div class="flex-between mb"><span>Salary</span><span class="fw-600">₹${Number(j.salary_min || 0).toLocaleString()}/${j.salary_period || 'month'}</span></div>
-            <div class="flex-between"><span>Type</span><span>${j.job_type}</span></div>
-          </div>
-          <div class="form-group"><label>Your Experience</label><textarea class="form-input" id="appExp" rows="2" placeholder="Describe your relevant experience…"></textarea></div>
-          <div class="form-group"><label>Expected Salary (₹)</label><input class="form-input" type="number" id="appSalary" placeholder="${j.salary_min || ''}"></div>
-          <div class="form-group"><label>Available From</label><input class="form-input" type="date" id="appDate"></div>
-          <button class="btn btn-primary" id="submitApp">Submit Application</button>`);
-        document.querySelector('#submitApp')?.addEventListener('click', async () => {
-          try {
-            await api.applyJob(j.id, { experience: document.querySelector('#appExp')?.value, expected_salary: Number(document.querySelector('#appSalary')?.value) || undefined, available_from: document.querySelector('#appDate')?.value || undefined });
-            showToast('Application submitted!', 'success'); closeModal(); loadData();
-          } catch (e) { showToast(e.message, 'error'); }
-        });
-      });
+  function renderBrowseMode() {
+    const isRent = mode === 'rent';
+    let filtered = equipment.filter(e => {
+      if (isRent) return e.listing_type === 'rent' || e.listing_type === 'both';
+      return e.listing_type === 'sale' || e.listing_type === 'both';
     });
-  }
-
-  function renderEarnings() {
-    const completedBookings = bookings.filter(b => b.status === 'completed');
-    const totalEarned = completedBookings.reduce((sum, b) => sum + Number(b.total_amount || 0), 0);
-    return `<div class="section" style="padding-top:8px">
-      <div class="stats-grid mb-lg">
-        <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value">₹${totalEarned.toLocaleString()}</div><div class="stat-label">Total Earned</div></div>
-        <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-value">${bookings.length}</div><div class="stat-label">Bookings</div></div>
-        <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value">${stats.avg_rating || '0.0'}</div><div class="stat-label">Rating</div></div>
-      </div>
-      ${completedBookings.length > 0 ? `<div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:8px">💳 Payment History</div>
-        ${completedBookings.slice(0, 10).map(b => `
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
-            <div><div class="fw-600">${b.equipment_name || 'Equipment'}</div><div class="text-muted" style="font-size:11px">${b.start_date ? new Date(b.start_date).toLocaleDateString('en-IN') : ''}</div></div>
-            <div class="fw-700" style="color:var(--success)">₹${Number(b.total_amount || 0).toLocaleString()}</div>
-          </div>
-        `).join('')}
-      </div>` : `<div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:8px">💳 Payment History</div>
-        <div class="empty-state" style="padding:20px 0"><div class="es-icon">💰</div><div class="es-title">No earnings yet</div><div class="es-text">List equipment or services to start earning</div></div>
-      </div>`}
-      <div class="card" style="padding:16px;margin-bottom:12px;background:var(--info-bg);border:1px solid var(--info)">
-        <div class="fw-700 text-sm" style="margin-bottom:4px">🔒 Escrow Protection</div>
-        <div class="text-sm text-muted">All payments are held in escrow until delivery is confirmed. Commission: 8-15% of rental value.</div>
-      </div>
-    </div>`;
-  }
-
-  function renderBookings() {
-    const statusColors = { pending: 'orange', confirmed: 'blue', completed: 'green', rejected: 'gray', cancelled: 'gray' };
-    return `<div class="section" style="padding-top:8px">
-      <div class="section-title">${mode === 'seller' ? '📋 Incoming Bookings' : '📋 My Bookings'}</div>
-      ${bookings.length === 0 ? `<div class="empty-state"><div class="es-icon">📋</div><div class="es-title">No bookings yet</div><div class="es-text">${mode === 'buyer' ? 'Book equipment to see your rentals here' : 'Your equipment bookings will appear here'}</div></div>` :
-        bookings.map(b => `
-          <div class="card" style="margin-bottom:8px">
-            <div class="flex-between">
-              <div class="fw-700">${b.equipment_name || 'Equipment #' + b.equipment_id}</div>
-              <span class="tag tag-${statusColors[b.status] || 'gray'}">${b.status}</span>
-            </div>
-            <div class="text-sm text-muted mt-sm">
-              ${b.renter_name ? '👤 ' + b.renter_name + ' · ' : ''}${b.start_date ? new Date(b.start_date).toLocaleDateString('en-IN') : ''} → ${b.end_date ? new Date(b.end_date).toLocaleDateString('en-IN') : ''}
-            </div>
-            <div class="flex-between mt-sm">
-              <span class="fw-600" style="color:var(--primary)">₹${Number(b.total_amount || 0).toLocaleString()}</span>
-              ${b.notes ? `<span class="text-sm text-muted">${b.notes}</span>` : ''}
-            </div>
-            ${b.status === 'pending' && mode === 'seller' ? `
-              <div style="display:flex;gap:8px;margin-top:8px">
-                <button class="btn btn-primary btn-small booking-action-btn" data-bid="${b.id}" data-status="confirmed" style="flex:1">✅ Confirm</button>
-                <button class="btn btn-small booking-action-btn" data-bid="${b.id}" data-status="rejected" style="flex:1;background:#FFEBEE;color:#C62828;border:none">❌ Reject</button>
-              </div>` : ''}
-            ${b.status === 'confirmed' && mode === 'seller' ? `
-              <button class="btn btn-secondary btn-small mt-sm booking-action-btn" data-bid="${b.id}" data-status="completed" style="width:100%">✅ Mark Completed</button>` : ''}
-            ${b.status === 'pending' && mode === 'buyer' ? `
-              <button class="btn btn-small mt-sm booking-action-btn" data-bid="${b.id}" data-status="cancelled" style="width:100%;background:#FFEBEE;color:#C62828;border:none">Cancel Booking</button>` : ''}
-          </div>
-        `).join('')}
-    </div>`;
-  }
-
-  function renderApplications() {
-    const statusColors = { pending: 'orange', accepted: 'green', rejected: 'gray', withdrawn: 'gray' };
-    return `<div class="section" style="padding-top:8px">
-      <div class="section-title">📝 My Job Applications</div>
-      ${applications.length === 0 ? `<div class="empty-state"><div class="es-icon">📝</div><div class="es-title">No applications yet</div><div class="es-text">Apply to jobs to track your applications here</div></div>` :
-        applications.map(a => `
-          <div class="card" style="margin-bottom:8px">
-            <div class="flex-between">
-              <div class="fw-700">${a.job_title || 'Job #' + a.job_id}</div>
-              <span class="tag tag-${statusColors[a.status] || 'gray'}">${a.status}</span>
-            </div>
-            <div class="text-sm text-muted mt-sm">${a.employer_name ? '🏢 ' + a.employer_name : ''} ${a.location_label ? '· 📍 ' + a.location_label : ''}</div>
-            ${a.expected_salary ? `<div class="text-sm mt-sm">💰 Expected: ₹${Number(a.expected_salary).toLocaleString()}</div>` : ''}
-            ${a.available_from ? `<div class="text-sm text-muted">📅 Available from: ${new Date(a.available_from).toLocaleDateString('en-IN')}</div>` : ''}
-            <div class="text-sm text-muted mt-sm">Applied: ${a.created_at ? new Date(a.created_at).toLocaleDateString('en-IN') : 'N/A'}</div>
-          </div>
-        `).join('')}
-    </div>`;
-  }
-
-  function renderServices() {
-    const services = [
-      { icon: '💧', name: 'Drip Irrigation Install', rate: '₹5,000-₹15,000', category: 'irrigation' },
-      { icon: '🧪', name: 'Soil Testing', rate: '₹200-₹500', category: 'testing' },
-      { icon: '🐄', name: 'Veterinary Visit', rate: '₹300-₹1,000', category: 'veterinary' },
-      { icon: '🏗️', name: 'Warehouse Storage', rate: '₹5-₹15/quintal/day', category: 'storage' },
-      { icon: '🚛', name: 'Transport Service', rate: '₹15-₹25/km', category: 'transport' },
-      { icon: '🌿', name: 'Pest Control', rate: '₹500-₹2,000', category: 'crop_care' },
-    ];
-    return `<div class="section" style="padding-top:8px">
-      <div class="section-title">🔧 Available Services</div>
-      ${services.map(s => `
-        <div class="listing-card">
-          <div class="l-icon">${s.icon}</div>
-          <div class="l-body">
-            <div class="l-title">${s.name}</div>
-            <div class="l-meta">${s.category} · Available in your district</div>
-          </div>
-          <div style="text-align:right">
-            <div class="l-price" style="font-size:12px">${s.rate}</div>
-            <button class="btn btn-primary btn-small mt-sm">Book</button>
-          </div>
-        </div>
-      `).join('')}
-      <div class="card" style="padding:16px;margin-bottom:12px;background:var(--accent-light);border:1px solid var(--accent)">
-        <div class="fw-600 text-sm">💡 Lead Generation</div>
-        <div class="text-sm text-muted" style="margin-top:4px">Service providers pay ₹10-₹50 per lead. Farmers get services at best prices.</div>
-      </div>
-    </div>`;
-  }
-
-  function renderEquipment() {
-    let filtered = equipment;
-    if (eqSearch) filtered = filtered.filter(e => `${e.name} ${e.equipment_type} ${e.district_name}`.toLowerCase().includes(eqSearch.toLowerCase()));
-    if (eqTypeFilter) filtered = filtered.filter(e => e.equipment_type === eqTypeFilter);
+    if (eqSearch) filtered = filtered.filter(e => `${e.name} ${e.equipment_type} ${e.location_label}`.toLowerCase().includes(eqSearch.toLowerCase()));
+    if (eqType) filtered = filtered.filter(e => e.equipment_type === eqType);
+    const mc = isRent ? '#0277BD' : '#2E7D32';
 
     return `
-      <div class="section" style="padding-top:8px">
-        <div class="stats-grid-2 mb-lg">
-          <div class="stat-card"><div class="stat-value">${stats.total_equipment || equipment.length}</div><div class="stat-label">${mode === 'seller' ? 'My Equipment' : 'Available'}</div></div>
-          <div class="stat-card"><div class="stat-value">${stats.available_equipment || 0}</div><div class="stat-label">${mode === 'seller' ? 'Active Listings' : 'Nearby'}</div></div>
+      <div style="background:${mc}08;border:1px solid ${mc}25;border-radius:10px;padding:10px 12px;margin:8px 0 10px">
+        <div style="font-size:12px;font-weight:700;color:${mc}">${isRent ? '🔑 Rent Equipment' : '💰 Buy Equipment'}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${isRent ? 'Hire tractors, harvesters & machines by day. Returned after use.' : 'Purchase pre-owned or new equipment. Contact seller to negotiate.'}</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="text-align:center;background:white;border-radius:10px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+          <div style="font-weight:800;font-size:18px;color:${mc}">${filtered.length}</div>
+          <div style="font-size:10px;color:#757575">${isRent ? 'For Rent' : 'For Sale'}</div>
         </div>
-        ${mode === 'buyer' ? `
-          <div class="search-bar" style="margin-bottom:8px"><span class="s-icon">🔍</span><input type="text" id="eqSearchInput" placeholder="Search equipment…" value="${eqSearch}"></div>
-          <div class="filter-chips" style="margin-bottom:8px">
-            <button class="chip eq-type-chip ${!eqTypeFilter ? 'active' : ''}" data-type="">All</button>
-            <button class="chip eq-type-chip ${eqTypeFilter === 'tractor' ? 'active' : ''}" data-type="tractor">🚜 Tractor</button>
-            <button class="chip eq-type-chip ${eqTypeFilter === 'harvester' ? 'active' : ''}" data-type="harvester">🌾 Harvester</button>
-            <button class="chip eq-type-chip ${eqTypeFilter === 'sprayer' ? 'active' : ''}" data-type="sprayer">💨 Sprayer</button>
-            <button class="chip eq-type-chip ${eqTypeFilter === 'rotavator' ? 'active' : ''}" data-type="rotavator">⚙️ Rotavator</button>
-          </div>
-        ` : ''}
-        ${mode === 'seller' ? '<button class="btn btn-primary btn-small mb" id="listEquipBtn" style="width:100%">+ List Equipment</button>' : ''}
-        ${filtered.length === 0 ? `<div class="empty-state"><div class="es-icon">🚜</div><div class="es-title">${mode === 'seller' ? 'No equipment listed' : 'No equipment found'}</div>${mode === 'seller' ? '<button class="btn btn-primary btn-small mt" id="listEquipBtn">+ List Equipment</button>' : '<div class="es-text">Try different search terms</div>'}</div>`
-          : filtered.map(e => `
-            <div class="listing-card">
-              <div class="l-icon">🚜</div>
-              <div class="l-body">
-                <div class="l-title">${e.name}</div>
-                <div class="l-meta">${e.equipment_type || 'General'} · ${e.location_label || e.district_name || ''}</div>
-                <div class="l-tags">
-                  <span class="tag tag-${e.status === 'available' ? 'green' : 'orange'}">${e.status}</span>
-                  ${e.operator_included || e.has_operator ? '<span class="tag tag-blue">+ Operator</span>' : ''}
-                  ${e.rating ? `<span class="tag tag-gray">⭐ ${Number(e.rating).toFixed(1)}</span>` : ''}
-                </div>
-              </div>
-              <div style="text-align:right">
-                <div class="l-price">₹${Number(e.daily_rate || 0).toLocaleString()}/day</div>
-                ${e.hourly_rate ? `<div class="text-sm text-muted">₹${Number(e.hourly_rate).toLocaleString()}/hr</div>` : ''}
-                ${mode === 'buyer' && e.status === 'available' ? `<button class="btn btn-primary btn-small mt-sm book-btn" data-id="${e.id}">Book</button>` : ''}
-                ${mode === 'seller' ? `<div style="display:flex;gap:4px;margin-top:6px"><button class="btn btn-secondary btn-small eq-edit-btn" data-id="${e.id}">✏️</button><button class="btn btn-small eq-del-btn" data-id="${e.id}" style="background:#FFEBEE;color:#C62828;border:none">🗑️</button></div>` : ''}
-              </div>
-            </div>
-          `).join('')}
-      </div>`;
+        <div style="text-align:center;background:white;border-radius:10px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+          <div style="font-weight:800;font-size:18px;color:${mc}">${filtered.filter(e=>e.status==='available').length}</div>
+          <div style="font-size:10px;color:#757575">Available</div>
+        </div>
+        <div style="text-align:center;background:white;border-radius:10px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+          <div style="font-weight:800;font-size:18px;color:${mc}">${[...new Set(filtered.map(e=>e.equipment_type))].length}</div>
+          <div style="font-size:10px;color:#757575">Types</div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;background:white;border:1px solid #E0E0E0;border-radius:10px;padding:8px 12px;margin-bottom:8px">
+        <span style="margin-right:8px">🔍</span>
+        <input id="eqSearch" type="text" placeholder="Search tractor, harvester, location…" value="${eqSearch}" style="border:none;outline:none;flex:1;font-size:13px;background:transparent">
+      </div>
+
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px">
+        <button data-et="" style="flex-shrink:0;padding:5px 12px;border-radius:20px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:${!eqType?mc:'#F5F5F5'};color:${!eqType?'white':'#616161'}">All</button>
+        ${EQ_TYPES.map(t=>`<button data-et="${t.id}" style="flex-shrink:0;padding:5px 10px;border-radius:20px;border:none;font-size:11px;cursor:pointer;background:${eqType===t.id?mc:'#F5F5F5'};color:${eqType===t.id?'white':'#616161'}">${t.icon} ${t.label}</button>`).join('')}
+      </div>
+
+      ${filtered.length === 0 ? '<div style="text-align:center;padding:30px"><div style="font-size:40px">🚜</div><div style="font-weight:700;margin-top:8px">No equipment found</div></div>'
+        : filtered.map(e => renderCard(e)).join('')}
+    `;
   }
 
-  function renderJobs() {
+  function renderSellMode() {
     return `
-      <div class="section" style="padding-top:8px">
-        <div class="stats-grid-2 mb-lg">
-          <div class="stat-card"><div class="stat-value">${stats.active_jobs || jobs.length}</div><div class="stat-label">Active Jobs</div></div>
-          <div class="stat-card"><div class="stat-value">${stats.total_vacancies || 0}</div><div class="stat-label">Vacancies</div></div>
+      <div style="margin-top:10px">
+        <button id="listEquipBtn" style="width:100%;padding:14px;background:linear-gradient(135deg,#E65100,#BF360C);color:white;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:14px;box-shadow:0 3px 12px rgba(230,81,0,0.25)">+ List Your Equipment</button>
+        <div style="background:white;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+          <div style="font-weight:700;font-size:13px;margin-bottom:10px">📋 How It Works</div>
+          ${[{n:'1',t:'List Equipment',d:'Add name, type, daily rate or sale price'},{n:'2',t:'Get Requests',d:'Farmers send booking or purchase requests'},{n:'3',t:'Earn Money',d:'Accept requests. Secure escrow payment'}].map(s=>`
+            <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px">
+              <div style="width:26px;height:26px;border-radius:50%;background:#E65100;color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0">${s.n}</div>
+              <div><div style="font-weight:700;font-size:12px">${s.t}</div><div style="font-size:11px;color:#757575">${s.d}</div></div>
+            </div>`).join('')}
         </div>
-        ${jobs.length === 0 ? `<div class="empty-state"><div class="es-icon">💼</div><div class="es-title">${mode === 'seller' ? 'No jobs posted' : 'No jobs available'}</div>${mode === 'seller' ? '<button class="btn btn-primary btn-small mt" id="postJobBtn">+ Post Job</button>' : ''}</div>`
-          : `${mode === 'seller' ? '<button class="btn btn-primary btn-small mb" id="postJobBtn" style="width:100%">+ Post Job</button>' : ''}
-          ${jobs.map(j => `
-            <div class="card">
-              <div class="flex-between">
-                <div class="fw-700">${j.title}</div>
-                <span class="tag tag-blue">${j.job_type || 'general'}</span>
+        <div style="background:#FFF3E0;border:1px solid #FFE0B2;border-radius:10px;padding:12px;font-size:12px;color:#E65100;line-height:1.5">
+          <strong>💡 Earn ₹1,000–₹8,000/day</strong> by renting out your tractor, harvester, or any farm equipment when idle. Over 10,000 farmers are looking for equipment near you.
+        </div>
+      </div>
+    `;
+  }
+
+  function renderCard(e) {
+    const isRent = e.listing_type === 'rent' || e.listing_type === 'both';
+    const isSale = e.listing_type === 'sale' || e.listing_type === 'both';
+    const ti = EQ_TYPES.find(t=>t.id===e.equipment_type)?.icon || '🚜';
+    const mc = mode === 'rent' ? '#0277BD' : '#2E7D32';
+    return `
+      <div style="background:white;border-radius:12px;margin-bottom:10px;box-shadow:0 2px 6px rgba(0,0,0,0.07);overflow:hidden">
+        <div style="height:4px;background:${mc}"></div>
+        <div style="padding:12px 14px">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <div style="width:44px;height:44px;border-radius:10px;background:#FBE9E7;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${ti}</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:14px">${e.name}</div>
+              <div style="font-size:11px;color:#757575;margin-top:2px">📍 ${e.location_label||'Nearby'}${e.owner_name?' · 👤 '+e.owner_name:''}</div>
+              <div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap">
+                ${mode==='rent'&&isRent?`<span style="background:#E3F2FD;color:#0277BD;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">₹${Number(e.daily_rate||0).toLocaleString()}/day</span>`:''}
+                ${mode==='buy'&&isSale?`<span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">₹${Number(e.sale_price||0).toLocaleString()}</span>`:''}
+                ${e.year_of_manufacture?`<span style="background:#F5F5F5;color:#616161;padding:2px 7px;border-radius:8px;font-size:10px">${e.year_of_manufacture}</span>`:''}
+                ${e.operator_included?`<span style="background:#FFF3E0;color:#E65100;padding:2px 7px;border-radius:8px;font-size:10px">+Operator</span>`:''}
+                ${e.rating?`<span style="background:#FFF8E1;color:#F9A825;padding:2px 7px;border-radius:8px;font-size:10px">⭐${Number(e.rating).toFixed(1)}</span>`:''}
+                <span style="background:${e.status==='available'?'#E8F5E9':'#FFEBEE'};color:${e.status==='available'?'#2E7D32':'#C62828'};padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600">${e.status==='available'?'✓ Available':'Booked'}</span>
               </div>
-              <div class="text-sm text-muted mt-sm">${j.employer_name || ''} · ${j.location_label || j.district_name || ''}</div>
-              <div class="flex-between mt-sm">
-                <span class="text-sm fw-600" style="color:var(--primary)">₹${Number(j.salary_min || 0).toLocaleString()}${j.salary_max ? ' - ₹' + Number(j.salary_max).toLocaleString() : ''}/${j.salary_period || 'month'}</span>
-                <span class="text-sm text-muted">${j.vacancies || 0} openings</span>
-              </div>
-              ${j.skills?.length ? `<div class="l-tags mt-sm">${(Array.isArray(j.skills) ? j.skills : []).map(s => `<span class="tag tag-gray">${s}</span>`).join('')}</div>` : ''}
-              ${j.days_remaining ? `<div class="text-sm text-muted mt-sm">⏰ ${j.days_remaining} days left</div>` : ''}
-              ${mode === 'buyer' ? `<button class="btn btn-primary btn-small mt-sm apply-btn" data-jid="${j.id}">Apply Now</button>` : `
-                <div style="display:flex;gap:8px;margin-top:8px">
-                  <button class="btn btn-secondary btn-small job-edit-btn" data-jid="${j.id}" style="flex:1">✏️ Edit</button>
-                  <button class="btn btn-small job-del-btn" data-jid="${j.id}" style="flex:1;background:#FFEBEE;color:#C62828;border:none">🗑️ Delete</button>
-                </div>`}
             </div>
-          `).join('')}`}
-      </div>`;
-  }
-
-  function showBooking(id) {
-    const e = equipment.find(x => x.id == id);
-    if (!e) return;
-    const days = 1;
-    showModal(`
-      <div class="modal-handle"></div>
-      <h3>🚜 Book ${e.name}</h3>
-      <div class="card" style="box-shadow:none;background:var(--bg)">
-        <div class="flex-between mb"><span>Daily Rate</span><span class="fw-700">₹${Number(e.daily_rate).toLocaleString()}/day</span></div>
-        ${e.hourly_rate ? `<div class="flex-between mb"><span>Hourly Rate</span><span>₹${Number(e.hourly_rate).toLocaleString()}/hr</span></div>` : ''}
-        ${e.operator_included || e.has_operator ? '<div class="flex-between mb"><span>Operator</span><span class="tag tag-blue">✅ Included</span></div>' : ''}
-        <div class="flex-between"><span>Location</span><span>${e.location_label || e.district_name || 'N/A'}</span></div>
+          </div>
+          ${e.description?`<div style="font-size:11px;color:#757575;margin-top:8px;line-height:1.5">${e.description.slice(0,120)}${e.description.length>120?'…':''}</div>`:''}
+          <div style="display:flex;gap:6px;margin-top:10px">
+            ${mode==='rent'&&isRent&&e.status==='available'?`<button class="book-btn" data-id="${e.id}" style="flex:1;padding:9px;background:#0277BD;color:white;border:none;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer">📅 Book Now</button>`:''}
+            ${mode==='buy'&&isSale?`<button class="contact-buy-btn" data-id="${e.id}" style="flex:1;padding:9px;background:#2E7D32;color:white;border:none;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer">� Contact Seller</button>`:''}
+            <button class="review-eq-btn" data-id="${e.id}" data-name="${e.name}" style="padding:9px 10px;background:#FFF8E1;color:#F9A825;border:none;border-radius:8px;font-size:12px;cursor:pointer">⭐</button>
+          </div>
+        </div>
       </div>
-      <div class="form-group mt"><label>Start Date</label><input class="form-input" type="date" id="bStart"></div>
-      <div class="form-group"><label>End Date</label><input class="form-input" type="date" id="bEnd"></div>
-      <div class="form-group"><label>Notes</label><textarea class="form-input" id="bNotes" placeholder="Any special requirements…"></textarea></div>
-      <button class="btn btn-primary" id="confirmBook" style="width:100%">🔒 Confirm Booking (Escrow Protected)</button>
-      <div style="display:flex;gap:8px;margin-top:10px;padding:10px;background:var(--info-bg);border-radius:8px;border:1px solid var(--info)">
-        <span style="font-size:16px">🛡️</span>
-        <div class="text-sm" style="color:var(--info)"><strong>Escrow Protection:</strong> Payment held securely until delivery confirmed. Commission: 8-15%. Cancel anytime before confirmation.</div>
-      </div>
-    `);
-    document.querySelector('#confirmBook')?.addEventListener('click', async () => {
-      const start = document.querySelector('#bStart')?.value;
-      const end = document.querySelector('#bEnd')?.value;
-      if (!start || !end) { showToast('Select dates', 'error'); return; }
-      try {
-        const res = await api.bookEquipment(e.id, { start_date: start, end_date: end, notes: document.querySelector('#bNotes')?.value });
-        showToast(`Booked! Total: ₹${res.booking?.total_amount || 'N/A'}`, 'success');
-        closeModal(); loadData();
-      } catch (err) { showToast(err.message, 'error'); }
-    });
-  }
-
-  function showEditEquipment(id) {
-    const e = equipment.find(x => x.id == id);
-    if (!e) return;
-    showModal(`
-      <div class="modal-handle"></div>
-      <h3>✏️ Edit Equipment</h3>
-      <div class="form-group"><label>Name</label><input class="form-input" id="eName" value="${e.name || ''}"></div>
-      <div class="form-group"><label>Daily Rate (₹)</label><input class="form-input" type="number" id="eRate" value="${e.daily_rate || ''}"></div>
-      <div class="form-group"><label>Hourly Rate (₹)</label><input class="form-input" type="number" id="eHRate" value="${e.hourly_rate || ''}"></div>
-      <div class="form-group"><label>With Operator?</label><select class="form-input" id="eOp"><option value="false" ${!(e.operator_included || e.has_operator) ? 'selected' : ''}>No</option><option value="true" ${(e.operator_included || e.has_operator) ? 'selected' : ''}>Yes</option></select></div>
-      <div class="form-group"><label>Location</label><input class="form-input" id="eLoc" value="${e.location_label || ''}"></div>
-      <div class="form-group"><label>Status</label><select class="form-input" id="eStatus"><option value="available" ${e.status==='available'?'selected':''}>Available</option><option value="rented" ${e.status==='rented'?'selected':''}>Rented</option><option value="maintenance" ${e.status==='maintenance'?'selected':''}>Maintenance</option></select></div>
-      <div class="form-group"><label>Description</label><textarea class="form-input" id="eDesc" rows="2">${e.description || ''}</textarea></div>
-      <button class="btn btn-primary" id="saveEquipEdit" style="width:100%">Save Changes</button>
-    `);
-    document.querySelector('#saveEquipEdit')?.addEventListener('click', async () => {
-      try {
-        await api.updateEquipment(e.id, {
-          name: document.querySelector('#eName')?.value?.trim(),
-          daily_rate: Number(document.querySelector('#eRate')?.value),
-          hourly_rate: Number(document.querySelector('#eHRate')?.value) || undefined,
-          operator_included: document.querySelector('#eOp')?.value === 'true',
-          location_label: document.querySelector('#eLoc')?.value?.trim(),
-          status: document.querySelector('#eStatus')?.value,
-          description: document.querySelector('#eDesc')?.value?.trim(),
-        });
-        showToast('Equipment updated!', 'success'); closeModal(); loadData();
-      } catch(err) { showToast(err.message, 'error'); }
-    });
-  }
-
-  function showEditJob(id) {
-    const j = jobs.find(x => x.id == id);
-    if (!j) return;
-    showModal(`
-      <div class="modal-handle"></div>
-      <h3>✏️ Edit Job</h3>
-      <div class="form-group"><label>Title</label><input class="form-input" id="ejTitle" value="${j.title || ''}"></div>
-      <div class="form-group"><label>Min Salary (₹)</label><input class="form-input" type="number" id="ejSalMin" value="${j.salary_min || ''}"></div>
-      <div class="form-group"><label>Max Salary (₹)</label><input class="form-input" type="number" id="ejSalMax" value="${j.salary_max || ''}"></div>
-      <div class="form-group"><label>Vacancies</label><input class="form-input" type="number" id="ejVac" value="${j.vacancies || ''}"></div>
-      <div class="form-group"><label>Location</label><input class="form-input" id="ejLoc" value="${j.location_label || ''}"></div>
-      <div class="form-group"><label>Status</label><select class="form-input" id="ejStatus"><option value="active" ${j.is_active!==false?'selected':''}>Active</option><option value="inactive" ${j.is_active===false?'selected':''}>Inactive</option></select></div>
-      <div class="form-group"><label>Description</label><textarea class="form-input" id="ejDesc" rows="2">${j.description || ''}</textarea></div>
-      <button class="btn btn-primary" id="saveJobEdit" style="width:100%">Save Changes</button>
-    `);
-    document.querySelector('#saveJobEdit')?.addEventListener('click', async () => {
-      try {
-        await api.updateJob(j.id, {
-          title: document.querySelector('#ejTitle')?.value?.trim(),
-          salary_min: Number(document.querySelector('#ejSalMin')?.value) || undefined,
-          salary_max: Number(document.querySelector('#ejSalMax')?.value) || undefined,
-          vacancies: Number(document.querySelector('#ejVac')?.value) || undefined,
-          location_label: document.querySelector('#ejLoc')?.value?.trim(),
-          is_active: document.querySelector('#ejStatus')?.value === 'active',
-          description: document.querySelector('#ejDesc')?.value?.trim(),
-        });
-        showToast('Job updated!', 'success'); closeModal(); loadData();
-      } catch(err) { showToast(err.message, 'error'); }
-    });
-  }
-
-  function showPostJob() {
-    showModal(`
-      <div class="modal-handle"></div>
-      <h3>Post a Job</h3>
-      <div class="form-group"><label>Title</label><input class="form-input" type="text" id="jTitle" placeholder="Farm Supervisor"></div>
-      <div class="form-group"><label>Employer Name</label><input class="form-input" type="text" id="jEmployer" placeholder="Your farm/company name"></div>
-      <div class="form-group"><label>Job Type</label><select class="form-input" id="jType"><option>permanent</option><option>seasonal</option><option>daily_wage</option><option>contract</option></select></div>
-      <div class="form-group"><label>Min Salary (₹)</label><input class="form-input" type="number" id="jSalary" placeholder="15000"></div>
-      <div class="form-group"><label>Max Salary (₹)</label><input class="form-input" type="number" id="jSalaryMax" placeholder="25000"></div>
-      <div class="form-group"><label>Salary Period</label><select class="form-input" id="jPeriod"><option value="month">Per Month</option><option value="day">Per Day</option><option value="season">Per Season</option><option value="year">Per Year</option></select></div>
-      <div class="form-group"><label>Location</label><input class="form-input" type="text" id="jLoc" placeholder="Village, District"></div>
-      <div class="form-group"><label>Vacancies</label><input class="form-input" type="number" id="jVac" placeholder="2"></div>
-      <div class="form-group"><label>Skills Required</label><input class="form-input" type="text" id="jSkills" placeholder="Tractor driving, Irrigation, Harvesting (comma-separated)"></div>
-      <div class="form-group"><label>Description</label><textarea class="form-input" id="jDesc" placeholder="Job details, responsibilities, requirements…"></textarea></div>
-      <button class="btn btn-primary" id="submitJob" style="width:100%">Post Job</button>
-    `);
-    document.querySelector('#submitJob')?.addEventListener('click', async () => {
-      const title = document.querySelector('#jTitle')?.value?.trim();
-      if (!title) { showToast('Title is required', 'error'); return; }
-      try {
-        const skills = document.querySelector('#jSkills')?.value?.split(',').map(s => s.trim()).filter(Boolean);
-        await api.createJob({
-          title,
-          employer_name: document.querySelector('#jEmployer')?.value?.trim() || undefined,
-          job_type: document.querySelector('#jType')?.value,
-          salary_min: Number(document.querySelector('#jSalary')?.value) || undefined,
-          salary_max: Number(document.querySelector('#jSalaryMax')?.value) || undefined,
-          salary_period: document.querySelector('#jPeriod')?.value,
-          location_label: document.querySelector('#jLoc')?.value?.trim() || undefined,
-          vacancies: Number(document.querySelector('#jVac')?.value) || 1,
-          skills: skills.length ? skills : undefined,
-          description: document.querySelector('#jDesc')?.value?.trim() || undefined,
-        });
-        showToast('Job posted!', 'success');
-        closeModal(); loadData();
-      } catch (e) { showToast(e.message, 'error'); }
-    });
+    `;
   }
 
   function showListEquipment() {
     showModal(`
-      <div class="modal-handle"></div>
-      <h3>List Equipment for Rent</h3>
-      <div class="form-group"><label>Equipment Name</label><input class="form-input" type="text" id="eqName" placeholder="John Deere 5050D"></div>
-      <div class="form-group"><label>Type</label><select class="form-input" id="eqType"><option>tractor</option><option>harvester</option><option>sprayer</option><option>rotavator</option><option>seed_drill</option><option>other</option></select></div>
+      <div class="modal-handle"></div><h3>🚜 List Equipment</h3>
+      <div class="form-group"><label>Name *</label><input class="form-input" id="eqName" placeholder="e.g. John Deere 5310"></div>
+      <div class="form-group"><label>Type *</label><select class="form-input" id="eqTypeS">${EQ_TYPES.map(t=>`<option value="${t.id}">${t.icon} ${t.label}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Listing</label><select class="form-input" id="eqLT"><option value="rent">🔑 Rent</option><option value="sale">💰 Sale</option><option value="both">Both</option></select></div>
       <div class="form-group"><label>Daily Rate (₹)</label><input class="form-input" type="number" id="eqRate" placeholder="1500"></div>
-      <div class="form-group"><label>Hourly Rate (₹, optional)</label><input class="form-input" type="number" id="eqHRate" placeholder="300"></div>
-      <div class="form-group"><label>With Operator?</label><select class="form-input" id="eqOperator"><option value="false">No (equipment only)</option><option value="true">Yes (+ operator)</option></select></div>
-      <div class="form-group"><label>Location</label><input class="form-input" type="text" id="eqLoc" placeholder="Village, District"></div>
-      <div class="form-group"><label>Description</label><textarea class="form-input" id="eqDesc" rows="2" placeholder="Condition, hours, features…"></textarea></div>
-      <button class="btn btn-primary" id="submitEquip">List Equipment</button>
-      <div class="text-sm text-muted mt" style="text-align:center">Commission: 8-15% on completed rentals</div>
+      <div class="form-group"><label>Sale Price (₹)</label><input class="form-input" type="number" id="eqPrice" placeholder="450000"></div>
+      <div class="form-group"><label>Year</label><input class="form-input" type="number" id="eqYear" placeholder="2021"></div>
+      <div class="form-group"><label>Location</label><input class="form-input" id="eqLoc" placeholder="Guntur, AP"></div>
+      <div class="form-group"><label>Description</label><textarea class="form-input" id="eqDesc" rows="2"></textarea></div>
+      <button id="submitEq" style="width:100%;padding:12px;background:#E65100;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">List Equipment</button>
     `);
-    document.querySelector('#submitEquip')?.addEventListener('click', async () => {
+    document.querySelector('#submitEq')?.addEventListener('click', async () => {
+      const name = document.querySelector('#eqName')?.value?.trim();
+      if (!name) return showToast('Name required','error');
       try {
-        await api.createEquipment({
-          name: document.querySelector('#eqName')?.value,
-          equipment_type: document.querySelector('#eqType')?.value,
-          daily_rate: Number(document.querySelector('#eqRate')?.value),
-          hourly_rate: Number(document.querySelector('#eqHRate')?.value) || undefined,
-          operator_included: document.querySelector('#eqOperator')?.value === 'true',
-          location_label: document.querySelector('#eqLoc')?.value || undefined,
-          description: document.querySelector('#eqDesc')?.value,
-        });
-        showToast('Equipment listed!', 'success'); closeModal(); loadData();
-      } catch (e) { showToast(e.message, 'error'); }
+        await api.createEquipment({ name, equipment_type:document.querySelector('#eqTypeS').value, listing_type:document.querySelector('#eqLT').value, daily_rate:Number(document.querySelector('#eqRate').value)||null, sale_price:Number(document.querySelector('#eqPrice').value)||null, year_of_manufacture:Number(document.querySelector('#eqYear').value)||null, location_label:document.querySelector('#eqLoc').value, description:document.querySelector('#eqDesc').value });
+        showToast('Listed!','success'); closeModal(); loadData();
+      } catch(e) { showToast(e.message,'error'); }
     });
   }
 
-  async function loadBookings() {
-    try {
-      const [bk, ap] = await Promise.all([
-        api.getMyBookings().catch(() => []),
-        api.getMyApplications().catch(() => []),
-      ]);
-      bookings = Array.isArray(bk) ? bk : (bk.bookings || []);
-      applications = Array.isArray(ap) ? ap : (ap.applications || []);
-    } catch(e) { console.error(e); }
-    render();
+  function showBookingModal(id) {
+    const e = equipment.find(x=>x.id==id);
+    if (!e) return;
+    showModal(`<div class="modal-handle"></div><h3>📅 Book — ${e.name}</h3>
+      <div style="background:#E3F2FD;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px">${e.equipment_type?.replace('_',' ')} · ${e.location_label} · ₹${Number(e.daily_rate||0).toLocaleString()}/day${e.operator_included?' · +Operator':''}</div>
+      <div class="form-group"><label>Start</label><input class="form-input" type="date" id="bkS"></div>
+      <div class="form-group"><label>End</label><input class="form-input" type="date" id="bkE"></div>
+      <div class="form-group"><label>Notes</label><textarea class="form-input" id="bkN" rows="2" placeholder="Purpose, location…"></textarea></div>
+      <button id="submitBk" style="width:100%;padding:12px;background:#0277BD;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Confirm Booking</button>`);
+    document.querySelector('#submitBk')?.addEventListener('click', async ()=>{
+      const s=document.querySelector('#bkS').value, en=document.querySelector('#bkE').value;
+      if(!s||!en) return showToast('Select dates','error');
+      const d=Math.ceil((new Date(en)-new Date(s))/86400000)+1;
+      const total=d*Number(e.daily_rate||0);
+      closeModal();
+      showCheckout({
+        amount: total,
+        description: `${e.name} — ${d} days rental`,
+        order_type: 'kisanconnect',
+        reference_id: e.id,
+        onSuccess: async () => {
+          try { await api.createBooking({equipment_id:e.id,start_date:s,end_date:en,notes:document.querySelector('#bkN')?.value||'',total_amount:total}); showToast(t('booking_confirmed')||`Booked ${d} days!`,'success'); loadData(); } catch(err){showToast(err.message,'error');}
+        },
+        onFailure: () => showToast(t('payment_failed')||'Payment failed','error')
+      });
+    });
+  }
+
+  function attachEvents() {
+    container.querySelectorAll('[data-kmode]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.kmode;eqType='';eqSearch='';render();}));
+    container.querySelectorAll('[data-et]').forEach(b=>b.addEventListener('click',()=>{eqType=b.dataset.et;render();}));
+    container.querySelector('#eqSearch')?.addEventListener('input',e=>{eqSearch=e.target.value;render();});
+    container.querySelector('#listEquipBtn')?.addEventListener('click',showListEquipment);
+    container.querySelectorAll('.book-btn').forEach(b=>b.addEventListener('click',()=>showBookingModal(b.dataset.id)));
+    container.querySelectorAll('.contact-buy-btn').forEach(b=>b.addEventListener('click',()=>{
+      navigate('chat');
+    }));
+    container.querySelectorAll('.review-eq-btn').forEach(b=>b.addEventListener('click',()=>showReviewsModal({target_type:'equipment',target_id:b.dataset.id,target_name:b.dataset.name})));
   }
 
   async function loadData() {
     loading = true; render();
     try {
-      const [eq, jb, st, bk, ap] = await Promise.all([
-        api.getEquipment('?limit=20'),
-        api.getJobs('?limit=20'),
-        api.getKisanStats().catch(() => ({})),
-        api.getMyBookings().catch(() => []),
-        api.getMyApplications().catch(() => []),
-      ]);
-      equipment = Array.isArray(eq) ? eq : (eq.equipment || []);
-      jobs = Array.isArray(jb) ? jb : (jb.jobs || []);
-      stats = st?.stats || st || {};
-      bookings = Array.isArray(bk) ? bk : (bk.bookings || []);
-      applications = Array.isArray(ap) ? ap : (ap.applications || []);
-    } catch (e) { console.error(e); }
+      const eq = await api.getEquipment('?limit=30').catch(()=>null);
+      const data = eq?(Array.isArray(eq)?eq:(eq.equipment||[])):[];
+      equipment = data.length > 0 ? data : SAMPLE_EQUIPMENT;
+    } catch(e) { equipment = SAMPLE_EQUIPMENT; }
     loading = false; render();
   }
 

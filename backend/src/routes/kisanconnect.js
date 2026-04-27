@@ -284,4 +284,149 @@ router.delete('/jobs/:id', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ── Crop Marketplace ──────────────────────────────────
+// GET /api/kisanconnect/crops
+router.get('/crops', optionalAuth, async (req, res) => {
+  try {
+    const { search, quality, is_organic, limit = 20, offset = 0 } = req.query;
+    let conditions = [`cl.status = 'active'`];
+    let params = [];
+    let i = 1;
+    if (search) { conditions.push(`(cl.crop_name ILIKE $${i} OR cl.variety ILIKE $${i})`); params.push(`%${search}%`); i++; }
+    if (quality) { conditions.push(`cl.quality_grade = $${i++}`); params.push(quality); }
+    if (is_organic === 'true') { conditions.push(`cl.is_organic = true`); }
+    params.push(parseInt(limit), parseInt(offset));
+    const result = await query(`
+      SELECT cl.*, d.name AS district_name, u.name AS seller_name, u.phone AS seller_phone
+      FROM crop_listings cl
+      LEFT JOIN districts d ON d.id = cl.district_id
+      JOIN users u ON u.id = cl.seller_id
+      WHERE ${conditions.join(' AND ')}
+      ORDER BY cl.created_at DESC
+      LIMIT $${i++} OFFSET $${i++}
+    `, params);
+    res.json({ crops: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/kisanconnect/crops
+router.post('/crops', authMiddleware, async (req, res) => {
+  try {
+    const { crop_name, variety, quantity_kg, price_per_kg, quality_grade, is_organic, district_id, location_label, description } = req.body;
+    if (!crop_name || !quantity_kg) return res.status(400).json({ error: 'crop_name and quantity_kg required' });
+    const result = await query(`
+      INSERT INTO crop_listings (id, seller_id, crop_name, variety, quantity_kg, price_per_kg, quality_grade, is_organic, district_id, location_label, description)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *
+    `, [uuidv4(), req.user.id, crop_name, variety, quantity_kg, price_per_kg, quality_grade || 'ungraded', is_organic || false, district_id, location_label, description]);
+    res.status(201).json({ crop: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/kisanconnect/crops/:id
+router.patch('/crops/:id', authMiddleware, async (req, res) => {
+  try {
+    const { quantity_kg, price_per_kg, description, status } = req.body;
+    const existing = await query('SELECT * FROM crop_listings WHERE id = $1 AND seller_id = $2', [req.params.id, req.user.id]);
+    if (!existing.rows.length) return res.status(404).json({ error: 'Crop listing not found' });
+    const result = await query(`
+      UPDATE crop_listings SET quantity_kg = COALESCE($1, quantity_kg), price_per_kg = COALESCE($2, price_per_kg),
+        description = COALESCE($3, description), status = COALESCE($4, status)
+      WHERE id = $5 RETURNING *
+    `, [quantity_kg, price_per_kg, description, status, req.params.id]);
+    res.json({ crop: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/kisanconnect/crops/:id
+router.delete('/crops/:id', authMiddleware, async (req, res) => {
+  try {
+    const existing = await query('SELECT * FROM crop_listings WHERE id = $1 AND seller_id = $2', [req.params.id, req.user.id]);
+    if (!existing.rows.length) return res.status(404).json({ error: 'Crop listing not found' });
+    await query('DELETE FROM crop_listings WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Crop listing deleted' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Rural Services ────────────────────────────────────
+// GET /api/kisanconnect/services
+router.get('/services', async (req, res) => {
+  try {
+    const { type, district_id } = req.query;
+    let conditions = ['sl.is_active = true'];
+    let params = [];
+    let i = 1;
+    if (type) { conditions.push(`sl.service_type = $${i++}`); params.push(type); }
+    if (district_id) { conditions.push(`sl.district_id = $${i++}`); params.push(district_id); }
+    const result = await query(`
+      SELECT sl.*, d.name AS district_name, u.name AS provider_name
+      FROM service_listings sl
+      LEFT JOIN districts d ON d.id = sl.district_id
+      JOIN users u ON u.id = sl.provider_id
+      WHERE ${conditions.join(' AND ')}
+      ORDER BY sl.rating DESC, sl.total_bookings DESC
+    `, params);
+    res.json({ services: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/kisanconnect/services
+router.post('/services', authMiddleware, async (req, res) => {
+  try {
+    const { service_type, title, description, price, price_unit, district_id, location_label } = req.body;
+    if (!service_type || !title) return res.status(400).json({ error: 'service_type and title required' });
+    const result = await query(`
+      INSERT INTO service_listings (id, provider_id, service_type, title, description, price, price_unit, district_id, location_label)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *
+    `, [uuidv4(), req.user.id, service_type, title, description, price, price_unit || 'per_visit', district_id, location_label]);
+    res.status(201).json({ service: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/kisanconnect/services/:id/request
+router.post('/services/:id/request', authMiddleware, async (req, res) => {
+  try {
+    const { preferred_date, notes } = req.body;
+    const svc = await query('SELECT * FROM service_listings WHERE id = $1 AND is_active = true', [req.params.id]);
+    if (!svc.rows.length) return res.status(404).json({ error: 'Service not found' });
+    const result = await query(`
+      INSERT INTO service_requests (id, service_id, requester_id, preferred_date, notes)
+      VALUES ($1,$2,$3,$4,$5) RETURNING *
+    `, [uuidv4(), req.params.id, req.user.id, preferred_date, notes]);
+    await query('UPDATE service_listings SET total_bookings = total_bookings + 1 WHERE id = $1', [req.params.id]);
+    res.status(201).json({ request: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Reviews ───────────────────────────────────────────
+// POST /api/kisanconnect/reviews
+router.post('/reviews', authMiddleware, async (req, res) => {
+  try {
+    const { target_type, target_id, rating, comment } = req.body;
+    if (!target_type || !target_id || !rating) return res.status(400).json({ error: 'target_type, target_id, rating required' });
+    const result = await query(`
+      INSERT INTO reviews (id, reviewer_id, target_type, target_id, rating, comment)
+      VALUES ($1,$2,$3,$4,$5,$6) RETURNING *
+    `, [uuidv4(), req.user.id, target_type, target_id, rating, comment]);
+    // Update target rating
+    if (target_type === 'equipment') {
+      const avg = await query('SELECT AVG(rating) AS avg_rating FROM reviews WHERE target_type = $1 AND target_id = $2', [target_type, target_id]);
+      await query('UPDATE equipment SET rating = $1 WHERE id = $2', [avg.rows[0].avg_rating, target_id]);
+    }
+    res.status(201).json({ review: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/kisanconnect/reviews/:targetType/:targetId
+router.get('/reviews/:targetType/:targetId', async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT r.*, u.name AS reviewer_name FROM reviews r
+      JOIN users u ON u.id = r.reviewer_id
+      WHERE r.target_type = $1 AND r.target_id = $2
+      ORDER BY r.created_at DESC
+    `, [req.params.targetType, req.params.targetId]);
+    res.json({ reviews: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

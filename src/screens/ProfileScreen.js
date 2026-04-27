@@ -1,346 +1,382 @@
 import { api } from '../api.js';
-import { getState, logout as logoutStore } from '../store.js';
+import { getState, logout as logoutStore, getRole } from '../store.js';
 import { navigate, showToast, showModal, closeModal } from '../main.js';
+import { t, getLang, setLang, LANGUAGES } from '../i18n.js';
 
 export function renderProfile(container) {
   const user = getState().user || {};
   const role = user.role || 'farmer';
 
+  const ROLE_META = {
+    farmer:           { icon: '👨‍🌾', color: '#4CAF50', label: 'Farmer',          tagline: 'India\'s Agriculture Network' },
+    fpo:              { icon: '🏢', color: '#2196F3', label: 'FPO Admin',        tagline: 'FPO Management Platform' },
+    buyer:            { icon: '🛒', color: '#FF9800', label: 'Buyer',            tagline: 'Buyer Intelligence App' },
+    supplier:         { icon: '🏭', color: '#9C27B0', label: 'Input Supplier',   tagline: 'AquaOS Input Marketplace' },
+    service_provider: { icon: '🔧', color: '#607D8B', label: 'Service Provider', tagline: 'AgriHub Services' },
+  };
+  const rm = ROLE_META[role] || ROLE_META.farmer;
+
   container.innerHTML = `
-    <div class="profile-hero">
-      <div class="profile-avatar">${(user.name || 'U')[0].toUpperCase()}</div>
+    <div class="profile-hero" style="background:linear-gradient(135deg,${rm.color},${role==='buyer'?'#F44336':role==='fpo'?'#9C27B0':role==='supplier'?'#E91E63':'#00c9a7'})">
+      <div class="profile-avatar" style="background:rgba(255,255,255,0.25);color:white;font-size:28px;width:70px;height:70px;margin:0 auto 10px">${rm.icon}</div>
       <div class="ph-name">${user.name || 'User'}</div>
       <div class="ph-phone">+91 ${user.phone || ''}</div>
-      <div class="ph-role">${role}</div>
+      <div class="ph-role" style="background:rgba(255,255,255,0.2)">${rm.icon} ${rm.label}</div>
+      <div style="font-size:11px;opacity:0.8;margin-top:4px">${rm.tagline}</div>
     </div>
 
+    <!-- ROLE-SPECIFIC PROFILE SETTINGS -->
+    <div id="roleProfileSection" style="padding:8px 0"></div>
+
+    <!-- PLATFORM ACCESS -->
     <div style="padding:8px 0">
-      <div class="menu-item" data-nav="orders">
-        <div class="mi-icon" style="background:var(--accent-light)">📦</div>
-        <div class="mi-text"><div class="mi-title">My Orders</div><div class="mi-sub">Track your purchases</div></div>
-        <span class="mi-arrow">›</span>
-      </div>
-      <div class="menu-item" data-nav="notifications">
-        <div class="mi-icon" style="background:var(--info-bg)">🔔</div>
-        <div class="mi-text"><div class="mi-title">Notifications</div><div class="mi-sub">Alerts & updates</div></div>
-        <span class="mi-arrow">›</span>
-      </div>
-      <div class="menu-item" data-nav="community">
-        <div class="mi-icon" style="background:var(--success-bg)">💬</div>
-        <div class="mi-text"><div class="mi-title">Community</div><div class="mi-sub">Discussions & tips</div></div>
-        <span class="mi-arrow">›</span>
-      </div>
-      <div class="menu-item" data-nav="weather">
-        <div class="mi-icon" style="background:#E0F7FA">🌤️</div>
-        <div class="mi-text"><div class="mi-title">Weather</div><div class="mi-sub">Forecast & advisories</div></div>
-        <span class="mi-arrow">›</span>
-      </div>
+      <div style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Platform Access</div>
+      ${role === 'farmer' ? `
+        <div class="menu-item" data-nav="intelligence"><div class="mi-icon" style="background:#E8F5E9">📊</div><div class="mi-text"><div class="mi-title">My Dashboard</div><div class="mi-sub">Declarations, Harvests, Inquiries</div></div><span class="mi-arrow">›</span></div>
+        <div class="menu-item" data-nav="agriflow"><div class="mi-icon" style="background:#EDE7F6">🌾</div><div class="mi-text"><div class="mi-title">AgriFlow</div><div class="mi-sub">Supply Intelligence</div></div><span class="mi-arrow">›</span></div>
+        <div class="menu-item" data-nav="aquaos"><div class="mi-icon" style="background:#E3F2FD">🐟</div><div class="mi-text"><div class="mi-title">AquaOS</div><div class="mi-sub">Aquaculture Farm OS</div></div><span class="mi-arrow">›</span></div>
+        <div class="menu-item" data-nav="kisan"><div class="mi-icon" style="background:#FFF3E0">🚜</div><div class="mi-text"><div class="mi-title">KisanConnect</div><div class="mi-sub">Rural Super-App</div></div><span class="mi-arrow">›</span></div>
+      ` : role === 'fpo' ? `
+        <div class="menu-item" data-nav="intelligence"><div class="mi-icon" style="background:#E3F2FD">📊</div><div class="mi-text"><div class="mi-title">FPO Dashboard</div><div class="mi-sub">Members, Procurement, Inventory</div></div><span class="mi-arrow">›</span></div>
+        <div class="menu-item" data-nav="agriflow"><div class="mi-icon" style="background:#E8F5E9">🌾</div><div class="mi-text"><div class="mi-title">Supply Listings</div><div class="mi-sub">Publish aggregated supply</div></div><span class="mi-arrow">›</span></div>
+        <div class="menu-item" data-nav="kisan"><div class="mi-icon" style="background:#FFF3E0">🚜</div><div class="mi-text"><div class="mi-title">KisanConnect</div><div class="mi-sub">Marketplace</div></div><span class="mi-arrow">›</span></div>
+      ` : role === 'buyer' ? `
+        <div class="menu-item" data-nav="intelligence"><div class="mi-icon" style="background:#FFF3E0">🔍</div><div class="mi-text"><div class="mi-title">Supply Search</div><div class="mi-sub">Search nationwide crop supply</div></div><span class="mi-arrow">›</span></div>
+        <div class="menu-item" data-nav="aquaos"><div class="mi-icon" style="background:#E3F2FD">🐟</div><div class="mi-text"><div class="mi-title">AquaOS Marketplace</div><div class="mi-sub">Aquaculture harvest listings</div></div><span class="mi-arrow">›</span></div>
+        <div class="menu-item" data-nav="kisan"><div class="mi-icon" style="background:#EDE7F6">🚜</div><div class="mi-text"><div class="mi-title">KisanConnect</div><div class="mi-sub">Crop Marketplace</div></div><span class="mi-arrow">›</span></div>
+      ` : role === 'supplier' ? `
+        <div class="menu-item" data-nav="aquaos"><div class="mi-icon" style="background:#E3F2FD">📦</div><div class="mi-text"><div class="mi-title">My Products</div><div class="mi-sub">Manage input catalog & leads</div></div><span class="mi-arrow">›</span></div>
+        <div class="menu-item" data-nav="kisan"><div class="mi-icon" style="background:#FFF3E0">🚜</div><div class="mi-text"><div class="mi-title">KisanConnect</div><div class="mi-sub">Rural Input Marketplace</div></div><span class="mi-arrow">›</span></div>
+      ` : `
+        <div class="menu-item" data-nav="kisan"><div class="mi-icon" style="background:#FFF3E0">🚜</div><div class="mi-text"><div class="mi-title">KisanConnect</div><div class="mi-sub">Service Listings</div></div><span class="mi-arrow">›</span></div>
+      `}
+      <div class="menu-item" data-nav="community"><div class="mi-icon" style="background:#E8F5E9">💬</div><div class="mi-text"><div class="mi-title">Community</div><div class="mi-sub">Knowledge network</div></div><span class="mi-arrow">›</span></div>
+      <div class="menu-item" data-nav="weather"><div class="mi-icon" style="background:#E0F7FA">🌤️</div><div class="mi-text"><div class="mi-title">Weather & Forecast</div><div class="mi-sub">Crop advisories</div></div><span class="mi-arrow">›</span></div>
+      <div class="menu-item" data-nav="notifications"><div class="mi-icon" style="background:var(--info-bg)">🔔</div><div class="mi-text"><div class="mi-title">Notifications</div><div class="mi-sub">Alerts & updates</div></div><span class="mi-arrow">›</span></div>
+      <div class="menu-item" data-nav="orders"><div class="mi-icon" style="background:var(--accent-light)">📦</div><div class="mi-text"><div class="mi-title">Orders</div><div class="mi-sub">Track purchases</div></div><span class="mi-arrow">›</span></div>
+      <div class="menu-item" data-nav="architecture"><div class="mi-icon" style="background:#ECEFF1">🏗️</div><div class="mi-text"><div class="mi-title">Platform Architecture</div><div class="mi-sub">Roadmap & technical stack</div></div><span class="mi-arrow">›</span></div>
     </div>
 
-    <div style="padding:12px 0">
+    <!-- ACCOUNT SETTINGS -->
+    <div style="padding:8px 0">
+      <div style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Account</div>
+      <div class="menu-item" id="kycBtn">
+        <div class="mi-icon" style="background:#E8F5E9">🛡️</div>
+        <div class="mi-text"><div class="mi-title">${t('complete_kyc')}</div><div class="mi-sub" id="kycStatusText">${t('kyc_pending')}</div></div>
+        <span class="mi-arrow">›</span>
+      </div>
+      <div class="menu-item" id="paymentHistBtn">
+        <div class="mi-icon" style="background:#FFF3E0">💳</div>
+        <div class="mi-text"><div class="mi-title">${t('payment_history')}</div><div class="mi-sub">${t('wallet_balance')}: Loading...</div></div>
+        <span class="mi-arrow">›</span>
+      </div>
+      <div class="menu-item" id="langBtn">
+        <div class="mi-icon" style="background:#E3F2FD">🌐</div>
+        <div class="mi-text"><div class="mi-title">${t('change_language')}</div><div class="mi-sub">${LANGUAGES.find(l=>l.code===getLang())?.native || 'English'}</div></div>
+        <span class="mi-arrow">›</span>
+      </div>
       <div class="menu-item" id="editNameBtn">
         <div class="mi-icon" style="background:var(--primary-surface)">✏️</div>
-        <div class="mi-text"><div class="mi-title">Edit Name</div><div class="mi-sub">${user.name || 'Update your name'}</div></div>
+        <div class="mi-text"><div class="mi-title">${t('edit_profile')}</div><div class="mi-sub">${user.name || 'Update your name'}</div></div>
         <span class="mi-arrow">›</span>
       </div>
-      ${role === 'farmer' ? `
-        <div class="menu-item" id="editProfileBtn">
-          <div class="mi-icon" style="background:#E8F5E9">🌾</div>
-          <div class="mi-text"><div class="mi-title">Farm Profile</div><div class="mi-sub">District, land, irrigation, soil type</div></div>
-          <span class="mi-arrow">›</span>
-        </div>
-      ` : ''}
-      ${role === 'fpo' ? `
-        <div class="menu-item" id="fpoProfileBtn">
-          <div class="mi-icon" style="background:#E8F5E9">🏢</div>
-          <div class="mi-text"><div class="mi-title">FPO Profile</div><div class="mi-sub">Organization, members, registration</div></div>
-          <span class="mi-arrow">›</span>
-        </div>
-      ` : ''}
-      ${role === 'buyer' ? `
-        <div class="menu-item" id="buyerProfileBtn">
-          <div class="mi-icon" style="background:#E3F2FD">🏪</div>
-          <div class="mi-text"><div class="mi-title">Business Profile</div><div class="mi-sub">Company, GST, preferences</div></div>
-          <span class="mi-arrow">›</span>
-        </div>
-      ` : ''}
-      <div class="menu-item" id="kycBtn">
-        <div class="mi-icon" style="background:#FFF3E0">🪪</div>
-        <div class="mi-text"><div class="mi-title">KYC Verification</div><div class="mi-sub">${user.is_verified ? '✅ Verified' : '⏳ Complete your KYC'}</div></div>
-        <span class="mi-arrow">›</span>
-      </div>
-      <div class="menu-item" id="notifPrefsBtn">
-        <div class="mi-icon" style="background:#F3E5F5">⚙️</div>
-        <div class="mi-text"><div class="mi-title">Notification Preferences</div><div class="mi-sub">Price alerts, weather, orders</div></div>
-        <span class="mi-arrow">›</span>
+      <div class="menu-item" id="logoutBtn">
+        <div class="mi-icon" style="background:#FFEBEE">🚪</div>
+        <div class="mi-text"><div class="mi-title">${t('logout')}</div><div class="mi-sub">Sign out of AgriHub</div></div>
+        <span class="mi-arrow" style="color:#F44336">›</span>
       </div>
     </div>
 
-    <div style="padding:12px 0">
-      <div class="menu-item" id="exportDataBtn">
-        <div class="mi-icon" style="background:#E3F2FD">📥</div>
-        <div class="mi-text"><div class="mi-title">Export My Data</div><div class="mi-sub">DPDP Act 2023 compliance</div></div>
-        <span class="mi-arrow">›</span>
+    <!-- PLAN INFO -->
+    <div class="card" style="margin:12px 16px 80px;padding:14px;background:linear-gradient(135deg,var(--primary),#00c9a7);color:white">
+      <div class="fw-700">${role === 'buyer' ? '🧠 Buyer Intelligence' : role === 'fpo' ? '🏢 FPO Pro Platform' : role === 'supplier' ? '📦 Supplier Platform' : '🌾 Farmer Network'}</div>
+      <div style="font-size:12px;opacity:0.9;margin-top:4px">
+        ${role === 'buyer' ? 'Upgrade to Enterprise (₹50,000/yr) for heatmaps, price forecasts, direct farmer contact & API access' :
+          role === 'fpo' ? 'Pro Plan (₹2,999/mo) · Unlimited members, procurement, inventory, supply listings' :
+          role === 'supplier' ? 'Premium Listing (₹4,999/mo) · Featured products, lead contact details, advertising' :
+          'Free Farmer · ₹100/yr Premium for advanced advisory, insurance, priority listings'}
       </div>
-      <div class="menu-item" data-nav="architecture">
-        <div class="mi-icon" style="background:#E8EAF6">🏗️</div>
-        <div class="mi-text"><div class="mi-title">Architecture</div><div class="mi-sub">System design & blueprint</div></div>
-        <span class="mi-arrow">›</span>
-      </div>
-    </div>
-
-    <div style="padding:16px">
-      <button class="btn btn-danger" id="logoutBtn">🚪 Logout</button>
-    </div>
-
-    <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">
-      AgriHub v1.0.0 · 500+ Features · 5 Integrated Apps<br>
-      🌾 AgriFlow · 🐟 AquaOS · 🚜 KisanConnect · 🏡 FarmerConnect · 📊 Intelligence<br>
-      Made with ❤️ for Indian Farmers
     </div>
   `;
 
-  container.querySelectorAll('[data-nav]').forEach(el => {
-    el.addEventListener('click', () => navigate(el.dataset.nav));
-  });
+  container.querySelectorAll('[data-nav]').forEach(el => el.addEventListener('click', () => navigate(el.dataset.nav)));
 
   container.querySelector('#editNameBtn')?.addEventListener('click', () => {
-    showModal(`
-      <div class="modal-handle"></div>
-      <h3>Edit Name</h3>
-      <div class="form-group"><label>Your Name</label><input class="form-input" type="text" id="editName" value="${user.name || ''}" placeholder="Enter name"></div>
-      <button class="btn btn-primary" id="saveName">Save</button>
-    `);
+    showModal(`<div class="modal-handle"></div><h3>✏️ Edit Name</h3>
+      <div class="form-group"><label>Name</label><input class="form-input" id="newName" value="${user.name||''}" placeholder="Your full name"></div>
+      <button class="btn btn-primary" id="saveName" style="width:100%">${t('save')}</button>`);
     document.querySelector('#saveName')?.addEventListener('click', async () => {
-      const name = document.querySelector('#editName')?.value?.trim();
-      if (!name) { showToast('Enter a name', 'error'); return; }
+      const name = document.querySelector('#newName')?.value?.trim();
+      if (!name) { showToast('Name required', 'error'); return; }
       try {
-        await api.updateMe({ name });
-        const updated = { ...user, name };
-        localStorage.setItem('agrihub_user', JSON.stringify(updated));
-        (await import('../store.js')).setState({ user: updated });
-        showToast('Name updated!', 'success');
-        closeModal();
-        renderProfile(container);
-      } catch (e) { showToast(e.message, 'error'); }
+        await api.updateProfile({ name });
+        showToast('Name updated!', 'success'); closeModal();
+      } catch(e) { showToast(e.message,'error'); }
     });
   });
 
-  container.querySelector('#editProfileBtn')?.addEventListener('click', async () => {
-    let farmProfile = {}, districts = [];
-    try { const res = await api.getFarmerProfile(); farmProfile = res?.profile || res || {}; } catch(e) {}
-    try { const d = await api.getDistricts(); districts = Array.isArray(d) ? d : (d.districts || []); } catch(e) {}
-    showModal(`
-      <div class="modal-handle"></div>
-      <h3>🌾 Farm Profile</h3>
-      <div class="form-group"><label>State</label><input class="form-input" id="fpState" value="${farmProfile.state || ''}" placeholder="e.g. Maharashtra"></div>
-      <div class="form-group"><label>District</label>
-        <select class="form-input" id="fpDistrict">
-          <option value="">Select District</option>
-          ${districts.map(d => `<option value="${d.name}" ${(farmProfile.district_name || '') === d.name ? 'selected' : ''}>${d.name}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group"><label>Village/Mandal</label><input class="form-input" id="fpVillage" value="${farmProfile.village || ''}" placeholder="e.g. Ozar"></div>
-      <div class="form-group"><label>Land Area (acres)</label><input class="form-input" type="number" id="fpLand" value="${farmProfile.total_land_acres || ''}" placeholder="e.g. 5"></div>
-      <div class="form-group"><label>Irrigation Type</label>
-        <select class="form-input" id="fpIrrigation">
-          <option value="">Select</option>
-          ${['Drip','Sprinkler','Flood','Rainfed','Canal','Borewell'].map(t=>`<option value="${t}" ${(farmProfile.irrigation_type||[]).includes(t)?'selected':''}>${t}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group"><label>Soil Type</label>
-        <select class="form-input" id="fpSoil">
-          <option value="">Select</option>
-          ${['Black Cotton','Red','Alluvial','Laterite','Sandy','Clay','Loamy'].map(t=>`<option value="${t}" ${(farmProfile.soil_type||[]).includes(t)?'selected':''}>${t}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group"><label>Primary Crops</label><input class="form-input" id="fpCrops" value="${(farmProfile.primary_crops || []).join(', ')}" placeholder="e.g. Wheat, Rice, Cotton"></div>
-      <div class="form-group"><label>Farming Method</label>
-        <select class="form-input" id="fpMethod">
-          ${['conventional','organic','natural','mixed'].map(t=>`<option value="${t}" ${farmProfile.farming_method===t?'selected':''}>${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join('')}
-        </select>
-      </div>
-      <button class="btn btn-primary" id="saveFarmProfile" style="width:100%">Save Farm Profile</button>
-    `);
-    document.querySelector('#saveFarmProfile')?.addEventListener('click', async () => {
-      const irrigation = document.querySelector('#fpIrrigation')?.value;
-      const soil = document.querySelector('#fpSoil')?.value;
-      const crops = document.querySelector('#fpCrops')?.value?.split(',').map(s=>s.trim()).filter(Boolean);
-      const data = {
-        state: document.querySelector('#fpState')?.value?.trim() || undefined,
-        district_name: document.querySelector('#fpDistrict')?.value || undefined,
-        village: document.querySelector('#fpVillage')?.value?.trim() || undefined,
-        total_land_acres: parseFloat(document.querySelector('#fpLand')?.value) || null,
-        irrigation_type: irrigation ? [irrigation] : [],
-        soil_type: soil ? [soil] : [],
-        primary_crops: crops || [],
-        farming_method: document.querySelector('#fpMethod')?.value || 'conventional',
-      };
-      try {
-        await api.updateFarmerProfile(data);
-        showToast('Farm profile saved!', 'success');
-        closeModal();
-      } catch(e) { showToast(e.message, 'error'); }
-    });
-  });
-
-  container.querySelector('#fpoProfileBtn')?.addEventListener('click', async () => {
-    let fpoProfile = {};
-    try { const res = await api.getFPOProfile(); fpoProfile = res?.profile || res || {}; } catch(e) {}
-    showModal(`
-      <div class="modal-handle"></div>
-      <h3>🏢 FPO Profile</h3>
-      <div class="form-group"><label>Organization Name</label><input class="form-input" id="fpoName" value="${fpoProfile.organization_name || ''}" placeholder="Farmers Producer Organization"></div>
-      <div class="form-group"><label>Registration Number</label><input class="form-input" id="fpoRegNo" value="${fpoProfile.registration_number || ''}" placeholder="FPO/REG/2024/XXXX"></div>
-      <div class="form-group"><label>Total Members</label><input class="form-input" type="number" id="fpoMembers" value="${fpoProfile.total_members || ''}" placeholder="500"></div>
-      <div class="form-group"><label>State</label><input class="form-input" id="fpoState" value="${fpoProfile.state || ''}" placeholder="Maharashtra"></div>
-      <div class="form-group"><label>District</label><input class="form-input" id="fpoDistrict" value="${fpoProfile.district_name || ''}" placeholder="Nashik"></div>
-      <div class="form-group"><label>Commodities Handled</label><input class="form-input" id="fpoCommodities" value="${(fpoProfile.commodities || []).join(', ')}" placeholder="Wheat, Rice, Cotton"></div>
-      <div class="form-group"><label>Storage Capacity (MT)</label><input class="form-input" type="number" id="fpoStorage" value="${fpoProfile.storage_capacity_mt || ''}" placeholder="100"></div>
-      <div class="form-group"><label>Contact Email</label><input class="form-input" type="email" id="fpoEmail" value="${fpoProfile.email || ''}" placeholder="fpo@example.com"></div>
-      <div class="form-group"><label>About</label><textarea class="form-input" id="fpoAbout" rows="2">${fpoProfile.description || ''}</textarea></div>
-      <button class="btn btn-primary" id="saveFPOProfile" style="width:100%">Save FPO Profile</button>
-    `);
-    document.querySelector('#saveFPOProfile')?.addEventListener('click', async () => {
-      try {
-        await api.updateFPOProfile({
-          organization_name: document.querySelector('#fpoName')?.value?.trim(),
-          registration_number: document.querySelector('#fpoRegNo')?.value?.trim(),
-          total_members: Number(document.querySelector('#fpoMembers')?.value) || undefined,
-          state: document.querySelector('#fpoState')?.value?.trim(),
-          district_name: document.querySelector('#fpoDistrict')?.value?.trim(),
-          commodities: document.querySelector('#fpoCommodities')?.value?.split(',').map(s => s.trim()).filter(Boolean),
-          storage_capacity_mt: Number(document.querySelector('#fpoStorage')?.value) || undefined,
-          email: document.querySelector('#fpoEmail')?.value?.trim(),
-          description: document.querySelector('#fpoAbout')?.value?.trim(),
-        });
-        showToast('FPO profile saved!', 'success'); closeModal();
-      } catch(e) { showToast(e.message, 'error'); }
-    });
-  });
-
-  container.querySelector('#buyerProfileBtn')?.addEventListener('click', async () => {
-    let buyerProfile = {};
-    try { const res = await api.getBuyerProfile(); buyerProfile = res?.profile || res || {}; } catch(e) {}
-    showModal(`
-      <div class="modal-handle"></div>
-      <h3>🏪 Business Profile</h3>
-      <div class="form-group"><label>Company Name</label><input class="form-input" id="bpCompany" value="${buyerProfile.company_name || ''}" placeholder="ABC Trading Co."></div>
-      <div class="form-group"><label>Business Type</label>
-        <select class="form-input" id="bpType">
-          <option value="">Select</option>
-          ${['Wholesaler','Retailer','Processor','Exporter','Restaurant/Hotel','Institutional'].map(t => `<option value="${t}" ${buyerProfile.business_type === t ? 'selected' : ''}>${t}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group"><label>GST Number</label><input class="form-input" id="bpGst" value="${buyerProfile.gst_number || ''}" placeholder="22AAAAA0000A1Z5" style="text-transform:uppercase"></div>
-      <div class="form-group"><label>FSSAI License</label><input class="form-input" id="bpFssai" value="${buyerProfile.fssai_license || ''}" placeholder="14-digit FSSAI number"></div>
-      <div class="form-group"><label>Commodities of Interest</label><input class="form-input" id="bpCommodities" value="${(buyerProfile.commodities || []).join(', ')}" placeholder="Rice, Wheat, Pulses"></div>
-      <div class="form-group"><label>Monthly Requirement (MT)</label><input class="form-input" type="number" id="bpVolume" value="${buyerProfile.monthly_volume_mt || ''}" placeholder="50"></div>
-      <div class="form-group"><label>Operating Districts</label><input class="form-input" id="bpDistricts" value="${(buyerProfile.operating_districts || []).join(', ')}" placeholder="Nashik, Pune, Mumbai"></div>
-      <div class="form-group"><label>Address</label><textarea class="form-input" id="bpAddr" rows="2">${buyerProfile.address || ''}</textarea></div>
-      <button class="btn btn-primary" id="saveBuyerProfile" style="width:100%">Save Business Profile</button>
-    `);
-    document.querySelector('#saveBuyerProfile')?.addEventListener('click', async () => {
-      try {
-        await api.updateBuyerProfile({
-          company_name: document.querySelector('#bpCompany')?.value?.trim(),
-          business_type: document.querySelector('#bpType')?.value,
-          gst_number: document.querySelector('#bpGst')?.value?.trim().toUpperCase(),
-          fssai_license: document.querySelector('#bpFssai')?.value?.trim(),
-          commodities: document.querySelector('#bpCommodities')?.value?.split(',').map(s => s.trim()).filter(Boolean),
-          monthly_volume_mt: Number(document.querySelector('#bpVolume')?.value) || undefined,
-          operating_districts: document.querySelector('#bpDistricts')?.value?.split(',').map(s => s.trim()).filter(Boolean),
-          address: document.querySelector('#bpAddr')?.value?.trim(),
-        });
-        showToast('Business profile saved!', 'success'); closeModal();
-      } catch(e) { showToast(e.message, 'error'); }
-    });
-  });
-
-  container.querySelector('#notifPrefsBtn')?.addEventListener('click', () => {
-    const prefs = JSON.parse(localStorage.getItem('agrihub_notif_prefs') || '{}');
-    showModal(`
-      <div class="modal-handle"></div>
-      <h3>⚙️ Notification Preferences</h3>
-      <div style="display:flex;flex-direction:column;gap:12px">
-        ${[
-          { key: 'price_alerts', label: '💰 Price Alerts', desc: 'Get notified when crop prices change significantly' },
-          { key: 'weather_alerts', label: '🌤️ Weather Alerts', desc: 'Severe weather warnings and advisories' },
-          { key: 'order_updates', label: '📦 Order Updates', desc: 'Status changes on your orders' },
-          { key: 'inquiry_alerts', label: '📩 Inquiry Alerts', desc: 'New inquiries on your listings' },
-          { key: 'community_updates', label: '💬 Community Updates', desc: 'Replies and mentions' },
-          { key: 'harvest_reminders', label: '🌾 Harvest Reminders', desc: 'Upcoming harvest date notifications' },
-        ].map(n => `
-          <div style="display:flex;align-items:center;gap:12px;padding:8px;border-bottom:1px solid var(--border)">
-            <div style="flex:1">
-              <div class="fw-600 text-sm">${n.label}</div>
-              <div class="text-sm text-muted">${n.desc}</div>
-            </div>
-            <label style="position:relative;width:44px;height:24px;flex-shrink:0">
-              <input type="checkbox" class="notif-toggle" data-key="${n.key}" ${prefs[n.key] !== false ? 'checked' : ''} style="opacity:0;width:0;height:0">
-              <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:${prefs[n.key] !== false ? 'var(--primary)' : '#ccc'};border-radius:12px;transition:.2s"></span>
-              <span style="position:absolute;content:'';height:20px;width:20px;left:${prefs[n.key] !== false ? '22px' : '2px'};bottom:2px;background:white;border-radius:50%;transition:.2s"></span>
-            </label>
-          </div>
-        `).join('')}
-      </div>
-      <button class="btn btn-primary mt-lg" id="saveNotifPrefs" style="width:100%">Save Preferences</button>
-    `);
-    document.querySelector('#saveNotifPrefs')?.addEventListener('click', () => {
-      const newPrefs = {};
-      document.querySelectorAll('.notif-toggle').forEach(t => { newPrefs[t.dataset.key] = t.checked; });
-      localStorage.setItem('agrihub_notif_prefs', JSON.stringify(newPrefs));
-      showToast('Preferences saved!', 'success'); closeModal();
-    });
-  });
-
+  // ─── KYC Button ──────────────────────────────────────────────
   container.querySelector('#kycBtn')?.addEventListener('click', () => {
-    showModal(`
-      <div class="modal-handle"></div>
-      <h3>🪪 KYC Verification</h3>
-      <p style="color:var(--text2);font-size:13px;margin-bottom:16px">Complete your KYC to unlock premium features, higher trade limits, and verified seller badge.</p>
-      <div class="form-group"><label>Aadhaar Number</label><input class="form-input" id="kycAadhaar" placeholder="XXXX XXXX XXXX" maxlength="14"></div>
-      <div class="form-group"><label>PAN Number (optional)</label><input class="form-input" id="kycPan" placeholder="ABCDE1234F" maxlength="10" style="text-transform:uppercase"></div>
-      <div class="form-group"><label>Bank Account (for payouts)</label><input class="form-input" id="kycBank" placeholder="Account number"></div>
-      <div class="form-group"><label>IFSC Code</label><input class="form-input" id="kycIfsc" placeholder="e.g. SBIN0001234" style="text-transform:uppercase"></div>
-      <button class="btn btn-primary" id="submitKyc" style="width:100%">Submit for Verification</button>
+    showModal(`<div class="modal-handle"></div>
+      <h3>🛡️ ${t('complete_kyc')}</h3>
+      <p class="text-sm text-muted" style="margin-bottom:16px">Submit documents for identity verification. Required for payments above ₹50,000.</p>
+      <div id="kycDocsList" style="margin-bottom:16px">
+        <div class="card" style="padding:12px;margin-bottom:8px;cursor:pointer" data-doctype="aadhaar">
+          <div class="flex-between"><div class="fw-600">📋 ${t('upload_aadhaar')}</div><span class="tag tag-gray" id="kycDoc_aadhaar">Pending</span></div>
+          <div class="text-sm text-muted mt-sm">Aadhaar card (front + back)</div>
+        </div>
+        <div class="card" style="padding:12px;margin-bottom:8px;cursor:pointer" data-doctype="pan">
+          <div class="flex-between"><div class="fw-600">📋 ${t('upload_pan')}</div><span class="tag tag-gray" id="kycDoc_pan">Pending</span></div>
+          <div class="text-sm text-muted mt-sm">PAN Card</div>
+        </div>
+        <div class="card" style="padding:12px;margin-bottom:8px;cursor:pointer" data-doctype="bank_passbook">
+          <div class="flex-between"><div class="fw-600">🏦 ${t('upload_bank')}</div><span class="tag tag-gray" id="kycDoc_bank_passbook">Pending</span></div>
+          <div class="text-sm text-muted mt-sm">Bank Passbook first page or cancelled cheque</div>
+        </div>
+      </div>
+      <div class="form-group"><label>Document Type</label><select class="form-input" id="kycDocType">
+        <option value="aadhaar">Aadhaar Card</option><option value="pan">PAN Card</option><option value="bank_passbook">Bank Passbook</option>
+        <option value="land_pattadar">Land Pattadar</option><option value="fpo_certificate">FPO Certificate</option><option value="gst_certificate">GST Certificate</option>
+      </select></div>
+      <div class="form-group"><label>Document Number (optional)</label><input class="form-input" id="kycDocNum" placeholder="Enter document number"></div>
+      <button class="btn btn-primary" id="submitKyc" style="width:100%">${t('submit')} Document</button>
+      <button class="btn btn-secondary mt-sm" id="verifyKycBtn" style="width:100%;margin-top:8px">🔄 Request Verification</button>
     `);
     document.querySelector('#submitKyc')?.addEventListener('click', async () => {
-      const aadhaar = document.querySelector('#kycAadhaar')?.value?.replace(/\s/g,'');
-      if (!aadhaar || aadhaar.length !== 12) { showToast('Enter valid 12-digit Aadhaar', 'error'); return; }
+      const doc_type = document.querySelector('#kycDocType')?.value;
+      const doc_number = document.querySelector('#kycDocNum')?.value;
       try {
-        await api.updateMe({ aadhaar_last4: aadhaar.slice(-4), kyc_submitted: true });
-        showToast('KYC submitted for verification!', 'success');
-        closeModal();
+        await api.submitKYCDocument({ doc_type, doc_number_hash: doc_number ? btoa(doc_number) : null });
+        showToast('Document submitted!', 'success');
+      } catch(e) { showToast(e.message, 'error'); }
+    });
+    document.querySelector('#verifyKycBtn')?.addEventListener('click', async () => {
+      try {
+        await api.verifyKYC();
+        showToast(t('kyc_verified'), 'success'); closeModal();
       } catch(e) { showToast(e.message, 'error'); }
     });
   });
 
-  container.querySelector('#exportDataBtn')?.addEventListener('click', async () => {
-    showToast('Preparing data export...', 'info');
+  // ─── Payment History Button ──────────────────────────────────
+  container.querySelector('#paymentHistBtn')?.addEventListener('click', async () => {
     try {
-      const [profile, listings, inquiries] = await Promise.allSettled([
-        api.getFarmerProfile(), api.getMyListings(), api.getMyInquiries()
+      const [walletRes, histRes] = await Promise.all([
+        api.getWallet().catch(() => ({ balance: 0, recent_transactions: [] })),
+        api.getPaymentHistory().catch(() => ({ payments: [] })),
       ]);
-      const exportData = {
-        exported_at: new Date().toISOString(),
-        profile: profile.value || {},
-        listings: listings.value || [],
-        inquiries: inquiries.value || []
-      };
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `agrihub_data_${Date.now()}.json`;
-      a.click(); URL.revokeObjectURL(url);
-      showToast('Data exported successfully!', 'success');
+      const balance = walletRes.balance || 0;
+      const payments = histRes.payments || [];
+      showModal(`<div class="modal-handle"></div>
+        <h3>💳 ${t('payment_history')}</h3>
+        <div class="card" style="padding:16px;margin-bottom:16px;background:linear-gradient(135deg,#2196F3,#00BCD4);color:white;border-radius:12px">
+          <div class="text-sm" style="opacity:0.8">${t('wallet_balance')}</div>
+          <div style="font-size:28px;font-weight:800;margin-top:4px">₹${Number(balance).toLocaleString()}</div>
+          <button class="btn btn-small" id="addMoneyBtn" style="margin-top:12px;background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.4)">+ ${t('add_money')}</button>
+        </div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">Recent Payments</div>
+        ${payments.length === 0 ? '<div class="text-sm text-muted">No payment history yet</div>' :
+          payments.slice(0,10).map(p => `
+            <div class="card" style="padding:10px;margin-bottom:6px">
+              <div class="flex-between"><div class="fw-600 text-sm">${p.description || p.order_type || 'Payment'}</div><span class="tag tag-${p.status==='paid'?'green':p.status==='failed'?'red':'gray'}">${p.status}</span></div>
+              <div class="flex-between mt-sm"><span class="fw-700" style="color:var(--primary)">₹${Number(p.amount).toLocaleString()}</span><span class="text-sm text-muted">${new Date(p.created_at).toLocaleDateString('en-IN')}</span></div>
+            </div>
+          `).join('')}
+      `);
+      document.querySelector('#addMoneyBtn')?.addEventListener('click', () => {
+        showToast('Wallet top-up coming soon', 'info');
+      });
     } catch(e) { showToast(e.message, 'error'); }
   });
 
-  container.querySelector('#logoutBtn')?.addEventListener('click', async () => {
-    await api.logout();
-    api.setToken(null);
+  // ─── Language Button ─────────────────────────────────────────
+  container.querySelector('#langBtn')?.addEventListener('click', () => {
+    showModal(`<div class="modal-handle"></div>
+      <h3>🌐 ${t('change_language')}</h3>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+        ${LANGUAGES.map(l => `
+          <button class="btn ${getLang()===l.code ? 'btn-primary' : 'btn-secondary'} lang-choice" data-lang="${l.code}" style="width:100%;text-align:left;padding:14px 16px">
+            <span style="font-size:16px;margin-right:8px">${l.flag}</span>
+            <span class="fw-700">${l.native}</span>
+            <span class="text-sm text-muted" style="margin-left:8px">(${l.name})</span>
+            ${getLang()===l.code ? '<span style="margin-left:auto">✓</span>' : ''}
+          </button>
+        `).join('')}
+      </div>
+    `);
+    document.querySelectorAll('.lang-choice').forEach(b => {
+      b.addEventListener('click', async () => {
+        setLang(b.dataset.lang);
+        try { await api.updateLanguage(b.dataset.lang); } catch(e) {}
+        closeModal();
+        showToast('Language updated!', 'success');
+        navigate('profile'); // Re-render with new language
+      });
+    });
+  });
+
+  // ─── Wallet balance loader ───────────────────────────────────
+  api.getWallet().then(w => {
+    const el = container.querySelector('#paymentHistBtn .mi-sub');
+    if (el) el.textContent = `${t('wallet_balance')}: ₹${Number(w.balance||0).toLocaleString()}`;
+  }).catch(() => {});
+
+  // ─── KYC status loader ───────────────────────────────────────
+  api.getKYCStatus().then(res => {
+    const status = res.kyc?.status || 'pending';
+    const el = container.querySelector('#kycStatusText');
+    if (el) {
+      el.textContent = status === 'verified' ? t('kyc_verified') : status === 'submitted' ? t('kyc_pending') : t('kyc_pending');
+      el.style.color = status === 'verified' ? 'var(--success)' : '';
+    }
+  }).catch(() => {});
+
+  container.querySelector('#logoutBtn')?.addEventListener('click', () => {
+    if (!confirm('Logout from AgriHub?')) return;
     logoutStore();
     navigate('login');
   });
+
+  loadRoleProfile();
+
+  async function loadRoleProfile() {
+    const el = container.querySelector('#roleProfileSection');
+    if (!el) return;
+    try {
+      if (role === 'farmer') {
+        const res = await api.getFarmerProfile();
+        const fp = res.profile || res || {};
+        el.innerHTML = `
+          <div style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Farm Profile</div>
+          <div class="menu-item" id="editFarmBtn">
+            <div class="mi-icon" style="background:#E8F5E9">🌾</div>
+            <div class="mi-text">
+              <div class="mi-title">${fp.village ? `${fp.village}, ${fp.district_name||''}` : 'Set Farm Location'}</div>
+              <div class="mi-sub">${fp.total_land_acres ? `${fp.total_land_acres} acres · ${fp.irrigation_type||''}` : 'State · District · Land area'}</div>
+            </div>
+            <span class="mi-arrow">›</span>
+          </div>
+          ${fp.primary_crops?.length ? `<div style="padding:4px 16px 8px;display:flex;flex-wrap:wrap;gap:6px">
+            ${fp.primary_crops.slice(0,6).map(c => `<span class="tag tag-green">${c}</span>`).join('')}
+          </div>` : ''}
+        `;
+        el.querySelector('#editFarmBtn')?.addEventListener('click', () => showFarmerProfileModal(fp));
+
+      } else if (role === 'fpo') {
+        const res = await api.getFPOProfile();
+        const fp = res.profile || res || {};
+        el.innerHTML = `
+          <div style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">FPO Profile</div>
+          <div class="menu-item" id="editFpoBtn">
+            <div class="mi-icon" style="background:#E3F2FD">🏢</div>
+            <div class="mi-text">
+              <div class="mi-title">${fp.fpo_name || 'Set Up FPO Profile'}</div>
+              <div class="mi-sub">${fp.state||''} ${fp.district_name ? '· '+fp.district_name : ''} ${fp.member_count ? '· '+fp.member_count+' members' : ''}</div>
+            </div>
+            <span class="mi-arrow">›</span>
+          </div>
+        `;
+        el.querySelector('#editFpoBtn')?.addEventListener('click', () => showFPOProfileModal(fp));
+
+      } else if (role === 'buyer') {
+        const res = await api.getBuyerProfile();
+        const bp = res.profile || res || {};
+        el.innerHTML = `
+          <div style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Buyer Profile</div>
+          <div class="menu-item" id="editBuyerBtn">
+            <div class="mi-icon" style="background:#FFF3E0">🛒</div>
+            <div class="mi-text">
+              <div class="mi-title">${bp.company_name || 'Set Company Profile'}</div>
+              <div class="mi-sub">${bp.business_type||''} ${bp.gstin ? '· GSTIN: '+bp.gstin.slice(0,8)+'…' : ''}</div>
+            </div>
+            <span class="mi-arrow">›</span>
+          </div>
+          ${bp.commodities?.length ? `<div style="padding:4px 16px 8px;display:flex;flex-wrap:wrap;gap:6px">
+            ${bp.commodities.slice(0,6).map(c => `<span class="tag tag-orange">${c}</span>`).join('')}
+          </div>` : ''}
+        `;
+        el.querySelector('#editBuyerBtn')?.addEventListener('click', () => showBuyerProfileModal(bp));
+      }
+    } catch(e) { console.error('Profile load:', e); }
+  }
+
+  function showFarmerProfileModal(fp = {}) {
+    showModal(`<div class="modal-handle"></div><h3>🌾 Farm Profile</h3>
+      <div class="form-group"><label>State</label><input class="form-input" id="fpState" value="${fp.state||''}" placeholder="Andhra Pradesh"></div>
+      <div class="form-group"><label>District</label><input class="form-input" id="fpDist" value="${fp.district_name||''}" placeholder="West Godavari"></div>
+      <div class="form-group"><label>Village</label><input class="form-input" id="fpVillage" value="${fp.village||''}" placeholder="Bhimavaram"></div>
+      <div class="form-group"><label>Land (acres)</label><input class="form-input" type="number" id="fpAcres" value="${fp.total_land_acres||''}" placeholder="5"></div>
+      <div class="form-group"><label>Irrigation Type</label><select class="form-input" id="fpIrr">
+        ${['borewell','canal','drip','rainfed','tank','river'].map(t=>`<option value="${t}" ${fp.irrigation_type===t?'selected':''}>${t}</option>`).join('')}
+      </select></div>
+      <div class="form-group"><label>Farming Method</label><select class="form-input" id="fpMethod">
+        ${['conventional','organic','natural','integrated'].map(t=>`<option value="${t}" ${fp.farming_method===t?'selected':''}>${t}</option>`).join('')}
+      </select></div>
+      <div class="form-group"><label>Primary Crops (comma-separated)</label><input class="form-input" id="fpCrops" value="${(fp.primary_crops||[]).join(', ')}" placeholder="Tomato, Onion, Rice"></div>
+      <div class="form-group"><label><input type="checkbox" id="fpConsent" ${fp.contact_consent?'checked':''}> Allow buyers to contact me directly</label></div>
+      <button class="btn btn-primary" id="saveFarmer" style="width:100%">Save Farm Profile</button>`);
+    document.querySelector('#saveFarmer')?.addEventListener('click', async () => {
+      try {
+        await api.updateFarmerProfile({
+          state: document.querySelector('#fpState')?.value,
+          village: document.querySelector('#fpVillage')?.value,
+          total_land_acres: Number(document.querySelector('#fpAcres')?.value) || undefined,
+          irrigation_type: document.querySelector('#fpIrr')?.value,
+          farming_method: document.querySelector('#fpMethod')?.value,
+          primary_crops: document.querySelector('#fpCrops')?.value?.split(',').map(s=>s.trim()).filter(Boolean),
+          contact_consent: document.querySelector('#fpConsent')?.checked,
+        });
+        showToast('Farm profile saved', 'success'); closeModal(); loadRoleProfile();
+      } catch(e) { showToast(e.message,'error'); }
+    });
+  }
+
+  function showFPOProfileModal(fp = {}) {
+    showModal(`<div class="modal-handle"></div><h3>🏢 FPO Profile</h3>
+      <div class="form-group"><label>FPO Name</label><input class="form-input" id="fpName" value="${fp.fpo_name||''}" placeholder="Sri Rama FPO Ltd"></div>
+      <div class="form-group"><label>Registration Number</label><input class="form-input" id="fpReg" value="${fp.registration_number||''}"></div>
+      <div class="form-group"><label>State</label><input class="form-input" id="fpState" value="${fp.state||''}" placeholder="Andhra Pradesh"></div>
+      <div class="form-group"><label>District</label><input class="form-input" id="fpDist" value="${fp.district_name||''}"></div>
+      <div class="form-group"><label>CEO Name</label><input class="form-input" id="fpCeo" value="${fp.ceo_name||''}"></div>
+      <div class="form-group"><label>Primary Crops (comma-separated)</label><input class="form-input" id="fpCrops" value="${(fp.primary_crops||[]).join(', ')}"></div>
+      <button class="btn btn-primary" id="saveFpo" style="width:100%">Save FPO Profile</button>`);
+    document.querySelector('#saveFpo')?.addEventListener('click', async () => {
+      try {
+        await api.updateFPOProfile({
+          fpo_name: document.querySelector('#fpName')?.value,
+          registration_number: document.querySelector('#fpReg')?.value,
+          state: document.querySelector('#fpState')?.value,
+          ceo_name: document.querySelector('#fpCeo')?.value,
+          primary_crops: document.querySelector('#fpCrops')?.value?.split(',').map(s=>s.trim()).filter(Boolean),
+        });
+        showToast('FPO profile saved', 'success'); closeModal(); loadRoleProfile();
+      } catch(e) { showToast(e.message,'error'); }
+    });
+  }
+
+  function showBuyerProfileModal(bp = {}) {
+    showModal(`<div class="modal-handle"></div><h3>🛒 Buyer Profile</h3>
+      <div class="form-group"><label>Company Name</label><input class="form-input" id="bpComp" value="${bp.company_name||''}" placeholder="Fresh Exports Pvt Ltd"></div>
+      <div class="form-group"><label>Business Type</label><select class="form-input" id="bpType">
+        ${['trader','exporter','processor','retailer','supermarket','wholesaler'].map(t=>`<option value="${t}" ${bp.business_type===t?'selected':''}>${t}</option>`).join('')}
+      </select></div>
+      <div class="form-group"><label>GSTIN</label><input class="form-input" id="bpGstin" value="${bp.gstin||''}" maxlength="15" placeholder="29ABCDE1234F1Z5"></div>
+      <div class="form-group"><label>Monthly Volume (tons)</label><input class="form-input" type="number" id="bpVol" value="${bp.monthly_volume_tons||''}"></div>
+      <div class="form-group"><label>Sourcing States (comma-separated)</label><input class="form-input" id="bpStates" value="${(bp.sourcing_states||[]).join(', ')}" placeholder="Andhra Pradesh, Karnataka"></div>
+      <div class="form-group"><label>Commodities (comma-separated)</label><input class="form-input" id="bpComm" value="${(bp.commodities||[]).join(', ')}" placeholder="Tomato, Onion, Shrimp"></div>
+      <button class="btn btn-primary" id="saveBuyer" style="width:100%">Save Buyer Profile</button>`);
+    document.querySelector('#saveBuyer')?.addEventListener('click', async () => {
+      try {
+        await api.updateBuyerProfile({
+          company_name: document.querySelector('#bpComp')?.value,
+          business_type: document.querySelector('#bpType')?.value,
+          gstin: document.querySelector('#bpGstin')?.value,
+          monthly_volume_tons: Number(document.querySelector('#bpVol')?.value) || undefined,
+          sourcing_states: document.querySelector('#bpStates')?.value?.split(',').map(s=>s.trim()).filter(Boolean),
+          commodities: document.querySelector('#bpComm')?.value?.split(',').map(s=>s.trim()).filter(Boolean),
+        });
+        showToast('Buyer profile saved', 'success'); closeModal(); loadRoleProfile();
+      } catch(e) { showToast(e.message,'error'); }
+    });
+  }
 }

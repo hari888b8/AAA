@@ -1,13 +1,14 @@
 import { api } from '../api.js';
 import { showToast, showModal, closeModal } from '../main.js';
 import { getRole, getState } from '../store.js';
+import { t } from '../i18n.js';
 
 export function renderFarmerConnect(container) {
   const role = getRole();
   const userId = getState().user?.id;
   let mode = role === 'buyer' ? 'seeker' : 'owner';
   let tab = mode === 'owner' ? 'listings' : 'browse';
-  let properties = [], stats = {}, savedIds = new Set(), myInquiries = [];
+  let properties = [], stats = {}, savedIds = new Set(), myInquiries = [], societies = [];
   let loading = true;
   let search = '', filterType = '';
 
@@ -27,8 +28,10 @@ export function renderFarmerConnect(container) {
         <div class="tab-bar">
           <button class="tab-btn ${tab === 'listings' ? 'active' : ''}" data-tab="listings">🏠 Listings</button>
           <button class="tab-btn ${tab === 'inquiries' ? 'active' : ''}" data-tab="inquiries">📩 Inquiries</button>
+          <button class="tab-btn ${tab === 'societies' ? 'active' : ''}" data-tab="societies">🏘️ Society</button>
+          <button class="tab-btn ${tab === 'agreements' ? 'active' : ''}" data-tab="agreements">📝 Agreements</button>
         </div>
-        ${tab === 'listings' ? renderOwnerView() : renderOwnerInquiries()}
+        ${tab === 'listings' ? renderOwnerView() : tab === 'inquiries' ? renderOwnerInquiries() : tab === 'societies' ? renderSocieties() : renderAgreements()}
       ` : `
         <div class="tab-bar">
           <button class="tab-btn ${tab === 'browse' ? 'active' : ''}" data-tab="browse">🔍 Browse</button>
@@ -226,6 +229,15 @@ export function renderFarmerConnect(container) {
       e.stopPropagation();
       try { await api.unsaveProperty(b.dataset.pid); savedIds.delete(Number(b.dataset.pid)); showToast('Removed', 'info'); render(); } catch(err) { showToast(err.message, 'error'); }
     }));
+
+    // Society management
+    container.querySelector('#addSocietyBtn')?.addEventListener('click', showAddSociety);
+    container.querySelectorAll('.log-visitor-btn').forEach(b => b.addEventListener('click', () => showLogVisitor(b.dataset.sid)));
+    container.querySelectorAll('.add-maint-btn').forEach(b => b.addEventListener('click', () => showAddMaintenance(b.dataset.sid)));
+    container.querySelectorAll('.log-complaint-btn').forEach(b => b.addEventListener('click', () => showLogComplaint(b.dataset.sid)));
+
+    // Agreements
+    container.querySelector('#createAgreementBtn')?.addEventListener('click', showCreateAgreement);
   }
 
   function showEditProperty(id) {
@@ -354,6 +366,184 @@ export function renderFarmerConnect(container) {
     });
   }
 
+  function renderSocieties() {
+    return `<div class="section" style="padding-top:8px">
+      <div class="section-title">🏘️ Society Management</div>
+      <button class="btn btn-primary btn-small mb" id="addSocietyBtn" style="width:100%">+ Add Society</button>
+      ${societies.length === 0 ? `<div class="empty-state"><div class="es-icon">🏘️</div><div class="es-title">No societies managed</div><div class="es-text">Add your society/colony for visitor tracking, maintenance & complaints</div></div>` :
+        societies.map(s => `
+          <div class="card" style="padding:14px;margin-bottom:10px">
+            <div class="flex-between" style="margin-bottom:8px">
+              <div class="fw-700">${s.name}</div>
+              <span class="tag tag-blue">${s.total_units || 0} units</span>
+            </div>
+            <div class="text-sm text-muted">${s.address || s.district_name || 'Local'}</div>
+            <div style="display:flex;gap:6px;margin-top:10px">
+              <button class="btn btn-secondary btn-small log-visitor-btn" data-sid="${s.id}" style="flex:1">👤 Visitor</button>
+              <button class="btn btn-secondary btn-small add-maint-btn" data-sid="${s.id}" style="flex:1">💰 Maintenance</button>
+              <button class="btn btn-secondary btn-small log-complaint-btn" data-sid="${s.id}" style="flex:1">📢 Complaint</button>
+            </div>
+          </div>
+        `).join('')}
+      <div class="card" style="padding:14px;margin-top:8px;background:var(--info-bg);border:1px solid var(--info)">
+        <div class="fw-600 text-sm">🏘️ Society Features</div>
+        <div class="text-sm text-muted" style="margin-top:6px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+            <span>✅ Visitor Log</span><span>✅ Maintenance Billing</span>
+            <span>✅ Complaint Tracking</span><span>✅ Notice Board</span>
+            <span>✅ Vendor Management</span><span>✅ Digital Gate Pass</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderAgreements() {
+    return `<div class="section" style="padding-top:8px">
+      <div class="section-title">📝 Digital Rent Agreements</div>
+      ${properties.length > 0 ? `<button class="btn btn-primary btn-small mb" id="createAgreementBtn" style="width:100%">+ Create Agreement</button>` : '<div class="text-sm text-muted mb">List a property first to create agreements</div>'}
+      <div class="card" style="padding:16px;margin-bottom:12px">
+        <div class="fw-700" style="margin-bottom:10px">📋 Agreement Benefits</div>
+        <div style="display:grid;gap:8px">
+          ${[
+            { icon: '📱', title: 'Digital & Paperless', desc: 'Create, sign & share agreements digitally' },
+            { icon: '🔒', title: 'Legally Valid', desc: 'E-stamped and compliant with state laws' },
+            { icon: '🔔', title: 'Auto-Reminders', desc: 'Renewal & payment reminders for both parties' },
+            { icon: '💰', title: 'Security Deposit Tracking', desc: 'Record and track security deposits safely' },
+          ].map(f => `
+            <div style="display:flex;gap:10px;padding:8px;background:var(--bg);border-radius:8px">
+              <span style="font-size:20px">${f.icon}</span>
+              <div><div class="fw-600 text-sm">${f.title}</div><div class="text-sm text-muted">${f.desc}</div></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="card" style="padding:14px;background:var(--accent-light);border:1px solid var(--accent)">
+        <div class="fw-600 text-sm">💰 Agreement Pricing</div>
+        <div class="text-sm text-muted mt-sm">Basic (Free): Standard template · Premium (₹299): Custom terms + e-stamp · Legal (₹999): Lawyer-reviewed</div>
+      </div>
+    </div>`;
+  }
+
+  function showAddSociety() {
+    showModal(`
+      <div class="modal-handle"></div>
+      <h3>🏘️ Add Society</h3>
+      <div class="form-group"><label>Society Name</label><input class="form-input" type="text" id="socName" placeholder="Green Valley Apartments"></div>
+      <div class="form-group"><label>Address</label><textarea class="form-input" id="socAddr" rows="2" placeholder="Full address…"></textarea></div>
+      <div class="form-group"><label>Total Units</label><input class="form-input" type="number" id="socUnits" placeholder="48"></div>
+      <button class="btn btn-primary" id="submitSociety" style="width:100%">Add Society</button>
+    `);
+    document.querySelector('#submitSociety')?.addEventListener('click', async () => {
+      try {
+        await api.createSociety({
+          name: document.querySelector('#socName')?.value?.trim(),
+          address: document.querySelector('#socAddr')?.value?.trim(),
+          total_units: Number(document.querySelector('#socUnits')?.value) || 0,
+        });
+        showToast('Society added!', 'success'); closeModal(); loadData();
+      } catch(e) { showToast(e.message, 'error'); }
+    });
+  }
+
+  function showLogVisitor(societyId) {
+    showModal(`
+      <div class="modal-handle"></div>
+      <h3>👤 Log Visitor</h3>
+      <div class="form-group"><label>Visitor Name</label><input class="form-input" type="text" id="vName" placeholder="Name"></div>
+      <div class="form-group"><label>Phone</label><input class="form-input" type="tel" id="vPhone" placeholder="9876543210"></div>
+      <div class="form-group"><label>Purpose</label><select class="form-input" id="vPurpose"><option>Visiting Resident</option><option>Delivery</option><option>Service/Repair</option><option>Guest</option><option>Other</option></select></div>
+      <div class="form-group"><label>Unit Number</label><input class="form-input" type="text" id="vUnit" placeholder="A-101"></div>
+      <button class="btn btn-primary" id="submitVisitor" style="width:100%">Log Entry</button>
+    `);
+    document.querySelector('#submitVisitor')?.addEventListener('click', async () => {
+      try {
+        await api.logVisitor(societyId, {
+          visitor_name: document.querySelector('#vName')?.value?.trim(),
+          phone: document.querySelector('#vPhone')?.value?.trim(),
+          purpose: document.querySelector('#vPurpose')?.value,
+          unit_number: document.querySelector('#vUnit')?.value?.trim(),
+        });
+        showToast('Visitor logged!', 'success'); closeModal();
+      } catch(e) { showToast(e.message, 'error'); }
+    });
+  }
+
+  function showAddMaintenance(societyId) {
+    showModal(`
+      <div class="modal-handle"></div>
+      <h3>💰 Add Maintenance Bill</h3>
+      <div class="form-group"><label>Unit Number</label><input class="form-input" type="text" id="mUnit" placeholder="A-101"></div>
+      <div class="form-group"><label>Resident Name</label><input class="form-input" type="text" id="mName" placeholder="Name"></div>
+      <div class="form-group"><label>Amount (₹)</label><input class="form-input" type="number" id="mAmount" placeholder="2500"></div>
+      <div class="form-group"><label>Due Date</label><input class="form-input" type="date" id="mDue"></div>
+      <button class="btn btn-primary" id="submitMaint" style="width:100%">Create Bill</button>
+    `);
+    document.querySelector('#submitMaint')?.addEventListener('click', async () => {
+      try {
+        await api.createMaintenance(societyId, {
+          unit_number: document.querySelector('#mUnit')?.value?.trim(),
+          resident_name: document.querySelector('#mName')?.value?.trim(),
+          amount: Number(document.querySelector('#mAmount')?.value),
+          due_date: document.querySelector('#mDue')?.value,
+        });
+        showToast('Maintenance bill created!', 'success'); closeModal();
+      } catch(e) { showToast(e.message, 'error'); }
+    });
+  }
+
+  function showLogComplaint(societyId) {
+    showModal(`
+      <div class="modal-handle"></div>
+      <h3>📢 Log Complaint</h3>
+      <div class="form-group"><label>Unit Number</label><input class="form-input" type="text" id="cUnit" placeholder="A-101"></div>
+      <div class="form-group"><label>Category</label><select class="form-input" id="cCat"><option value="plumbing">🔧 Plumbing</option><option value="electrical">💡 Electrical</option><option value="noise">🔊 Noise</option><option value="parking">🅿️ Parking</option><option value="cleaning">🧹 Cleaning</option><option value="security">🔒 Security</option><option value="other">Other</option></select></div>
+      <div class="form-group"><label>Description</label><textarea class="form-input" id="cDesc" rows="3" placeholder="Describe the issue…"></textarea></div>
+      <button class="btn btn-primary" id="submitComplaint" style="width:100%">Submit Complaint</button>
+    `);
+    document.querySelector('#submitComplaint')?.addEventListener('click', async () => {
+      try {
+        await api.logComplaint(societyId, {
+          unit_number: document.querySelector('#cUnit')?.value?.trim(),
+          category: document.querySelector('#cCat')?.value,
+          description: document.querySelector('#cDesc')?.value?.trim(),
+        });
+        showToast('Complaint logged!', 'success'); closeModal();
+      } catch(e) { showToast(e.message, 'error'); }
+    });
+  }
+
+  function showCreateAgreement() {
+    showModal(`
+      <div class="modal-handle"></div>
+      <h3>📝 Create Rent Agreement</h3>
+      <div class="form-group"><label>Property</label><select class="form-input" id="agProp">${properties.map(p => `<option value="${p.id}">${p.title}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Tenant Name</label><input class="form-input" type="text" id="agTenant" placeholder="Tenant's full name"></div>
+      <div class="form-group"><label>Tenant Phone</label><input class="form-input" type="tel" id="agPhone" placeholder="9876543210"></div>
+      <div class="form-group"><label>Monthly Rent (₹)</label><input class="form-input" type="number" id="agRent" placeholder="12000"></div>
+      <div class="form-group"><label>Security Deposit (₹)</label><input class="form-input" type="number" id="agDeposit" placeholder="24000"></div>
+      <div class="form-group"><label>Start Date</label><input class="form-input" type="date" id="agStart"></div>
+      <div class="form-group"><label>End Date</label><input class="form-input" type="date" id="agEnd"></div>
+      <div class="form-group"><label>Special Terms</label><textarea class="form-input" id="agTerms" rows="2" placeholder="Any additional terms…"></textarea></div>
+      <button class="btn btn-primary" id="submitAgreement" style="width:100%">Create Agreement</button>
+    `);
+    document.querySelector('#submitAgreement')?.addEventListener('click', async () => {
+      try {
+        await api.createAgreement({
+          property_id: document.querySelector('#agProp')?.value,
+          tenant_name: document.querySelector('#agTenant')?.value?.trim(),
+          tenant_phone: document.querySelector('#agPhone')?.value?.trim(),
+          rent_amount: Number(document.querySelector('#agRent')?.value),
+          security_deposit: Number(document.querySelector('#agDeposit')?.value) || 0,
+          start_date: document.querySelector('#agStart')?.value,
+          end_date: document.querySelector('#agEnd')?.value,
+          terms: document.querySelector('#agTerms')?.value?.trim() || undefined,
+        });
+        showToast('Agreement created!', 'success'); closeModal();
+      } catch(e) { showToast(e.message, 'error'); }
+    });
+  }
+
   function typeIcon(t) {
     return { apartment: '🏢', farm_land: '🌾', pg: '🏠', villa: '🏡', warehouse: '🏭' }[t] || '🏠';
   }
@@ -361,17 +551,19 @@ export function renderFarmerConnect(container) {
   async function loadData() {
     loading = true; render();
     try {
-      const [propRes, st, savedRes, inqRes] = await Promise.all([
+      const [propRes, st, savedRes, inqRes, socRes] = await Promise.all([
         api.getProperties('?limit=30'),
         api.getFCStats().catch(() => ({})),
         api.getSavedProperties().catch(() => []),
         api.getPropertyInquiries().catch(() => []),
+        api.getSocieties().catch(() => []),
       ]);
       properties = Array.isArray(propRes) ? propRes : (propRes.properties || []);
       stats = st?.stats || st || {};
       const savedArr = Array.isArray(savedRes) ? savedRes : (savedRes.saved || []);
       savedIds = new Set(savedArr.map(s => s.property_id || s.id));
       myInquiries = Array.isArray(inqRes) ? inqRes : (inqRes.inquiries || []);
+      societies = Array.isArray(socRes) ? socRes : (socRes.societies || []);
     } catch (e) { console.error(e); }
     loading = false; render();
   }

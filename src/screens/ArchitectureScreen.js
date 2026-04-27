@@ -1,465 +1,362 @@
 import { navigate } from '../main.js';
 
-export function renderArchitecture(container) {
-  let activeSection = 'overview';
+/**
+ * Platform Architecture Map
+ *
+ * Correct Structure:
+ *   AgriGalaxy    — Input Supplier Marketplace (seeds, fertilizers, pesticides)
+ *   AquaOS        — Standalone aquaculture app
+ *   Agri          — Contains: AgriFlow + Community + Weather + Farmers + FPOs
+ *                   "Agri Intelligence" = data engine inside Agri
+ *   KisanConnect  — Equipment Only (Rent · Buy · Sell · Agri Services)
+ *   BhoomiOS      — Land sell/buy/rent marketplace
+ *
+ * Buyer logs in → sees all 5 platforms → subscribes to what they need
+ */
 
-  const SECTIONS = {
-    overview: { icon: '🏗️', label: 'Overview' },
-    platforms: { icon: '📱', label: 'Platforms' },
-    roles: { icon: '👥', label: 'Roles' },
-    data: { icon: '🗄️', label: 'Data & APIs' },
-    security: { icon: '🔐', label: 'Security' },
-    revenue: { icon: '💰', label: 'Revenue' },
-    roadmap: { icon: '🗺️', label: 'Roadmap' },
-  };
+export function renderArchitecture(container) {
+  let tab = 'map';
 
   function render() {
     container.innerHTML = `
-      <div class="arch-tabs" style="display:flex;gap:4px;overflow-x:auto;padding:8px 12px;-webkit-overflow-scrolling:touch">
-        ${Object.entries(SECTIONS).map(([k, v]) => `
-          <button class="chip ${activeSection === k ? 'active' : ''}" data-sec="${k}" style="white-space:nowrap;flex-shrink:0">${v.icon} ${v.label}</button>
+      <div style="background:linear-gradient(135deg,#1a237e,#311b92);color:white;padding:16px">
+        <div style="font-size:28px;margin-bottom:4px">🏗️</div>
+        <div style="font-weight:800;font-size:18px">AgriHub Platform Map</div>
+        <div style="font-size:12px;opacity:0.85">5 platforms · 5 roles · One login · Central data engine</div>
+      </div>
+      <div style="display:flex;gap:4px;overflow-x:auto;padding:10px 12px;background:white;border-bottom:1px solid var(--border)">
+        ${[['map','🗺️ Platform Map'],['roles','👥 Roles & Access'],['intel','🧠 Agri Intelligence'],['flow','🔄 Data Flow'],['roadmap','🚀 Roadmap']].map(([k,l])=>`
+          <button style="flex-shrink:0;padding:6px 14px;border-radius:20px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:${tab===k?'#1a237e':'var(--bg)'};color:${tab===k?'white':'var(--text2)'}" data-tab="${k}">${l}</button>
         `).join('')}
       </div>
-      <div class="arch-content" style="padding:0 16px 100px">${renderSection()}</div>
+      <div style="padding:14px 14px 80px">${renderTab()}</div>
     `;
-    container.querySelectorAll('[data-sec]').forEach(b => b.addEventListener('click', () => {
-      activeSection = b.dataset.sec; render();
-    }));
-    container.querySelectorAll('[data-nav]').forEach(el => {
-      el.addEventListener('click', () => navigate(el.dataset.nav));
-    });
+    container.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; render(); }));
+    container.querySelectorAll('[data-nav]').forEach(el => el.addEventListener('click', () => navigate(el.dataset.nav)));
   }
 
-  function renderSection() {
-    switch (activeSection) {
-      case 'overview': return renderOverview();
-      case 'platforms': return renderPlatforms();
-      case 'roles': return renderRoles();
-      case 'data': return renderData();
-      case 'security': return renderSecurity();
-      case 'revenue': return renderRevenue();
+  function renderTab() {
+    switch(tab) {
+      case 'map':     return renderMap();
+      case 'roles':   return renderRoles();
+      case 'intel':   return renderIntelligenceExplainer();
+      case 'flow':    return renderFlow();
       case 'roadmap': return renderRoadmap();
-      default: return '';
+      default: return renderMap();
     }
   }
 
-  function renderOverview() {
+  // ─── PLATFORM MAP ─────────────────────────────────────────────────────────
+  function renderMap() {
     return `
-      <div class="section">
-        <div style="text-align:center;padding:24px 0 16px">
-          <div style="font-size:48px">🌾</div>
-          <h2 style="margin:8px 0 4px;font-size:22px">AgriHub Ecosystem</h2>
-          <p class="text-sm text-muted">India's Nationwide Agriculture Supply & Intelligence Network</p>
+      <!-- PLATFORM OVERVIEW -->
+      <div style="background:linear-gradient(135deg,#E8EAF6,#E3F2FD);border-radius:12px;padding:14px;margin-bottom:16px;text-align:center">
+        <div style="font-weight:800;color:#1a237e;margin-bottom:4px">AgriHub Super Platform</div>
+        <div style="font-size:11px;color:#3949AB">5 standalone platforms · Single login · Unified data engine</div>
+        <div style="display:flex;justify-content:center;gap:16px;margin-top:12px;flex-wrap:wrap">
+          ${[['🌐','AgriGalaxy'],['🐟','AquaOS'],['🌾','Agri'],['🚜','KisanConnect'],['🏡','BhoomiOS']].map(([e,n])=>`<div style="text-align:center"><div style="font-size:24px">${e}</div><div style="font-size:10px;font-weight:700;color:#1a237e">${n}</div></div>`).join('')}
         </div>
+      </div>
 
-        <div class="stats-grid-4 mb-lg">
-          <div class="stat-card"><div class="stat-value">5</div><div class="stat-label">Platforms</div></div>
-          <div class="stat-card"><div class="stat-value">10M+</div><div class="stat-label">Target Scale</div></div>
-          <div class="stat-card"><div class="stat-value">76+</div><div class="stat-label">API Endpoints</div></div>
-          <div class="stat-card"><div class="stat-value">31</div><div class="stat-label">DB Tables</div></div>
+      <!-- PLATFORM 1: AGRIGALAXY -->
+      <div style="border:2px solid #6A1B9A;border-radius:14px;padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#6A1B9A,#4A148C);display:flex;align-items:center;justify-content:center;font-size:22px">🌐</div>
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:15px">AgriGalaxy</div>
+            <div style="font-size:11px;color:var(--text3)">Input Supplier Marketplace · Seeds · Fertilizers · Pesticides</div>
+          </div>
+          <button class="btn btn-small" data-nav="agrigalaxy" style="background:#6A1B9A;color:white;border:none;font-size:11px">Open →</button>
         </div>
-
-        <div class="card" style="padding:16px;margin-bottom:12px">
-          <div class="fw-700" style="margin-bottom:8px">🏛️ System Architecture</div>
-          <div style="font-size:12px;line-height:1.8;font-family:monospace;background:var(--surface);padding:12px;border-radius:8px;overflow-x:auto">
-┌──────────────────────────────────────────────────┐
-│              Mobile & Web Clients                 │
-│  👨‍🌾 Farmer  │  🏢 FPO  │  🛒 Buyer  │  🔧 Admin │
-└─────────┬──────────┬──────────┬──────────────────┘
-          │          │          │
-    ┌─────▼──────────▼──────────▼─────┐
-    │     API Gateway (Express.js)     │
-    │   JWT Auth · Rate Limit · RBAC   │
-    └─────┬──────┬──────┬──────┬──────┘
-          │      │      │      │
-   ┌──────▼──┐ ┌▼────┐ ┌▼───┐ ┌▼──────┐
-   │AgriFlow │ │Aqua │ │Kis │ │Farmer │
-   │  Routes │ │ OS  │ │Con │ │Connect│
-   └────┬────┘ └──┬──┘ └─┬──┘ └───┬───┘
-        │         │      │        │
-    ┌───▼─────────▼──────▼────────▼───┐
-    │     Intelligence Engine          │
-    │  Prices · Supply · Weather · ML  │
-    └────────────────┬────────────────┘
-                     │
-    ┌────────────────▼────────────────┐
-    │   PostgreSQL · Redis · Realtime  │
-    └─────────────────────────────────┘
+        <div style="background:#F3E5F510;border:1px dashed #6A1B9A40;border-radius:10px;padding:10px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:#6A1B9A;margin-bottom:6px">🏪 The Foundation App of AgriHub Ecosystem</div>
+          <div style="font-size:10px;color:var(--text2);line-height:1.5">
+            Sellers (input suppliers) list their stores, products & prices. Farmers (buyers) browse, compare & purchase agricultural inputs.
+            This is where every farming season begins — getting the right seeds, fertilizers & pesticides.
           </div>
         </div>
-
-        <div class="card" style="padding:16px;margin-bottom:12px">
-          <div class="fw-700" style="margin-bottom:10px">⚡ Tech Stack</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
           ${[
-            { cat: 'Frontend', items: 'Vanilla JS SPA · Vite · Mobile-First CSS' },
-            { cat: 'Backend', items: 'Node.js · Express · JWT Auth · WebSocket' },
-            { cat: 'Database', items: 'PostgreSQL 15 · PostGIS · Redis Cache' },
-            { cat: 'Infrastructure', items: 'Docker · Supabase · Vercel · Cloudflare' },
-            { cat: 'Mobile', items: 'Android (Kotlin + Jetpack Compose) · Flutter (planned)' },
-            { cat: 'ML/AI', items: 'XGBoost · Price Forecasting · Crop Recommendations' },
-          ].map(t => `<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
-            <span class="fw-600 text-sm" style="min-width:90px;color:var(--primary)">${t.cat}</span>
-            <span class="text-sm text-muted">${t.items}</span>
+            {e:'🏪',c:'#6A1B9A',t:'Seller / Supplier',d:'List store · Add products · Manage inventory · Orders'},
+            {e:'👨‍🌾',c:'#2E7D32',t:'Farmer / Buyer',d:'Browse stores · Search products · Compare prices · Buy'},
+            {e:'🌱',c:'#33691E',t:'Seeds Catalog',d:'Hybrid · Traditional · Region-wise varieties'},
+            {e:'🧪',c:'#E65100',t:'Fertilizers & Pesticides',d:'NPK · Organic · Spray chemicals · Dosage info'},
+          ].map(p=>`<div style="background:${p.c}10;border:1px solid ${p.c}25;border-radius:8px;padding:8px;text-align:center">
+            <div style="font-size:18px">${p.e}</div>
+            <div style="font-size:10px;font-weight:700;color:${p.c};margin:3px 0">${p.t}</div>
+            <div style="font-size:9px;color:var(--text3)">${p.d}</div>
           </div>`).join('')}
         </div>
-      </div>`;
-  }
+      </div>
 
-  function renderPlatforms() {
-    const platforms = [
-      { icon: '🌾', name: 'AgriFlow', desc: 'Supply Intelligence & Farmer Network', color: '#2E7D32',
-        features: ['Crop declarations & harvest calendar', 'FPO procurement & inventory', 'Supply discovery engine (25+ filters)', 'Price Radar (APMC/eNAM)', '5 intelligence reports', 'Community knowledge network'],
-        roles: 'Farmer · FPO Admin · FPO Staff · Buyer · Field Agent', nav: 'agriflow' },
-      { icon: '🐟', name: 'AquaOS', desc: 'Aquaculture Ecosystem Platform', color: '#0277BD',
-        features: ['Digital pond management (Farm OS)', 'Water quality logging & alerts', 'BioPro health scoring', 'Harvest marketplace (buyer-seller)', 'Input marketplace (feed/seed/medicine)', 'Advisory engine (species-specific)'],
-        roles: 'Farmer (Seller) · Buyer (Paid) · Supplier · Admin', nav: 'aquaos' },
-      { icon: '🤝', name: 'KisanConnect', desc: 'Rural Super-App (4 Marketplaces)', color: '#E65100',
-        features: ['Crop trading with escrow', 'Equipment rental system', 'Rural services marketplace', 'Job marketplace', 'Buyer/Seller mode toggle', 'AI-powered matching'],
-        roles: 'Farmer (Seller+Buyer) · Service Provider · Job Seeker', nav: 'kisan' },
-      { icon: '🏠', name: 'FarmerConnect', desc: 'Property & Agricultural Land Marketplace', color: '#6A1B9A',
-        features: ['Property search with filters', 'Agricultural land lease/sale', 'PG/accommodation listings', 'Society management SaaS', 'NRI remote management', 'Zero-broker guarantee'],
-        roles: 'Seeker · Owner · NRI · PG Operator · Society Admin · Broker', nav: 'farmerconnect' },
-      { icon: '📊', name: 'Intelligence Engine', desc: 'National Agriculture Data Engine', color: '#AD1457',
-        features: ['Real-time price aggregation', 'Supply-demand heatmaps', '30/60/90-day forecasts', 'Weather + satellite overlay', 'District-level analytics', 'Data quality scoring (0-100)'],
-        roles: 'Internal service · Buyer subscribers · Government', nav: 'intelligence' },
-    ];
+      <!-- PLATFORM 2: AquaOS -->
+      <div style="border:2px solid #0277BD;border-radius:14px;padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#0277BD,#00ACC1);display:flex;align-items:center;justify-content:center;font-size:22px">🐟</div>
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:15px">AquaOS</div>
+            <div style="font-size:11px;color:var(--text3)">Standalone Aquaculture Platform · AP shrimp, fish, crab</div>
+          </div>
+          <button class="btn btn-small" data-nav="aquaos" style="background:#0277BD;color:white;border:none;font-size:11px">Open →</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          ${[
+            {e:'👨‍🌾',c:'#2E7D32',t:'Aqua Farmer',d:'Pond OS · Feed logs · Harvest listing'},
+            {e:'🛒',c:'#E65100',t:'Aqua Buyer',d:'Search harvests · Offers · Chat'},
+            {e:'🏭',c:'#6A1B9A',t:'Input Supplier',d:'Feed · Medicine · Equipment'},
+          ].map(p=>`<div style="background:${p.c}10;border:1px solid ${p.c}25;border-radius:8px;padding:8px;text-align:center">
+            <div style="font-size:18px">${p.e}</div>
+            <div style="font-size:10px;font-weight:700;color:${p.c};margin:3px 0">${p.t}</div>
+            <div style="font-size:9px;color:var(--text3)">${p.d}</div>
+          </div>`).join('')}
+        </div>
+      </div>
 
-    return `<div class="section" style="padding-top:8px">
-      ${platforms.map(p => `
-        <div class="card" style="padding:16px;margin-bottom:12px;cursor:pointer;border-left:4px solid ${p.color}" data-nav="${p.nav}">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <span style="font-size:28px">${p.icon}</span>
-            <div>
-              <div class="fw-700">${p.name}</div>
-              <div class="text-sm text-muted">${p.desc}</div>
-            </div>
+      <!-- PLATFORM 2: AGRI (UMBRELLA) -->
+      <div style="border:2px solid #2E7D32;border-radius:14px;padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#2E7D32,#1B5E20);display:flex;align-items:center;justify-content:center;font-size:22px">🌾</div>
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:15px">Agri</div>
+            <div style="font-size:11px;color:var(--text3)">Crop Supply Ecosystem · Nationwide · FPO-powered</div>
           </div>
-          <div class="text-sm" style="margin-bottom:8px">
-            ${p.features.map(f => `<div style="padding:2px 0">• ${f}</div>`).join('')}
-          </div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px">
-            ${p.roles.split(' · ').map(r => `<span class="tag tag-gray" style="font-size:11px">${r}</span>`).join('')}
+          <button class="btn btn-small" data-nav="agri" style="background:#2E7D32;color:white;border:none;font-size:11px">Open →</button>
+        </div>
+
+        <!-- Sub-sections inside Agri -->
+        <div style="background:#E8F5E912;border:1px dashed #2E7D3240;border-radius:10px;padding:10px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:#2E7D32;margin-bottom:8px">Inside the Agri Platform:</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            ${[
+              {e:'🔄',t:'AgriFlow',d:'Crop supply chain — declarations, listings, inquiries (Farmer→FPO→Buyer)'},
+              {e:'🧠',t:'Agri Intelligence',d:'DATA ENGINE — powers supply forecasts, harvest timelines, price signals'},
+              {e:'💬',t:'Community',d:'Pest alerts · Farming tips · Disease warnings'},
+              {e:'🌤️',t:'Weather',d:'Regional forecast · Crop advisory · Risk index'},
+              {e:'👥',t:'Farmers',d:'120K+ registered farmers · District-wise supply data'},
+              {e:'🏢',t:'FPOs',d:'5,000+ Producer orgs · Aggregated procurement data'},
+            ].map(s=>`<div style="background:white;border-radius:7px;padding:8px;border-left:3px solid #2E7D32">
+              <div style="font-size:14px">${s.e}</div>
+              <div style="font-size:10px;font-weight:700;color:#2E7D32">${s.t}</div>
+              <div style="font-size:9px;color:var(--text3);line-height:1.4;margin-top:1px">${s.d}</div>
+            </div>`).join('')}
           </div>
         </div>
-      `).join('')}
-    </div>`;
+
+        <!-- Roles using Agri -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          ${[
+            {e:'👨‍🌾',c:'#2E7D32',t:'Crop Farmer',d:'Declare · Harvest · Inquiries'},
+            {e:'🏢',c:'#1565C0',t:'FPO Admin',d:'Members · Procurement · Supply'},
+            {e:'🛒',c:'#E65100',t:'Crop Buyer',d:'Search · Forecast · Watchlist'},
+          ].map(p=>`<div style="background:${p.c}10;border:1px solid ${p.c}25;border-radius:8px;padding:8px;text-align:center">
+            <div style="font-size:18px">${p.e}</div>
+            <div style="font-size:10px;font-weight:700;color:${p.c};margin:3px 0">${p.t}</div>
+            <div style="font-size:9px;color:var(--text3)">${p.d}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- PLATFORM 4: KISANCONNECT -->
+      <div style="border:2px solid #E65100;border-radius:14px;padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#E65100,#BF360C);display:flex;align-items:center;justify-content:center;font-size:22px">🚜</div>
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:15px">KisanConnect</div>
+            <div style="font-size:11px;color:var(--text3)">Equipment Only · Rent · Buy · Sell · Agri Services</div>
+          </div>
+          <button class="btn btn-small" data-nav="kisan" style="background:#E65100;color:white;border:none;font-size:11px">Open →</button>
+        </div>
+        <div style="background:#FBE9E710;border:1px dashed #E6510040;border-radius:10px;padding:10px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:#E65100;margin-bottom:6px">🚜 Equipment-Only Platform</div>
+          <div style="font-size:10px;color:var(--text2);line-height:1.5">
+            Farm machinery & equipment marketplace. 3 modes: Rent (temporary hire), Buy (purchase outright), Sell/List (owners list their equipment). Also: custom agri services (operators, harvesters, transport).
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+          ${['🔑 Rent Equipment','💰 Buy Equipment','🏷️ Sell / List Equipment','🔧 Agri Services','📋 Bookings & Orders','💼 Farm Jobs'].map(f=>`<div style="display:flex;align-items:center;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;font-size:10px">${f}</div>`).join('')}
+        </div>
+      </div>
+
+      <!-- PLATFORM 5: BHOOMIOS -->
+      <div style="border:2px solid #795548;border-radius:14px;padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#795548,#4E342E);display:flex;align-items:center;justify-content:center;font-size:22px">🏡</div>
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:15px">BhoomiOS</div>
+            <div style="font-size:11px;color:var(--text3)">Agricultural Land Marketplace · Buy · Sell · Rent</div>
+          </div>
+          <button class="btn btn-small" data-nav="bhoomios" style="background:#795548;color:white;border:none;font-size:11px">Open →</button>
+        </div>
+        <div style="background:#EFEBE910;border:1px dashed #79554840;border-radius:10px;padding:10px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:#795548;margin-bottom:6px">🏡 Land Transaction Platform</div>
+          <div style="font-size:10px;color:var(--text2);line-height:1.5">
+            Buy, sell, or rent agricultural land. Property listings with area, soil type, water source, legal status. District-wise search. Contact landowners directly.
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+          ${['🏷️ Sell Land','💰 Buy Land','🔑 Rent / Lease Land','📍 District Search','📄 Land Documents','📞 Contact Owner'].map(f=>`<div style="display:flex;align-items:center;gap:5px;padding:5px 7px;background:var(--bg);border-radius:6px;font-size:10px">${f}</div>`).join('')}
+        </div>
+      </div>
+
+      <!-- BUYER JOURNEY -->
+      <div style="background:linear-gradient(135deg,#BF360C12,#880E4F12);border:1px solid #BF360C30;border-radius:12px;padding:12px">
+        <div style="font-weight:700;color:#BF360C;margin-bottom:6px">🛒 Buyer Journey</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.6">
+          A buyer logs in → sees all 5 platforms → uses what they need:
+        </div>
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:5px">
+          ${[
+            {t:'Aqua Buyer only',d:'Uses AquaOS Marketplace. Searches shrimp/fish harvests. Makes price offers.'},
+            {t:'Crop Buyer only',d:'Uses Agri (AgriFlow). Searches crop supply nationwide. Contacts FPOs.'},
+            {t:'Equipment Buyer',d:'Uses KisanConnect. Rent or buy tractors, harvesters & farm machinery.'},
+            {t:'Input Supplier',d:'Uses AgriGalaxy. Lists store with seeds, fertilizers, pesticides for farmers.'},
+            {t:'Land Buyer/Renter',d:'Uses BhoomiOS. Search & buy/rent agricultural land by district.'},
+            {t:'Full Ecosystem',d:'Uses all 5 platforms. Common for large agri-businesses & cooperatives.'},
+          ].map(b=>`<div style="background:white;border-radius:8px;padding:8px 10px">
+            <div style="font-weight:700;font-size:11px;color:#BF360C">→ ${b.t}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">${b.d}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+    `;
   }
 
+  // ─── ROLES ────────────────────────────────────────────────────────────────
   function renderRoles() {
-    return `<div class="section" style="padding-top:8px">
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">👨‍🌾 Farmer (Free)</div>
-        <div class="text-sm text-muted" style="margin-bottom:8px">Core user — 80% of platform users. All farmer features are FREE.</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">
-          ${['AgriFlow', 'AquaOS', 'KisanConnect', 'FarmerConnect'].map(p => `<span class="tag tag-green" style="font-size:11px">${p}</span>`).join('')}
-        </div>
-        <div class="text-sm">
-          <div style="padding:3px 0">✅ Declare crops & manage harvests</div>
-          <div style="padding:3px 0">✅ Manage ponds, log water quality</div>
-          <div style="padding:3px 0">✅ Create listings (sell/rent)</div>
-          <div style="padding:3px 0">✅ View price radar & weather</div>
-          <div style="padding:3px 0">✅ Community discussions</div>
-          <div style="padding:3px 0">❌ Cannot see buyer data</div>
-        </div>
-      </div>
-
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">🛒 Buyer (Paid Subscription)</div>
-        <div class="text-sm text-muted" style="margin-bottom:8px">Commercial participants — 3 subscription tiers per platform.</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">
-          ${['AgriFlow', 'AquaOS', 'KisanConnect'].map(p => `<span class="tag tag-blue" style="font-size:11px">${p}</span>`).join('')}
-        </div>
-        <div class="text-sm">
-          <div style="padding:3px 0">✅ Search supply across states</div>
-          <div style="padding:3px 0">✅ Send inquiries to farmers/FPOs</div>
-          <div style="padding:3px 0">✅ Access intelligence reports</div>
-          <div style="padding:3px 0">✅ Price alerts & notifications</div>
-          <div style="padding:3px 0">⚠️ Only aggregated data (min 5 farmers)</div>
-          <div style="padding:3px 0">❌ Individual farmer data never exposed</div>
-        </div>
-      </div>
-
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">🏢 FPO Admin</div>
-        <div class="text-sm text-muted" style="margin-bottom:8px">Farmer Producer Organizations — manage members & procurement.</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">
-          <span class="tag tag-orange" style="font-size:11px">AgriFlow</span>
-        </div>
-        <div class="text-sm">
-          <div style="padding:3px 0">✅ Manage farmer members</div>
-          <div style="padding:3px 0">✅ Record procurement & inventory</div>
-          <div style="padding:3px 0">✅ Publish aggregated supply listings</div>
-          <div style="padding:3px 0">✅ Track payments to farmers</div>
-          <div style="padding:3px 0">✅ View member-level data</div>
-        </div>
-      </div>
-
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">🔐 4-Level Privacy Consent</div>
-        <div class="text-sm text-muted" style="margin-bottom:10px">Individual farmer data is NEVER exposed to buyers.</div>
-        <div class="text-sm">
-          ${[
-            { lvl: 'Level 0', desc: 'Fully anonymous — aggregate data only', color: '#4CAF50' },
-            { lvl: 'Level 1', desc: 'Crop + location visible, name hidden', color: '#FF9800' },
-            { lvl: 'Level 2', desc: 'Crop + FPO name visible, farmer hidden', color: '#2196F3' },
-            { lvl: 'Level 3', desc: 'Full contact visible (farmer opt-in only)', color: '#E91E63' },
-          ].map(l => `<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
-            <span class="tag" style="background:${l.color};color:white;font-size:10px;min-width:52px;text-align:center">${l.lvl}</span>
-            <span>${l.desc}</span>
-          </div>`).join('')}
-        </div>
-      </div>
-
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">🔄 KisanConnect Dual-Mode</div>
-        <div class="text-sm text-muted" style="margin-bottom:10px">Users toggle between Buyer and Seller mode within the same app.</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div style="padding:12px;background:var(--success-bg);border-radius:10px;text-align:center">
-            <div style="font-size:24px">🛒</div>
-            <div class="fw-600 text-sm" style="margin:4px 0">Buyer Mode</div>
-            <div style="font-size:11px;color:var(--text3)">Home · Explore · Activity · Messages · Profile</div>
-          </div>
-          <div style="padding:12px;background:var(--primary-surface);border-radius:10px;text-align:center">
-            <div style="font-size:24px">🏷️</div>
-            <div class="fw-600 text-sm" style="margin:4px 0">Seller Mode</div>
-            <div style="font-size:11px;color:var(--text3)">Dashboard · Listings · Orders · Earnings · Profile</div>
-          </div>
-        </div>
-      </div>
-    </div>`;
-  }
-
-  function renderData() {
-    return `<div class="section" style="padding-top:8px">
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">🗄️ Database Schema</div>
-        <div class="text-sm" style="font-family:monospace;line-height:1.8">
-          ${[
-            { tbl: 'users', desc: 'Auth, roles, KYC, district', cols: 12 },
-            { tbl: 'crop_declarations', desc: 'Farmer crop data collection', cols: 18 },
-            { tbl: 'agriflow_listings', desc: 'Marketplace supply listings', cols: 15 },
-            { tbl: 'agriflow_inquiries', desc: 'Buyer-seller inquiry system', cols: 10 },
-            { tbl: 'aqua_farms', desc: 'Aquaculture farm registry', cols: 10 },
-            { tbl: 'aqua_ponds', desc: 'Pond management with DOC', cols: 14 },
-            { tbl: 'aqua_water_logs', desc: 'Daily water quality tracking', cols: 10 },
-            { tbl: 'aqua_harvest_listings', desc: 'Harvest marketplace', cols: 12 },
-            { tbl: 'equipment', desc: 'KisanConnect rental equipment', cols: 12 },
-            { tbl: 'equipment_bookings', desc: 'Rental booking + escrow', cols: 10 },
-            { tbl: 'jobs', desc: 'Rural job marketplace', cols: 14 },
-            { tbl: 'fc_properties', desc: 'FarmerConnect listings', cols: 18 },
-            { tbl: 'community_posts', desc: 'Community discussions', cols: 8 },
-            { tbl: 'notifications', desc: 'Multi-channel alerts', cols: 8 },
-            { tbl: 'orders', desc: 'Transaction management', cols: 12 },
-          ].map(t => `<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)">
-            <span class="fw-600" style="min-width:150px;color:var(--primary)">${t.tbl}</span>
-            <span style="color:var(--text3)">${t.desc}</span>
-          </div>`).join('')}
-        </div>
-        <div class="text-sm text-muted" style="margin-top:8px">+ 16 more tables (districts, price_history, weather, etc.)</div>
-      </div>
-
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">🚪 API Routes (76+ endpoints)</div>
-        ${[
-          { prefix: '/api/auth', count: 5, desc: 'OTP send/verify, profile, token refresh' },
-          { prefix: '/api/agriflow', count: 15, desc: 'Listings, declarations, inquiries, FPO procurement' },
-          { prefix: '/api/aquaos', count: 12, desc: 'Ponds, water logs, advisories, harvest market' },
-          { prefix: '/api/kisanconnect', count: 10, desc: 'Equipment, bookings, jobs, applications' },
-          { prefix: '/api/farmerconnect', count: 8, desc: 'Properties CRUD, search, stats' },
-          { prefix: '/api/intelligence', count: 18, desc: 'Prices, supply-demand, heatmaps, weather, recommendations' },
-          { prefix: '/ws', count: 1, desc: 'Real-time WebSocket (price alerts, notifications)' },
-        ].map(r => `<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
-          <span class="fw-600 text-sm" style="min-width:140px;color:var(--primary)">${r.prefix}</span>
-          <span class="tag tag-gray" style="font-size:10px">${r.count}</span>
-          <span class="text-sm text-muted">${r.desc}</span>
-        </div>`).join('')}
-      </div>
-
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">📨 Event-Driven Pipeline</div>
-        <div class="text-sm">
-          ${[
-            { freq: 'Real-time', tasks: 'WebSocket price alerts, notification push, live order updates' },
-            { freq: 'Hourly', tasks: 'Aggregate declarations, update supply map, trigger buyer alerts' },
-            { freq: 'Daily', tasks: '30-day forecast, price trends (Agmarknet), weather overlay, data quality score' },
-            { freq: 'Weekly', tasks: 'Supply trends, demand-supply gap, FPO trust scores, buyer digest' },
-            { freq: 'Seasonal', tasks: 'Forecast calibration, government reports, NABARD data packages' },
-          ].map(e => `<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
-            <span class="tag tag-blue" style="font-size:10px;min-width:70px;text-align:center">${e.freq}</span>
-            <span class="text-sm">${e.tasks}</span>
-          </div>`).join('')}
-        </div>
-      </div>
-    </div>`;
-  }
-
-  function renderSecurity() {
-    return `<div class="section" style="padding-top:8px">
-      ${[
-        { icon: '🔐', title: 'Authentication', desc: 'OTP-based phone auth via MSG91. JWT (RS256) with role claims. Multi-factor for admin roles. Session management with refresh tokens.' },
-        { icon: '🛡️', title: 'Row-Level Security', desc: 'PostgreSQL RLS policies. Farmer sees own data only. FPO admin sees member data. Buyers see aggregated district data only (min 5 farmer threshold).' },
-        { icon: '🔒', title: 'Encryption', desc: 'TLS 1.3 in transit. AES-256 at rest. Aadhaar stored as SHA-256 hash only. Bank accounts encrypted at application layer.' },
-        { icon: '🕵️', title: 'Fraud Prevention', desc: 'Anomaly detection on crop declarations (3σ outliers). Data quality scoring 0-100. Statistical verification against district averages.' },
-        { icon: '🛑', title: 'Anti-Scraping', desc: 'Cloudflare WAF + rate limiting. Browser fingerprinting for API abuse detection. CAPTCHA on high-value endpoints.' },
-        { icon: '📋', title: 'DPDP Compliance', desc: 'India Digital Personal Data Protection Act 2023. Right to erasure. Data export. Consent management. Audit trails.' },
-      ].map(s => `
-        <div class="card" style="padding:16px;margin-bottom:12px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-            <span style="font-size:24px">${s.icon}</span>
-            <span class="fw-700">${s.title}</span>
-          </div>
-          <div class="text-sm text-muted">${s.desc}</div>
-        </div>
-      `).join('')}
-    </div>`;
-  }
-
-  function renderRevenue() {
-    return `<div class="section" style="padding-top:8px">
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">🏢 5-Tier Revenue Model</div>
-        <div style="font-size:12px;line-height:1.8;font-family:monospace;background:var(--surface);padding:12px;border-radius:8px">
-Tier 1: Farmer Plans         ₹0–₹249/yr
-Tier 2: FPO SaaS             ₹999–₹4,999/mo
-Tier 3: Buyer Intelligence   ₹9,999–₹59,999/yr
-Tier 4: Data Licensing        ₹2L–₹20L/yr
-Tier 5: Financial Referrals   Revenue share
-        </div>
-      </div>
-
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">👨‍🌾 Farmer Plans (80% users — FREE)</div>
-        ${[
-          { plan: 'Free', price: '₹0', features: 'Core features, price radar, community' },
-          { plan: 'AgriPass', price: '₹99/yr', features: 'Priority inquiries, yield analytics' },
-          { plan: 'AgriPass Pro', price: '₹249/yr', features: 'Direct buyer connection, premium prices' },
-        ].map(p => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-          <div><span class="fw-600 text-sm">${p.plan}</span><div class="text-sm text-muted">${p.features}</div></div>
-          <span class="fw-700" style="color:var(--primary)">${p.price}</span>
-        </div>`).join('')}
-      </div>
-
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">🛒 Buyer Subscriptions (Paid)</div>
-        <div class="text-sm fw-600" style="color:var(--primary);margin-bottom:8px">AgriFlow Buyer</div>
-        ${[
-          { plan: 'Explorer', price: '₹9,999/yr', features: '5 states, basic search' },
-          { plan: 'Trader', price: '₹24,999/yr', features: '10 states, full discovery' },
-          { plan: 'Enterprise', price: '₹59,999/yr', features: 'All-India, API, custom reports' },
-        ].map(p => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
-          <div><span class="fw-600 text-sm">${p.plan}</span><div class="text-sm text-muted">${p.features}</div></div>
-          <span class="fw-600 text-sm" style="color:var(--primary)">${p.price}</span>
-        </div>`).join('')}
-        <div class="text-sm fw-600" style="color:var(--primary);margin:12px 0 8px">AquaOS Buyer</div>
-        ${[
-          { plan: 'Free Buyer', price: '₹0', features: 'Browse only, no contact' },
-          { plan: 'Basic', price: '₹2,999/mo', features: 'Contact sellers, make offers' },
-          { plan: 'Professional', price: '₹7,999/mo', features: 'Priority access, intelligence reports' },
-          { plan: 'Enterprise', price: 'Custom', features: 'API access, white-label feeds' },
-        ].map(p => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
-          <div><span class="fw-600 text-sm">${p.plan}</span><div class="text-sm text-muted">${p.features}</div></div>
-          <span class="fw-600 text-sm" style="color:var(--primary)">${p.price}</span>
-        </div>`).join('')}
-      </div>
-
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">🏢 FPO SaaS Plans</div>
-        ${[
-          { plan: 'Starter', price: '₹999/mo', features: 'Up to 100 farmers' },
-          { plan: 'Growth', price: '₹2,499/mo', features: 'Up to 500 farmers' },
-          { plan: 'Enterprise', price: '₹4,999/mo', features: 'Unlimited, API access' },
-        ].map(p => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
-          <div><span class="fw-600 text-sm">${p.plan}</span><div class="text-sm text-muted">${p.features}</div></div>
-          <span class="fw-600 text-sm" style="color:var(--primary)">${p.price}</span>
-        </div>`).join('')}
-      </div>
-
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">🏠 FarmerConnect Plans</div>
-        <div class="text-sm fw-600" style="color:var(--primary);margin-bottom:8px">Seeker Plans</div>
-        ${[
-          { plan: 'Free', price: '₹0', features: 'Browse, 3 contacts/month' },
-          { plan: 'Connect', price: '₹499/30d', features: 'Unlimited contacts, chat' },
-          { plan: 'Relax', price: '₹1,499/90d', features: 'RM-assisted search' },
-          { plan: 'Power', price: '₹2,999/180d', features: 'Legal agreement, background check' },
-        ].map(p => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
-          <div><span class="fw-600 text-sm">${p.plan}</span><div class="text-sm text-muted">${p.features}</div></div>
-          <span class="fw-600 text-sm" style="color:var(--primary)">${p.price}</span>
-        </div>`).join('')}
-        <div class="text-sm fw-600" style="color:var(--primary);margin:12px 0 8px">Owner Plans</div>
-        ${[
-          { plan: 'Free', price: '₹0', features: '1 active listing' },
-          { plan: 'Premium', price: '₹799/90d', features: '5 listings, featured placement' },
-          { plan: 'Pro', price: '₹1,999/180d', features: '15 listings, top of search' },
-          { plan: 'Elite', price: '₹4,999/365d', features: 'Unlimited, dedicated RM' },
-        ].map(p => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
-          <div><span class="fw-600 text-sm">${p.plan}</span><div class="text-sm text-muted">${p.features}</div></div>
-          <span class="fw-600 text-sm" style="color:var(--primary)">${p.price}</span>
-        </div>`).join('')}
-      </div>
-
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">💳 Transaction Revenue</div>
-        ${[
-          { item: 'Crop trading commission', rate: '2–5% of GMV' },
-          { item: 'Equipment rental commission', rate: '8–15% of rental' },
-          { item: 'Rural services leads', rate: '₹10–₹50/lead' },
-          { item: 'Job posting fees', rate: '₹99–₹499/post' },
-          { item: 'Featured listings', rate: '₹50–₹500/listing' },
-          { item: 'AquaOS supplier commission', rate: '5–12% of sales' },
-          { item: 'FarmerConnect rent processing', rate: '1.5% of rent' },
-          { item: 'Digital agreements', rate: '₹399–₹3,499' },
-          { item: 'Data licensing (Institutional)', rate: '₹2L–₹20L/yr' },
-        ].map(t => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
-          <span class="text-sm">${t.item}</span>
-          <span class="fw-600 text-sm" style="color:var(--primary)">${t.rate}</span>
-        </div>`).join('')}
-      </div>
-    </div>`;
-  }
-
-  function renderRoadmap() {
-    const phases = [
-      { phase: 'Phase 1 — Foundation', status: '✅ Complete', color: '#4CAF50',
-        items: ['Core database schema (31 tables)', 'Auth + OTP flow', 'Farmer app MVP (crop declarations)', 'Basic marketplace CRUD', 'Mobile web app (current)'] },
-      { phase: 'Phase 2 — Marketplace', status: '🔄 In Progress', color: '#FF9800',
-        items: ['Buyer intelligence app', 'Supply search engine', 'FPO inventory management', 'Inquiry system', 'Escrow payments'] },
-      { phase: 'Phase 3 — Intelligence', status: '📋 Planned', color: '#2196F3',
-        items: ['Data aggregation pipeline', 'Harvest forecasting', 'Price radar integration (Agmarknet)', 'Intelligence reports', 'Weather + satellite overlay'] },
-      { phase: 'Phase 4 — Scale', status: '📋 Planned', color: '#9C27B0',
-        items: ['ML model training (XGBoost)', 'Government API integration (eNAM, PM-KISAN)', 'Banking & insurance ecosystem', 'Multi-state expansion'] },
-      { phase: 'Phase 5 — Dominance', status: '🔮 Vision', color: '#E91E63',
-        items: ['Satellite integration', 'AI crop prediction', 'National intelligence grid', 'Data licensing revenue (₹2Cr+)', '10M+ farmers'] },
+    const roles = [
+      {
+        e:'👨‍🌾', c:'#2E7D32', t:'Farmer', sub:'Crop or Aquaculture (or both)',
+        access:['🌐 AgriGalaxy — Browse & buy seeds, fertilizers, pesticides','🐟 AquaOS — Pond management, harvest listing','🌾 Agri — Crop declarations, harvest calendar, inquiries','🚜 KisanConnect — Rent/buy equipment','🏡 BhoomiOS — Buy or rent farmland'],
+        nav:['home','agrigalaxy','aquaos','agri','kisan'],
+        price:'Free · ₹100/yr Premium',
+      },
+      {
+        e:'🏢', c:'#1565C0', t:'FPO Admin', sub:'Farmer Producer Organization',
+        access:['🌾 Agri — FPO Hub (members, procurement, supply listings)','🚜 KisanConnect — Equipment hire for members','🌐 AgriGalaxy — Bulk input procurement','🏡 BhoomiOS — Land aggregation & leasing'],
+        nav:['home','agri','kisan','community','profile'],
+        price:'₹2,999–₹4,999/month SaaS',
+      },
+      {
+        e:'🛒', c:'#E65100', t:'Buyer', sub:'Trader · Exporter · Processor · Retailer',
+        access:['🐟 AquaOS — Aqua harvest marketplace (if aqua buyer)','🌾 Agri — Crop supply search (if crop buyer)','🚜 KisanConnect — Buy equipment (free)','🏡 BhoomiOS — Buy/rent agricultural land'],
+        nav:['home','aquaos','agri','kisan','profile'],
+        price:'₹10,000–₹50,000/year per platform',
+        note:'Subscribes selectively — aqua-only, crop-only, or both',
+      },
+      {
+        e:'🏭', c:'#6A1B9A', t:'Input Supplier', sub:'Seeds · Fertilizers · Pesticides · Feed · Medicine',
+        access:['🌐 AgriGalaxy — List store, manage products, receive orders from farmers','🐟 AquaOS — Input Marketplace (aqua feed, medicine)'],
+        nav:['home','agrigalaxy','aquaos','community','profile'],
+        price:'₹4,999/month featured listing',
+        note:'Sells production inputs to farmers via AgriGalaxy',
+      },
+      {
+        e:'🔧', c:'#546E7A', t:'Service Provider', sub:'Tractor · Labor · Cold Storage · Transport',
+        access:['🚜 KisanConnect — Service listings, jobs','🌾 Agri — Community & weather for planning'],
+        nav:['home','agri','kisan','community','profile'],
+        price:'Free listing · Commission on deals',
+      },
     ];
-
-    return `<div class="section" style="padding-top:8px">
-      ${phases.map((p, i) => `
-        <div class="card" style="padding:16px;margin-bottom:12px;border-left:4px solid ${p.color}">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <span class="fw-700">${p.phase}</span>
-            <span class="tag" style="background:${p.color}20;color:${p.color};font-size:10px">${p.status}</span>
-          </div>
-          <div class="text-sm">
-            ${p.items.map(item => `<div style="padding:3px 0">• ${item}</div>`).join('')}
+    return roles.map(r=>`
+      <div style="border-left:4px solid ${r.c};padding:12px 12px 12px 14px;margin-bottom:12px;background:${r.c}08;border-radius:0 10px 10px 0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:22px">${r.e}</span>
+          <div>
+            <div style="font-weight:700;color:${r.c}">${r.t}</div>
+            <div style="font-size:11px;color:var(--text3)">${r.sub}</div>
           </div>
         </div>
-      `).join('')}
+        ${r.note ? `<div style="background:${r.c}18;border-radius:6px;padding:5px 8px;font-size:11px;color:${r.c};font-weight:600;margin-bottom:8px">ℹ️ ${r.note}</div>` : ''}
+        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:4px">Platform Access:</div>
+        ${r.access.map(a=>`<div style="font-size:11px;color:var(--text2);padding:2px 0">✅ ${a}</div>`).join('')}
+        <div style="margin-top:6px">
+          <div style="font-size:10px;color:var(--text3);margin-bottom:3px">Bottom nav:</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">${r.nav.map(n=>`<span style="background:${r.c}20;color:${r.c};padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600">${n}</span>`).join('')}</div>
+        </div>
+        <div style="margin-top:6px;background:${r.c}18;padding:5px 8px;border-radius:6px;font-size:11px;color:${r.c};font-weight:600">💰 ${r.price}</div>
+      </div>
+    `).join('');
+  }
 
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:10px">📈 Target Market</div>
+  // ─── AGRI INTELLIGENCE EXPLAINER ──────────────────────────────────────────
+  function renderIntelligenceExplainer() {
+    return `
+      <div style="background:linear-gradient(135deg,#1a237e,#311b92);color:white;border-radius:14px;padding:16px;margin-bottom:14px">
+        <div style="font-size:28px;margin-bottom:6px">🧠</div>
+        <div style="font-weight:800;font-size:17px;margin-bottom:6px">Agri Intelligence</div>
+        <div style="font-size:12px;opacity:0.95;line-height:1.6">
+          <strong>Agri Intelligence is NOT a separate app.</strong> It is the data engine that runs inside the Agri platform.
+        </div>
+      </div>
+
+      <div style="font-weight:700;margin-bottom:10px">What it actually is:</div>
+      <div style="background:#E8F5E9;border-radius:10px;padding:12px;margin-bottom:10px">
+        <div style="font-weight:700;color:#2E7D32;margin-bottom:5px">The data infrastructure powering AgriFlow:</div>
+        ${['Farmers input crop data → system analyzes and forecasts','FPOs input procurement → system builds aggregated supply','District-level harvest timelines calculated from declarations','Price correlation engine → mandi data + supply forecasts','Demand signals from buyer inquiries → feedback to farmers'].map(s=>`<div style="font-size:11px;color:#1B5E20;padding:3px 0">→ ${s}</div>`).join('')}
+      </div>
+
+      <div style="font-weight:700;margin-bottom:10px">What each role calls it:</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
         ${[
-          { segment: 'Indian Agriculture', tam: '₹30L Cr/yr' },
-          { segment: 'AP Aquaculture', tam: '₹55,000 Cr/yr' },
-          { segment: 'Urban Rental', tam: '₹1,80,000 Cr/yr' },
-          { segment: 'Agricultural Land', tam: '₹12,000 Cr/yr' },
-          { segment: 'PG/Co-living', tam: '₹1,20,000 Cr/yr' },
-          { segment: 'Rural E-commerce', tam: '₹2,00,000 Cr/yr' },
-        ].map(m => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
-          <span class="text-sm">${m.segment}</span>
-          <span class="fw-700 text-sm" style="color:var(--primary)">${m.tam}</span>
+          {e:'👨‍🌾', r:'Farmer', sees:'Price alerts · Crop advisory · Harvest calendar · Plans', color:'#2E7D32'},
+          {e:'🏢', r:'FPO Admin', sees:'Member analytics · Procurement insights · Market intelligence', color:'#1565C0'},
+          {e:'🛒', r:'Buyer', sees:'Supply search results · Harvest forecasts · District heatmaps · Watchlist', color:'#E65100'},
+        ].map(i=>`<div style="border:1px solid ${i.color}30;border-radius:10px;padding:10px;background:${i.color}08">
+          <div style="font-weight:700;color:${i.color};margin-bottom:3px">${i.e} ${i.r}</div>
+          <div style="font-size:11px;color:var(--text2)">Calls it: "${i.r === 'Buyer' ? 'Supply Search & Intelligence' : i.r + ' Hub'}"</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Sees: ${i.sees}</div>
         </div>`).join('')}
       </div>
-    </div>`;
+
+      <div style="background:#FFF8E1;border:1px solid #FFD54F;border-radius:10px;padding:12px">
+        <div style="font-weight:700;color:#F57F17;margin-bottom:5px">💡 The core innovation:</div>
+        <div style="font-size:12px;color:#E65100;line-height:1.5">
+          A crop buyer can know <strong>40 days in advance</strong> that 500 tons of Tomato will be ready in West Godavari.
+          No Indian platform currently does this at scale.
+          This is powered by farmers declaring crops before harvest — and the intelligence engine aggregating it in real time.
+        </div>
+      </div>
+    `;
+  }
+
+  // ─── DATA FLOW ────────────────────────────────────────────────────────────
+  function renderFlow() {
+    return `
+      <div style="font-weight:700;margin-bottom:12px">🔄 How Supply Data Flows Through AgriHub</div>
+
+      ${[
+        {color:'#2E7D32', step:'Step 1 · Farmer Inputs', items:['Aqua Farmer: logs pond stocking → species, seed count, feed, water params','Crop Farmer: declares crop → area, expected yield, harvest date, location','FPO: records member procurement → quantity, quality, price paid']},
+        {color:'#1565C0', step:'Step 2 · Data Aggregated (Agri Intelligence Engine)', items:['Harvest timelines computed from declarations + pond cycles','District-level supply forecasts built from farmer + FPO data','Price signals correlated with regional supply/demand data','Buyer demand tracked from inquiry patterns']},
+        {color:'#E65100', step:'Step 3 · Buyer Discovers Supply', items:['Buyer searches: "Tomato, Andhra Pradesh, harvest next 10 days, >10 tons"','Sees: FPO aggregated supply + individual farmer listings','Sends inquiry → Farmer/FPO responds → Deal negotiated']},
+        {color:'#6A1B9A', step:'Data Privacy Rules', items:['Farmer → sees ONLY their own farm data','FPO → sees their member farmers data only','Buyer → sees AGGREGATED supply (not individual farmer contacts unless opted-in)','Supplier → sees only product leads relevant to them']},
+      ].map(s=>`<div style="background:${s.color}10;border-radius:10px;padding:12px;margin-bottom:10px;border-left:4px solid ${s.color}">
+        <div style="font-weight:700;color:${s.color};margin-bottom:6px">${s.step}</div>
+        ${s.items.map(i=>`<div style="font-size:11px;color:var(--text2);padding:3px 0">→ ${i}</div>`).join('')}
+      </div>`).join('')}
+    `;
+  }
+
+  // ─── ROADMAP ──────────────────────────────────────────────────────────────
+  function renderRoadmap() {
+    return `
+      ${[
+        {phase:'Phase 1 · Building Now',color:'#2E7D32',status:'🟢',items:['AgriGalaxy — Input supplier marketplace (seeds, fertilizers, pesticides)','Farmer App (AquaOS + Agri)','FPO Management Platform','Central Data Engine','KisanConnect — Equipment rent/buy/sell','BhoomiOS — Land buy/sell/rent']},
+        {phase:'Phase 2 · Next',color:'#1565C0',status:'🔵',items:['Full Buyer Intelligence (AgriFlow search)','AquaOS Marketplace (offers, chat)','AgriGalaxy — Reviews, ratings, delivery tracking','BhoomiOS — Legal document verification','Payment gateway integration','Push notifications + alerts']},
+        {phase:'Phase 3 · Scale',color:'#6A1B9A',status:'🟣',items:['Crop production heatmaps (district-level)','AI supply forecasting (90-day windows)','Farmer credit scoring (NABARD)','Crop insurance integration','IoT water sensor integration (AquaOS)','Cross-platform analytics dashboard']},
+      ].map(p=>`
+        <div style="margin-bottom:14px;border-left:4px solid ${p.color};padding-left:14px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <div style="font-weight:800;color:${p.color}">${p.phase}</div>
+            <div style="margin-left:auto;font-size:14px">${p.status}</div>
+          </div>
+          ${p.items.map(i=>`<div style="font-size:12px;padding:3px 0;color:var(--text2)">• ${i}</div>`).join('')}
+        </div>
+      `).join('')}
+      <div style="background:linear-gradient(135deg,#1a237e,#311b92);color:white;border-radius:12px;padding:14px;margin-top:8px">
+        <div style="font-weight:800;margin-bottom:8px">🎯 3-Year Targets</div>
+        ${['1,00,000 registered farmers','10,000 active buyers (aqua + crop)','5,000 FPOs on the platform','2,000 input suppliers listed','500+ districts nationwide covered'].map(g=>`<div style="font-size:12px;opacity:0.9;padding:3px 0">→ ${g}</div>`).join('')}
+      </div>
+    `;
   }
 
   render();

@@ -189,4 +189,88 @@ router.post('/logout', async (req, res) => {
   res.json({ message: 'Logged out' });
 });
 
+// ═══════════════════════════════════════════════════════════════
+// KYC ENDPOINTS
+// ═══════════════════════════════════════════════════════════════
+
+// GET /api/auth/kyc — Get KYC status & documents
+router.get('/kyc', require('../middleware/auth').authMiddleware, async (req, res) => {
+  try {
+    const { rows } = await query(
+      `SELECT kyc_status, kyc_documents FROM (
+        SELECT 'pending' as kyc_status, '[]'::jsonb as kyc_documents
+      ) defaults
+      UNION ALL
+      SELECT COALESCE(fp.kyc_status, 'pending'), COALESCE(fp.kyc_documents, '[]'::jsonb)
+      FROM farmer_profiles fp WHERE fp.user_id = $1
+      LIMIT 1`, [req.user.id]
+    );
+    // Try farmer_profiles first, fallback to defaults
+    let kyc = { status: 'pending', documents: [] };
+    const profile = await query(
+      `SELECT * FROM farmer_profiles WHERE user_id=$1`, [req.user.id]
+    ).catch(() => ({ rows: [] }));
+    if (profile.rows.length) {
+      kyc.status = profile.rows[0].kyc_status || 'pending';
+      kyc.documents = profile.rows[0].kyc_documents || [];
+    }
+    res.json({ kyc });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/auth/kyc/submit — Submit KYC document
+router.post('/kyc/submit', require('../middleware/auth').authMiddleware, async (req, res) => {
+  try {
+    const { doc_type, doc_url, doc_number_hash } = req.body;
+    if (!doc_type) return res.status(400).json({ error: 'doc_type required' });
+
+    const validTypes = ['aadhaar', 'pan', 'bank_passbook', 'land_pattadar', 'fpo_certificate', 'gst_certificate'];
+    if (!validTypes.includes(doc_type)) return res.status(400).json({ error: 'Invalid document type' });
+
+    // Ensure farmer_profiles exists
+    await query(
+      `INSERT INTO farmer_profiles (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING`,
+      [req.user.id]
+    );
+
+    // Add document to JSONB array
+    const doc = { type: doc_type, url: doc_url || null, number_hash: doc_number_hash || null, status: 'submitted', submitted_at: new Date().toISOString() };
+    await query(
+      `UPDATE farmer_profiles SET
+        kyc_documents = COALESCE(kyc_documents, '[]'::jsonb) || $2::jsonb,
+        kyc_status = 'submitted',
+        updated_at = NOW()
+       WHERE user_id = $1`,
+      [req.user.id, JSON.stringify([doc])]
+    );
+
+    res.json({ message: 'Document submitted for verification', document: doc });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/auth/kyc/verify — Admin verifies KYC (simplified auto-verify for demo)
+router.post('/kyc/verify', require('../middleware/auth').authMiddleware, async (req, res) => {
+  try {
+    // In production this would be admin-only. For demo, auto-verify after docs submitted
+    await query(
+      `UPDATE farmer_profiles SET kyc_status='verified', updated_at=NOW() WHERE user_id=$1`,
+      [req.user.id]
+    );
+    await query(
+      `UPDATE users SET is_verified=true WHERE id=$1`, [req.user.id]
+    );
+    res.json({ message: 'KYC verified', status: 'verified' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/auth/language — Update language preference
+router.patch('/language', require('../middleware/auth').authMiddleware, async (req, res) => {
+  try {
+    const { language } = req.body;
+    if (!['en', 'te', 'hi'].includes(language)) return res.status(400).json({ error: 'Supported: en, te, hi' });
+    await query(`UPDATE users SET language=$1, updated_at=NOW() WHERE id=$2`, [language, req.user.id]);
+    res.json({ message: 'Language updated', language });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

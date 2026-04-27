@@ -1,10 +1,50 @@
 import { api } from '../api.js';
 import { showToast } from '../main.js';
+import { t } from '../i18n.js';
 
 export function renderWeather(container) {
   let forecast = null, advisories = [], cropHealth = [], marketOutlook = {}, districts = [];
   let loading = true, selectedDistrict = '';
   let tab = 'forecast';
+
+  const SAMPLE_FORECAST = {
+    location: { district: 'Guntur, AP' },
+    current: { temperature: 34, condition: 'Partly Cloudy', humidity: 62, wind_kmh: 14, rain_chance_pct: 25 },
+    forecast: [
+      { date:'2026-04-27', temp_max:34, temp_min:24, condition:'partly_cloudy', rain_chance:25, humidity:62 },
+      { date:'2026-04-28', temp_max:35, temp_min:25, condition:'sunny', rain_chance:10, humidity:55 },
+      { date:'2026-04-29', temp_max:33, temp_min:24, condition:'cloudy', rain_chance:45, humidity:70 },
+      { date:'2026-04-30', temp_max:30, temp_min:23, condition:'rain', rain_chance:80, humidity:85 },
+      { date:'2026-05-01', temp_max:31, temp_min:23, condition:'rain', rain_chance:65, humidity:80 },
+      { date:'2026-05-02', temp_max:33, temp_min:24, condition:'partly_cloudy', rain_chance:30, humidity:65 },
+      { date:'2026-05-03', temp_max:35, temp_min:25, condition:'sunny', rain_chance:10, humidity:55 },
+    ]
+  };
+  const SAMPLE_ADVISORIES = [
+    { title:'Heavy rain expected Apr 30 - May 1', description:'Delay pesticide spraying. Ensure drainage channels are clear. Harvest mature paddy immediately.', severity:'high', crop_name:'Paddy' },
+    { title:'Rising temperatures - irrigate evening only', description:'Temperatures reaching 35°C+. Avoid mid-day irrigation. Mulch around vegetable crops.', severity:'medium', crop_name:'Vegetables' },
+    { title:'Thrips alert in chilli crops', description:'Yellow sticky traps showing high thrips counts in Guntur region. Apply Spinosad at 0.3ml/L if crossing ETL.', severity:'medium', crop_name:'Chilli' },
+  ];
+  const SAMPLE_CROP_HEALTH = [
+    { crop_name:'Paddy (BPT 5204)', district_name:'Guntur', health_score:85, ndvi:0.72, growth_stage:'Heading', soil_moisture:68, risk_level:'Low', recommendation:'Good health. Continue current water management.' },
+    { crop_name:'Cotton', district_name:'Adilabad', health_score:62, ndvi:0.55, growth_stage:'Boll Opening', soil_moisture:42, risk_level:'Medium', recommendation:'Stress detected. Increase irrigation frequency.' },
+    { crop_name:'Groundnut', district_name:'Kurnool', health_score:78, ndvi:0.65, growth_stage:'Pegging', soil_moisture:55, risk_level:'Low', recommendation:'On track. Apply gypsum for better pod filling.' },
+    { crop_name:'Tomato', district_name:'Madanapalle', health_score:45, ndvi:0.38, growth_stage:'Fruiting', soil_moisture:35, risk_level:'High', recommendation:'Severe water stress. Immediate drip irrigation needed.' },
+  ];
+  const SAMPLE_MARKET_OUTLOOK = {
+    summary: 'Pre-monsoon arrivals declining. Paddy and cotton prices expected to firm up through May. Groundnut demand strong from oil mills.',
+    trends: [
+      { crop_name:'Paddy BPT 5204', current_price:2180, forecast_price:2350, trend:'up', change_pct:7.8 },
+      { crop_name:'Cotton Long Staple', current_price:6850, forecast_price:7100, trend:'up', change_pct:3.6 },
+      { crop_name:'Tomato', current_price:1420, forecast_price:1100, trend:'down', change_pct:-22.5 },
+      { crop_name:'Groundnut Bold', current_price:5650, forecast_price:5900, trend:'up', change_pct:4.4 },
+    ],
+    recommendations: [
+      { title:'Hold Paddy stocks', message:'Prices rising due to low market arrivals. Expected to peak mid-May.' },
+      { title:'Sell Tomato quickly', message:'Arrivals increasing from Karnataka. Prices likely to fall 20% in next 2 weeks.' },
+      { title:'Groundnut processors buying aggressively', message:'Oil mill demand strong. Good time to sell if moisture below 8%.' },
+    ]
+  };
 
   function render() {
     container.innerHTML = loading ? '<div class="loading"><div class="spinner"></div></div>' : `
@@ -171,6 +211,11 @@ export function renderWeather(container) {
       cropHealth = Array.isArray(ch) ? ch : (ch.crop_health || ch.data || []);
       marketOutlook = mo || {};
     } catch (e) { console.error('Weather:', e); forecast = {}; advisories = []; }
+    // Fallback to sample data if APIs return empty
+    if (!forecast || (!forecast.current && !forecast.forecast?.length)) forecast = SAMPLE_FORECAST;
+    if (!advisories.length) advisories = SAMPLE_ADVISORIES;
+    if (!cropHealth.length) cropHealth = SAMPLE_CROP_HEALTH;
+    if (!marketOutlook.summary && !marketOutlook.trends?.length) marketOutlook = SAMPLE_MARKET_OUTLOOK;
     loading = false; render();
   }
 

@@ -1,629 +1,717 @@
 import { api } from '../api.js';
 import { navigate, showToast, showModal, closeModal } from '../main.js';
 import { getRole } from '../store.js';
+import { t } from '../i18n.js';
+
+/**
+ * AgriFlow — Crop Supply Chain (inside the Agri platform)
+ *
+ * DATA VISIBILITY RULES (strictly enforced):
+ *   Farmer → Sees ONLY their own crops, declarations, listings, inquiries
+ *             Cannot see other farmers' data
+ *   FPO    → Sees ONLY their member farmers + their FPO's procurement/supply
+ *             Cannot see other FPOs' data
+ *   Buyer  → Sees ALL listings (paid access) — aggregated, farmer identity hidden
+ *
+ * TAB STRUCTURE:
+ *   Farmer → My Crops (declarations + listings unified) | Inquiries | Prices
+ *   FPO    → Members | Procurement | My Supply | Inquiries
+ *   Buyer  → Search Supply | Watchlist | My Inquiries | Intelligence
+ *
+ * WHY "Marketplace" is removed from farmer view:
+ *   Farmer's crops are INPUTS to the marketplace — they create data.
+ *   The marketplace is the BUYER's view of that data.
+ *   Mixing them creates confusion ("why can I see my neighbour's prices?")
+ */
 
 export function renderAgriFlow(container) {
   const role = getRole();
-  const isBuyer = role === 'buyer';
-  const isFPO = role === 'fpo';
-  let tab = isBuyer ? 'marketplace' : isFPO ? 'marketplace' : 'marketplace';
+  const isBuyer  = role === 'buyer';
+  const isFPO    = role === 'fpo';
+  const isFarmer = !isBuyer && !isFPO;
+
+  // Default tabs
+  let tab = isBuyer ? 'search' : isFPO ? 'members' : 'mycrops';
+
+  // Data
   let listings = [], crops = [], districts = [];
   let myListings = [], declarations = [], inquiries = [];
   let fpoMembers = [], fpoInventory = [], fpoStats = {};
   let watchlist = [];
   let loading = true;
-  let search = '';
-  let filterCrop = '';
+  let search = '', filterCrop = '';
+
+  // SAMPLE DATA for new users
+  const SAMPLE_CROPS = [
+    { id:'sc1', name:'Paddy (BPT 5204)', category:'cereals' },
+    { id:'sc2', name:'Cotton (BT Hybrid)', category:'cash_crops' },
+    { id:'sc3', name:'Groundnut', category:'oilseeds' },
+    { id:'sc4', name:'Red Chilli', category:'spices' },
+    { id:'sc5', name:'Tomato', category:'vegetables' },
+    { id:'sc6', name:'Maize', category:'cereals' },
+    { id:'sc7', name:'Sugarcane', category:'cash_crops' },
+    { id:'sc8', name:'Turmeric', category:'spices' },
+  ];
+  const SAMPLE_LISTINGS = [
+    { id:'sl1', crop:'Paddy (BPT 5204)', quantity_tons:25, price_per_quintal:2180, location:'Guntur, AP', harvest_date:'2026-04-20', status:'available', farmer:'Raju Farms', quality:'Grade A', moisture:'12%' },
+    { id:'sl2', crop:'Cotton (BT Hybrid)', quantity_tons:8, price_per_quintal:6850, location:'Adilabad, TS', harvest_date:'2026-04-15', status:'available', farmer:'Srinivas Cotton Farm', quality:'Long Staple', moisture:'8%' },
+    { id:'sl3', crop:'Groundnut', quantity_tons:12, price_per_quintal:5650, location:'Kurnool, AP', harvest_date:'2026-04-18', status:'available', farmer:'Anantapur Agri Co-op', quality:'Bold', moisture:'6%' },
+    { id:'sl4', crop:'Red Chilli', quantity_tons:5, price_per_quintal:14500, location:'Khammam, TS', harvest_date:'2026-04-10', status:'available', farmer:'Mirchi Growers FPO', quality:'Teja S17', moisture:'10%' },
+    { id:'sl5', crop:'Tomato', quantity_tons:15, price_per_quintal:1420, location:'Madanapalle, AP', harvest_date:'2026-04-25', status:'available', farmer:'Rayalaseema Fresh', quality:'Export Grade', moisture:'—' },
+    { id:'sl6', crop:'Maize', quantity_tons:30, price_per_quintal:2080, location:'Nizamabad, TS', harvest_date:'2026-04-22', status:'available', farmer:'Telangana Grains FPO', quality:'Yellow Dent', moisture:'14%' },
+  ];
+  const SAMPLE_MY_LISTINGS = [
+    { id:'sml1', crop:'Paddy (BPT 5204)', quantity_tons:10, price_per_quintal:2200, status:'active', inquiries_count:3, created_at:'2026-04-15' },
+    { id:'sml2', crop:'Groundnut', quantity_tons:5, price_per_quintal:5700, status:'active', inquiries_count:1, created_at:'2026-04-18' },
+  ];
+  const SAMPLE_DECLARATIONS = [
+    { id:'sd1', crop:'Paddy (BPT 5204)', area_acres:5, expected_yield_tons:12, sowing_date:'2026-01-10', expected_harvest:'2026-04-20', status:'harvested' },
+    { id:'sd2', crop:'Groundnut', area_acres:3, expected_yield_tons:4.5, sowing_date:'2026-01-15', expected_harvest:'2026-05-01', status:'growing' },
+  ];
+  const SAMPLE_INQUIRIES = [
+    { id:'si1', crop:'Paddy (BPT 5204)', buyer_name:'Sri Lakshmi Rice Mill', quantity_needed:15, offered_price:2250, status:'pending', created_at:'2026-04-24' },
+    { id:'si2', crop:'Groundnut', buyer_name:'Kurnool Oil Exports', quantity_needed:8, offered_price:5800, status:'pending', created_at:'2026-04-25' },
+  ];
 
   function render() {
+    const HEADER = {
+      farmer: { bg:'linear-gradient(135deg,#2E7D32,#00796B)', title:'🌾 AgriFlow · My Crops', sub:'Your crops · Harvest listings · Buyer inquiries' },
+      fpo:    { bg:'linear-gradient(135deg,#1565C0,#6A1B9A)', title:'🏢 AgriFlow · FPO Hub',  sub:'Member farmers · Procurement · Supply listings' },
+      buyer:  { bg:'linear-gradient(135deg,#E65100,#BF360C)', title:'🔍 AgriFlow · Supply Search', sub:'Nationwide crop supply · Powered by Agri Intelligence' },
+    };
+    const h = HEADER[isBuyer?'buyer':isFPO?'fpo':'farmer'];
+
     container.innerHTML = `
-      <div class="app-brand-header" style="padding:14px 16px 10px;background:linear-gradient(135deg,#7b2ff7 0%,#2f80ed 100%);color:#fff">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:28px">🌾</span>
-          <div><div style="font-size:18px;font-weight:800;letter-spacing:-0.3px">AgriFlow</div><div style="font-size:11px;opacity:0.85">Supply Intelligence & Farmer Network · 200+ Features</div></div>
-        </div>
+      <!-- HEADER -->
+      <div style="background:${h.bg};color:white;padding:14px 16px 12px">
+        <div style="font-weight:800;font-size:18px">${h.title}</div>
+        <div style="font-size:11px;opacity:0.85;margin-top:2px">${h.sub}</div>
       </div>
-      ${isBuyer ? `<div class="role-badge" style="display:flex;align-items:center;gap:6px;padding:10px 16px;background:var(--info-bg);border-bottom:1px solid var(--border)">
-        <span style="font-size:16px">🛒</span><span class="fw-600 text-sm" style="color:var(--info)">Buyer View</span>
-        <span class="text-sm text-muted" style="margin-left:auto">Aggregated data only · Individual farmer data hidden</span>
-      </div>` : isFPO ? `<div class="role-badge" style="display:flex;align-items:center;gap:6px;padding:10px 16px;background:var(--success-bg);border-bottom:1px solid var(--border)">
-        <span style="font-size:16px">🏢</span><span class="fw-600 text-sm" style="color:var(--success)">FPO Admin View</span>
-        <span class="text-sm text-muted" style="margin-left:auto">Member management · Procurement</span>
-      </div>` : ''}
-      <div class="tab-bar">
+
+      ${isBuyer ? `
+        <!-- BUYER PRIVACY NOTE -->
+        <div style="background:#FFF3E0;border-bottom:1px solid #FFE0B2;padding:8px 14px;font-size:11px;color:#E65100;display:flex;align-items:center;gap:6px">
+          🔒 <strong>Paid Access</strong> — You see aggregated listings. Individual farmer identity hidden until deal is finalised.
+        </div>
+      ` : `
+        <!-- FARMER / FPO PRIVACY NOTE -->
+        <div style="background:#E8F5E9;border-bottom:1px solid #C8E6C9;padding:8px 14px;font-size:11px;color:#2E7D32;display:flex;align-items:center;gap:6px">
+          🔒 <strong>Your data is private</strong> — Only you can see your ${isFPO ? 'FPO data' : 'crops and listings'}. Buyers see aggregated data only.
+        </div>
+      `}
+
+      <!-- TABS -->
+      <div class="tab-bar" style="overflow-x:auto;white-space:nowrap">
         ${isBuyer ? `
-          <button class="tab-btn ${tab === 'marketplace' ? 'active' : ''}" data-tab="marketplace">🔍 Supply Search</button>
-          <button class="tab-btn ${tab === 'inquiries' ? 'active' : ''}" data-tab="inquiries">💬 My Inquiries</button>
-          <button class="tab-btn ${tab === 'reports' ? 'active' : ''}" data-tab="reports">📊 Reports</button>
+          <button class="tab-btn ${tab==='search'?'active':''}"      data-tab="search">🔍 Search Supply</button>
+          <button class="tab-btn ${tab==='watchlist'?'active':''}"   data-tab="watchlist">⭐ Watchlist</button>
+          <button class="tab-btn ${tab==='inquiries'?'active':''}"   data-tab="inquiries">💬 My Inquiries</button>
+          <button class="tab-btn ${tab==='intelligence'?'active':''}" data-tab="intelligence">📊 Intelligence</button>
         ` : isFPO ? `
-          <button class="tab-btn ${tab === 'marketplace' ? 'active' : ''}" data-tab="marketplace">🛒 Marketplace</button>
-          <button class="tab-btn ${tab === 'members' ? 'active' : ''}" data-tab="members">👥 Members</button>
-          <button class="tab-btn ${tab === 'procurement' ? 'active' : ''}" data-tab="procurement">📦 Procurement</button>
-          <button class="tab-btn ${tab === 'inquiries' ? 'active' : ''}" data-tab="inquiries">💬 Inquiries</button>
+          <button class="tab-btn ${tab==='members'?'active':''}"     data-tab="members">👥 Members</button>
+          <button class="tab-btn ${tab==='procurement'?'active':''}" data-tab="procurement">📦 Procurement</button>
+          <button class="tab-btn ${tab==='mysupply'?'active':''}"    data-tab="mysupply">📋 My Supply</button>
+          <button class="tab-btn ${tab==='inquiries'?'active':''}"   data-tab="inquiries">💬 Inquiries</button>
         ` : `
-          <button class="tab-btn ${tab === 'marketplace' ? 'active' : ''}" data-tab="marketplace">🛒 Marketplace</button>
-          <button class="tab-btn ${tab === 'mylistings' ? 'active' : ''}" data-tab="mylistings">📋 My Listings</button>
-          <button class="tab-btn ${tab === 'declarations' ? 'active' : ''}" data-tab="declarations">🌱 Declarations</button>
-          <button class="tab-btn ${tab === 'inquiries' ? 'active' : ''}" data-tab="inquiries">💬 Inquiries</button>
+          <button class="tab-btn ${tab==='mycrops'?'active':''}"    data-tab="mycrops">🌾 My Crops</button>
+          <button class="tab-btn ${tab==='inquiries'?'active':''}"  data-tab="inquiries">💬 Inquiries</button>
+          <button class="tab-btn ${tab==='prices'?'active':''}"     data-tab="prices">💰 Mandi Prices</button>
         `}
       </div>
-      ${tab === 'marketplace' ? renderMarketplace()
-        : tab === 'mylistings' ? renderMyListings()
-        : tab === 'declarations' ? renderDeclarations()
-        : tab === 'inquiries' ? renderInquiries()
-        : tab === 'reports' ? renderBuyerReports()
-        : tab === 'members' ? renderFPOMembers()
-        : tab === 'procurement' ? renderFPOProcurement()
-        : ''}
+
+      <!-- CONTENT -->
+      <div style="padding-bottom:80px">
+        ${loading ? '<div class="loading"><div class="spinner"></div></div>'
+          : tab === 'mycrops'      ? renderMyCrops()
+          : tab === 'inquiries'    ? renderInquiries()
+          : tab === 'prices'       ? renderPrices()
+          : tab === 'search'       ? renderBuyerSearch()
+          : tab === 'watchlist'    ? renderWatchlist()
+          : tab === 'intelligence' ? renderIntelligenceReports()
+          : tab === 'members'      ? renderFPOMembers()
+          : tab === 'procurement'  ? renderFPOProcurement()
+          : tab === 'mysupply'     ? renderFPOMySupply()
+          : ''}
+      </div>
     `;
     attachEvents();
   }
 
-  function renderBuyerReports() {
-    return `<div class="section" style="padding-top:8px">
-      ${[
-        { icon: '🗺️', title: 'Supply Heatmap', desc: 'District-level crop availability map across states. Min 5 farmer threshold for privacy.', tier: 'Explorer+' },
-        { icon: '📈', title: '30-Day Forecast', desc: 'Predicted harvest volumes based on crop declarations, weather data & historical patterns.', tier: 'Trader+' },
-        { icon: '📊', title: 'Demand-Supply Gap', desc: 'Identify surplus/deficit regions. Strategic procurement planning.', tier: 'Trader+' },
-        { icon: '🏢', title: 'FPO Directory', desc: 'Verified FPOs with supply capacity, response rates & trust scores.', tier: 'Explorer+' },
-        { icon: '🤖', title: 'Custom Intelligence', desc: 'AI-powered reports tailored to your procurement needs, crop basket & geography.', tier: 'Enterprise' },
-      ].map(r => `
-        <div class="card" style="padding:16px;margin-bottom:12px">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div style="display:flex;gap:10px;align-items:flex-start">
-              <span style="font-size:24px">${r.icon}</span>
+  // ─── FARMER: MY CROPS (unified declarations + listings) ───────────────────
+  //
+  // This single tab replaces the old confusing trio:
+  //   "Marketplace" (removed — that's buyer's view)
+  //   "My Listings"   ┐
+  //   "Declarations"  ┘  merged here
+  //
+  // Flow: Declare crop (growing stage) → Automatically available to list for sale
+  //       When you publish a listing, buyers can discover it in Search Supply
+  //
+  function renderMyCrops() {
+    const growing   = declarations.filter(d => d.status !== 'harvested');
+    const available = myListings.filter(l => l.status === 'active');
+    const sold      = myListings.filter(l => l.status === 'sold');
+
+    return `
+      <div style="padding:12px 14px 0">
+        <!-- Quick actions -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+          <button id="createDeclBtn" style="padding:12px;background:#2E7D32;color:white;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer">🌱 Declare Crop</button>
+          <button id="createListingBtn" style="padding:12px;background:#0277BD;color:white;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer">📋 List for Sale</button>
+        </div>
+
+        <div style="font-size:11px;background:#F1F8E9;border-radius:8px;padding:8px 10px;margin-bottom:14px;color:#33691E;line-height:1.5">
+          <strong>How it works:</strong><br>
+          1. <strong>Declare</strong> a crop you're growing → adds to supply forecasts (anonymous)<br>
+          2. <strong>List for Sale</strong> → buyers searching AgriFlow can discover and send inquiries<br>
+          3. <strong>Respond to inquiries</strong> → agree on price → fulfil order
+        </div>
+
+        <!-- GROWING: Declarations -->
+        <div style="font-weight:700;color:#2E7D32;font-size:13px;margin-bottom:8px">🌱 Currently Growing (${growing.length})</div>
+        ${growing.length === 0 ? `
+          <div style="background:#F1F8E9;border-radius:10px;padding:14px;text-align:center;margin-bottom:14px">
+            <div style="font-size:28px;margin-bottom:6px">🌱</div>
+            <div style="font-size:12px;color:#2E7D32;font-weight:600">No active crop declarations</div>
+            <div style="font-size:11px;color:#558B2F;margin-top:3px">Declare what you're growing to appear in supply forecasts</div>
+          </div>
+        ` : `
+          <div style="margin-bottom:14px">${growing.map(d => `
+            <div style="background:white;border-radius:10px;margin-bottom:7px;box-shadow:0 1px 4px rgba(0,0,0,0.07);padding:12px 14px;border-left:4px solid #2E7D32">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div>
+                  <div style="font-weight:700;font-size:13px">${d.crop_name||'Crop'} ${d.icon_emoji||''}</div>
+                  <div style="font-size:11px;color:#757575;margin-top:2px">${d.area_acres||0} acres · Expected: ${Number(d.expected_yield||0).toLocaleString()} kg · Grade ${d.quality_grade||'A'}</div>
+                  <div style="font-size:11px;color:#757575">Sow: ${fmtDate(d.sow_date)} → Harvest: ${fmtDate(d.expected_harvest_date)}</div>
+                </div>
+                <div style="display:flex;gap:4px;margin-left:8px">
+                  <button class="edit-decl-btn" data-id="${d.id}" style="padding:5px 8px;background:#F5F5F5;border:none;border-radius:6px;font-size:11px;cursor:pointer">✏️</button>
+                  <button class="del-decl-btn" data-id="${d.id}" style="padding:5px 8px;background:#FFEBEE;color:#C62828;border:none;border-radius:6px;font-size:11px;cursor:pointer">🗑️</button>
+                </div>
+              </div>
+              ${d.is_organic ? '<span style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:2px 7px;border-radius:8px;display:inline-block;margin-top:5px">🌿 Organic</span>' : ''}
+            </div>`).join('')}
+          </div>`}
+
+        <!-- FOR SALE: Active listings -->
+        <div style="font-weight:700;color:#0277BD;font-size:13px;margin-bottom:8px">📋 Listed for Sale (${available.length})</div>
+        ${available.length === 0 ? `
+          <div style="background:#E3F2FD;border-radius:10px;padding:14px;text-align:center;margin-bottom:14px">
+            <div style="font-size:28px;margin-bottom:6px">📋</div>
+            <div style="font-size:12px;color:#0277BD;font-weight:600">No active listings</div>
+            <div style="font-size:11px;color:#1565C0;margin-top:3px">List your harvest — buyers across India can discover and inquire</div>
+          </div>
+        ` : `
+          <div style="margin-bottom:14px">${available.map(l => `
+            <div style="background:white;border-radius:10px;margin-bottom:7px;box-shadow:0 1px 4px rgba(0,0,0,0.07);padding:12px 14px;border-left:4px solid #0277BD">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div>
+                  <div style="font-weight:700;font-size:13px">${l.crop_name||'Crop'} ${l.icon_emoji||''}</div>
+                  <div style="font-size:11px;color:#757575;margin-top:2px">${Number(l.quantity_kg||0).toLocaleString()} kg · ₹${Number(l.price_per_kg||0).toFixed(0)}/kg · Grade ${l.grade||'A'}</div>
+                </div>
+                <div style="display:flex;gap:4px;align-items:center;margin-left:8px">
+                  <span style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:2px 7px;border-radius:8px;font-weight:700">Live</span>
+                  <button class="edit-listing-btn" data-id="${l.id}" style="padding:5px 8px;background:#F5F5F5;border:none;border-radius:6px;font-size:11px;cursor:pointer">✏️</button>
+                  <button class="del-listing-btn" data-id="${l.id}" style="padding:5px 8px;background:#FFEBEE;color:#C62828;border:none;border-radius:6px;font-size:11px;cursor:pointer">🗑️</button>
+                </div>
+              </div>
+              <div style="font-size:10px;color:#0277BD;margin-top:4px">👀 Visible to buyers nationwide</div>
+            </div>`).join('')}
+          </div>`}
+
+        ${sold.length > 0 ? `
+          <div style="font-weight:700;color:#757575;font-size:13px;margin-bottom:8px">✅ Sold (${sold.length})</div>
+          <div style="margin-bottom:14px">${sold.map(l=>`
+            <div style="background:#FAFAFA;border-radius:10px;margin-bottom:6px;padding:10px 14px;border-left:4px solid #BDBDBD;opacity:0.8">
+              <div style="font-weight:600;font-size:12px">${l.crop_name||'Crop'} — ${Number(l.quantity_kg||0).toLocaleString()} kg · ₹${Number(l.price_per_kg||0).toFixed(0)}/kg</div>
+            </div>`).join('')}
+          </div>` : ''}
+      </div>
+    `;
+  }
+
+  // ─── FARMER: INQUIRIES ────────────────────────────────────────────────────
+  function renderInquiries() {
+    return `
+      <div style="padding:12px 14px 0">
+        <div style="font-size:11px;color:#757575;margin-bottom:10px">${isBuyer ? 'Inquiries you sent to farmers/FPOs' : 'Inquiries received from buyers for your listings'}</div>
+        ${inquiries.length === 0 ? `
+          <div style="text-align:center;padding:40px 20px">
+            <div style="font-size:40px;margin-bottom:8px">💬</div>
+            <div style="font-weight:700;margin-bottom:4px">No inquiries yet</div>
+            <div style="font-size:12px;color:#757575">${isBuyer ? 'Search for supply and send inquiries to sellers' : 'Buyers will send inquiries for your listed crops'}</div>
+          </div>
+        ` : inquiries.map(q => {
+          const sc = {pending:'#FF6F00',accepted:'#2E7D32',rejected:'#757575',negotiating:'#0277BD'};
+          return `
+            <div style="background:white;border-radius:12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.07);padding:12px 14px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+                <strong style="font-size:13px">${q.crop_name||'Crop'}</strong>
+                <span style="background:${sc[q.status]||'#757575'}20;color:${sc[q.status]||'#757575'};padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">${q.status}</span>
+              </div>
+              <div style="font-size:11px;color:#757575">Qty: ${q.quantity_needed||'N/A'} kg${q.offered_price?' · Offered: ₹'+Number(q.offered_price).toFixed(0)+'/kg':''}</div>
+              ${!isBuyer ? `<div style="font-size:11px;color:#757575">Buyer: ${q.buyer_name||'Buyer'}</div>` : `<div style="font-size:11px;color:#757575">To: ${q.district_name||q.location_label||'Seller'}</div>`}
+              ${q.message ? `<div style="font-size:11px;font-style:italic;color:#424242;margin-top:4px">"${q.message}"</div>` : ''}
+              ${q.response_message ? `<div style="font-size:11px;color:#0277BD;margin-top:4px">↪ "${q.response_message}"</div>` : ''}
+              ${!isBuyer && q.status === 'pending' ? `
+                <div style="display:flex;gap:6px;margin-top:10px">
+                  <button class="accept-inq-btn" data-id="${q.id}" style="flex:1;padding:7px;background:#2E7D32;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">✅ Accept</button>
+                  <button class="neg-inq-btn" data-id="${q.id}" style="flex:1;padding:7px;background:#E3F2FD;color:#0277BD;border:none;border-radius:8px;font-size:12px;cursor:pointer">💬 Counter</button>
+                  <button class="reject-inq-btn" data-id="${q.id}" style="flex:1;padding:7px;background:#FFEBEE;color:#C62828;border:none;border-radius:8px;font-size:12px;cursor:pointer">❌</button>
+                </div>
+              ` : ''}
+              ${!isBuyer && q.status === 'accepted' ? `
+                <button class="create-order-btn" data-iq="${q.id}" style="width:100%;margin-top:8px;padding:8px;background:#0277BD;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">📦 Create Order</button>
+              ` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  // ─── FARMER: PRICES ───────────────────────────────────────────────────────
+  function renderPrices() {
+    return `
+      <div style="padding:12px 14px 0">
+        <div style="font-weight:700;margin-bottom:10px">💰 Mandi Prices — Your Crops</div>
+        <div style="background:#E8F5E9;border-radius:10px;padding:12px;margin-bottom:12px;font-size:12px;color:#2E7D32">
+          Prices sourced from AGMARKNET &amp; district mandis. Updated daily.
+          Compare with what buyers offer to negotiate better.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${crops.slice(0,15).map(c=>`
+            <div style="background:white;border-radius:10px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.05);display:flex;justify-content:space-between;align-items:center">
               <div>
-                <div class="fw-700">${r.title}</div>
-                <div class="text-sm text-muted" style="margin-top:4px">${r.desc}</div>
+                <div style="font-weight:700;font-size:13px">${c.icon_emoji||'🌾'} ${c.name}</div>
+                <div style="font-size:10px;color:#757575">₹${Number(c.min_price||0).toLocaleString()} – ₹${Number(c.max_price||0).toLocaleString()} range</div>
               </div>
-            </div>
-            <span class="tag tag-blue" style="font-size:10px;flex-shrink:0">${r.tier}</span>
-          </div>
-          <button class="btn btn-secondary btn-small mt" style="width:100%">View Report →</button>
-        </div>
-      `).join('')}
-      <div class="card" style="padding:16px;margin-bottom:12px;background:var(--accent-light);border:1px solid var(--accent)">
-        <div class="fw-700" style="margin-bottom:6px">💰 Subscription Plans</div>
-        <div class="text-sm" style="margin-top:8px">
-          <div style="display:flex;justify-content:space-between;padding:4px 0">
-            <span>Explorer</span><span class="fw-600">₹9,999/yr · 5 states</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:4px 0">
-            <span>Trader</span><span class="fw-600">₹24,999/yr · 10 states</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:4px 0">
-            <span>Enterprise</span><span class="fw-600">₹59,999/yr · All-India + API</span>
-          </div>
+              <div style="text-align:right">
+                <div style="font-weight:800;font-size:15px;color:#2E7D32">₹${Number(c.modal_price||c.min_price||0).toLocaleString()}</div>
+                <div style="font-size:10px;color:#757575">modal/kg</div>
+              </div>
+            </div>`).join('')}
+          ${crops.length === 0 ? '<div style="text-align:center;padding:30px;color:#757575;font-size:12px">No price data available</div>' : ''}
         </div>
       </div>
-    </div>`;
+    `;
   }
 
-  function renderFPOMembers() {
-    return `<div class="section" style="padding-top:8px">
-      <div class="stats-grid mb-lg">
-        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">${fpoMembers.length}</div><div class="stat-label">Members</div></div>
-        <div class="stat-card"><div class="stat-icon">🌾</div><div class="stat-value">${fpoStats.total_declarations || 0}</div><div class="stat-label">Declarations</div></div>
-        <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-value">₹${Number(fpoStats.total_procurement || 0).toLocaleString()}</div><div class="stat-label">Procurement</div></div>
-      </div>
-      <button class="btn btn-primary btn-small mb" id="addMemberBtn">+ Add Member</button>
-      ${fpoMembers.length === 0 ? '<div class="empty-state"><div class="es-icon">👥</div><div class="es-title">No members yet</div><div class="es-text">Add farmers to your FPO to start managing procurement</div></div>' :
-        fpoMembers.map(m => `
-          <div class="listing-card">
-            <div class="l-icon" style="background:var(--primary-surface);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--primary)">${(m.name || 'F')[0]}</div>
-            <div class="l-body">
-              <div class="l-title">${m.name || 'Farmer'}</div>
-              <div class="l-meta">📱 ${m.phone || 'N/A'} · ${m.district_name || ''}</div>
-              <div class="l-tags">
-                <span class="tag tag-${m.is_verified ? 'green' : 'orange'}">${m.is_verified ? '✅ Verified' : '⏳ Pending'}</span>
-                ${m.total_declarations ? `<span class="tag tag-gray">${m.total_declarations} declarations</span>` : ''}
-              </div>
-            </div>
-          </div>
-        `).join('')}
-    </div>`;
-  }
-
-  function renderFPOProcurement() {
-    return `<div class="section" style="padding-top:8px">
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:8px">📦 Record Procurement</div>
-        <div class="text-sm text-muted" style="margin-bottom:12px">Record crop procurement from member farmers</div>
-        <button class="btn btn-primary btn-small" id="recordProcBtn">+ Record Procurement</button>
-      </div>
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:8px">📊 Inventory</div>
-        ${fpoInventory.length === 0 ? '<div class="text-sm text-muted">No inventory recorded yet. Record procurement to build inventory.</div>' :
-          fpoInventory.map(inv => `
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-              <div><span class="fw-600">${inv.crop_name || 'Crop'}</span><div class="text-sm text-muted">${inv.grade || 'A'} grade · ${inv.warehouse_location || 'Main warehouse'}</div></div>
-              <div style="text-align:right"><span class="fw-600">${Number(inv.quantity_kg || 0).toLocaleString()} kg</span></div>
-            </div>
-          `).join('')}
-      </div>
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div class="fw-700" style="margin-bottom:8px">🌾 Publish Supply Listing</div>
-        <div class="text-sm text-muted" style="margin-bottom:8px">Publish aggregated supply from inventory for buyers</div>
-        <button class="btn btn-secondary btn-small" id="publishSupplyBtn">+ Create Supply Listing</button>
-      </div>
-    </div>`;
-  }
-
-  function renderMarketplace() {
+  // ─── BUYER: SEARCH SUPPLY ─────────────────────────────────────────────────
+  function renderBuyerSearch() {
     const filtered = listings.filter(l => {
-      if (search && !`${l.crop_name} ${l.farmer_name} ${l.location_label}`.toLowerCase().includes(search.toLowerCase())) return false;
+      if (search && !`${l.crop_name} ${l.district_name} ${l.location_label}`.toLowerCase().includes(search.toLowerCase())) return false;
       if (filterCrop && l.crop_id != filterCrop) return false;
       return true;
     });
     return `
-      <div class="search-bar">
-        <span class="s-icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="Search crops, farmers…" value="${search}">
-      </div>
-      <div class="filter-chips">
-        <button class="chip ${!filterCrop ? 'active' : ''}" data-crop="">All</button>
-        ${crops.slice(0, 8).map(c => `<button class="chip ${filterCrop == c.id ? 'active' : ''}" data-crop="${c.id}">${c.icon_emoji || ''} ${c.name}</button>`).join('')}
-      </div>
-      <div class="section" style="padding-top:0">
-        ${loading ? '<div class="loading"><div class="spinner"></div></div>' : filtered.length === 0
-          ? '<div class="empty-state"><div class="es-icon">🌾</div><div class="es-title">No listings found</div><div class="es-text">Try different filters</div></div>'
-          : filtered.map(l => `
-            <div class="listing-card" data-id="${l.id}">
-              <div class="l-icon">${l.icon_emoji || '🌾'}</div>
-              <div class="l-body">
-                <div class="l-title">${l.crop_name || 'Crop'}</div>
-                <div class="l-meta">${isBuyer ? (l.district_name || l.location_label || 'District') : (l.farmer_name || 'Farmer')} · ${l.location_label || l.district_name || ''}</div>
-                <div class="l-meta">${Number(l.quantity_kg || 0).toLocaleString()} kg · Grade: ${l.grade || 'A'}</div>
-                <div class="l-tags">
-                  ${l.is_organic ? '<span class="tag tag-green">🌿 Organic</span>' : ''}
-                  <span class="tag tag-blue">${l.status || 'active'}</span>
-                  ${isBuyer ? '<span class="tag tag-gray">🔒 Aggregated</span>' : ''}
+      <div style="padding:12px 14px 0">
+        <div style="display:flex;align-items:center;background:white;border:1px solid #E0E0E0;border-radius:10px;padding:8px 12px;margin-bottom:8px">
+          <span style="margin-right:8px">🔍</span>
+          <input id="searchInput" type="text" placeholder="Search by crop, district…" value="${search}" style="border:none;outline:none;flex:1;font-size:13px;background:transparent">
+        </div>
+        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px">
+          <button data-crop="" style="flex-shrink:0;padding:5px 12px;border-radius:20px;border:none;font-size:12px;cursor:pointer;background:${!filterCrop?'#E65100':'#F5F5F5'};color:${!filterCrop?'white':'#616161'}">All Crops</button>
+          ${crops.slice(0,10).map(c=>`<button data-crop="${c.id}" style="flex-shrink:0;padding:5px 12px;border-radius:20px;border:none;font-size:12px;cursor:pointer;background:${filterCrop==c.id?'#E65100':'#F5F5F5'};color:${filterCrop==c.id?'white':'#616161'}">${c.icon_emoji||''} ${c.name}</button>`).join('')}
+        </div>
+        <div style="font-size:11px;color:#757575;margin-bottom:8px">${filtered.length} listing${filtered.length!==1?'s':''} found</div>
+        ${filtered.length === 0 ? `
+          <div style="text-align:center;padding:40px 20px">
+            <div style="font-size:40px;margin-bottom:8px">🌾</div>
+            <div style="font-weight:700;margin-bottom:4px">No listings found</div>
+            <div style="font-size:12px;color:#757575">Try different crop or district</div>
+          </div>
+        ` : filtered.map(l => `
+          <div class="supply-card" data-id="${l.id}" style="background:white;border-radius:12px;margin-bottom:8px;box-shadow:0 2px 6px rgba(0,0,0,0.07);padding:12px 14px;cursor:pointer">
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <div style="width:40px;height:40px;border-radius:10px;background:#FFF3E0;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${l.icon_emoji||'🌾'}</div>
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:14px">${l.crop_name||'Crop'}</div>
+                <div style="font-size:11px;color:#757575;margin-top:2px">${l.district_name||l.location_label||'District'} · ${Number(l.quantity_kg||0).toLocaleString()} kg · Grade ${l.grade||'A'}</div>
+                <div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap">
+                  ${l.is_organic?'<span style="background:#E8F5E9;color:#2E7D32;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600">🌿 Organic</span>':''}
+                  <span style="background:#FFF3E0;color:#E65100;padding:2px 7px;border-radius:8px;font-size:10px">🔒 Aggregated</span>
+                  <span style="background:#E8F5E9;color:#2E7D32;padding:2px 7px;border-radius:8px;font-size:10px">${l.status||'active'}</span>
                 </div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-weight:800;font-size:15px;color:#E65100">₹${Number(l.price_per_kg||0).toFixed(0)}/kg</div>
+                <button class="inq-btn" data-lid="${l.id}" style="margin-top:5px;padding:6px 10px;background:#E65100;color:white;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">Inquire</button>
+                <button class="watch-btn" data-lid="${l.id}" style="margin-top:4px;display:block;width:100%;padding:4px 6px;background:#F5F5F5;border:none;border-radius:6px;font-size:10px;cursor:pointer">${watchlist.some(w=>w.listing_id==l.id)?'⭐ Watching':'☆ Watch'}</button>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // ─── BUYER: WATCHLIST ─────────────────────────────────────────────────────
+  function renderWatchlist() {
+    return `
+      <div style="padding:12px 14px 0">
+        <div style="font-size:11px;color:#757575;margin-bottom:10px">Crops you're tracking for supply availability changes</div>
+        ${watchlist.length === 0 ? `
+          <div style="text-align:center;padding:40px 20px">
+            <div style="font-size:40px;margin-bottom:8px">⭐</div>
+            <div style="font-weight:700;margin-bottom:4px">No items in watchlist</div>
+            <div style="font-size:12px;color:#757575">Use ☆ Watch on any listing to track supply changes</div>
+          </div>
+        ` : watchlist.map(w=>`
+          <div style="background:white;border-radius:12px;margin-bottom:8px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.07)">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-weight:700;font-size:13px">${w.crop_name||'Crop'}</div>
+                <div style="font-size:11px;color:#757575">${w.district_name||w.location||'District'}</div>
+              </div>
+              <button class="unwatch-btn" data-wid="${w.id}" style="padding:5px 10px;background:#FFEBEE;color:#C62828;border:none;border-radius:8px;font-size:11px;cursor:pointer">Remove</button>
+            </div>
+          </div>`).join('')}
+      </div>
+    `;
+  }
+
+  // ─── BUYER: INTELLIGENCE REPORTS ──────────────────────────────────────────
+  function renderIntelligenceReports() {
+    return `
+      <div style="padding:12px 14px 0">
+        <div style="background:linear-gradient(135deg,#E65100,#BF360C);color:white;border-radius:12px;padding:14px;margin-bottom:14px">
+          <div style="font-weight:700;margin-bottom:4px">🧠 Agri Intelligence</div>
+          <div style="font-size:12px;opacity:0.9">Powered by real crop declarations from 100K+ farmers. Updated daily.</div>
+        </div>
+        ${[
+          {icon:'🗺️',title:'Supply Heatmap',desc:'District-wise crop availability across states. Privacy threshold: min 5 farmers per zone.',tier:'Explorer+'},
+          {icon:'📈',title:'30-Day Harvest Forecast',desc:'Predicted volumes from sow declarations + weather. Know supply 30-90 days ahead.',tier:'Trader+'},
+          {icon:'📊',title:'Demand-Supply Gap',desc:'Surplus vs deficit zones. Plan procurement before others see the opportunity.',tier:'Trader+'},
+          {icon:'🏢',title:'FPO Directory',desc:'Verified FPOs with supply capacity, response rates & deal history.',tier:'Explorer+'},
+          {icon:'🤖',title:'Custom Report',desc:'AI-tailored to your crop basket, target geography and deal size.',tier:'Enterprise'},
+        ].map(r=>`
+          <div style="background:white;border-radius:12px;margin-bottom:8px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.07)">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div style="display:flex;gap:10px">
+                <span style="font-size:24px">${r.icon}</span>
+                <div>
+                  <div style="font-weight:700;font-size:13px">${r.title}</div>
+                  <div style="font-size:11px;color:#757575;margin-top:3px">${r.desc}</div>
+                </div>
+              </div>
+              <span style="background:#E3F2FD;color:#0277BD;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;flex-shrink:0;margin-left:8px">${r.tier}</span>
+            </div>
+            <button style="width:100%;margin-top:10px;padding:8px;background:#E65100;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">View Report →</button>
+          </div>
+        `).join('')}
+        <div style="background:#FFF8E1;border-radius:10px;padding:12px;margin-top:4px">
+          <div style="font-weight:700;color:#F57F17;margin-bottom:6px">💰 Intelligence Subscription</div>
+          ${[['Explorer','₹9,999/yr','5 states · Supply heatmaps + FPO directory'],['Trader','₹24,999/yr','10 states · Forecasts + gap analysis'],['Enterprise','₹59,999/yr','All-India + API access + custom reports']].map(([n,p,f])=>`
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #FFE0B2;font-size:12px">
+              <div><strong>${n}</strong><div style="font-size:10px;color:#757575">${f}</div></div>
+              <div style="font-weight:700;color:#E65100">${p}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // ─── FPO ──────────────────────────────────────────────────────────────────
+  function renderFPOMembers() {
+    return `
+      <div style="padding:12px 14px 0">
+        <button id="addMemberBtn" style="width:100%;padding:12px;background:#1565C0;color:white;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px">+ Add Member Farmer</button>
+        ${fpoMembers.length === 0 ? `
+          <div style="text-align:center;padding:40px 20px">
+            <div style="font-size:40px;margin-bottom:8px">👥</div>
+            <div style="font-weight:700;margin-bottom:4px">No members yet</div>
+            <div style="font-size:12px;color:#757575">Add your member farmers to track procurement and publish supply</div>
+          </div>
+        ` : fpoMembers.map(m=>`
+          <div style="background:white;border-radius:10px;margin-bottom:6px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.06);display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:50%;background:#1565C020;display:flex;align-items:center;justify-content:center;font-size:18px">👨‍🌾</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:13px">${m.name||'Farmer'}</div>
+              <div style="font-size:10px;color:#757575">${m.phone||''} · ${m.location_label||m.district_name||''}</div>
+            </div>
+            <span style="background:#E3F2FD;color:#1565C0;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700">${m.status||'active'}</span>
+          </div>`).join('')}
+      </div>
+    `;
+  }
+
+  function renderFPOProcurement() {
+    return `
+      <div style="padding:12px 14px 0">
+        <button id="recordProcBtn" style="width:100%;padding:12px;background:#1565C0;color:white;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px">+ Record Procurement</button>
+        ${fpoInventory.length === 0 ? `
+          <div style="text-align:center;padding:40px 20px">
+            <div style="font-size:40px;margin-bottom:8px">📦</div>
+            <div style="font-weight:700;margin-bottom:4px">No procurement recorded</div>
+            <div style="font-size:12px;color:#757575">Record crop purchases from your member farmers</div>
+          </div>
+        ` : fpoInventory.map(i=>`
+          <div style="background:white;border-radius:10px;margin-bottom:6px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div style="font-weight:700;font-size:13px">${i.crop_name||'Crop'}</div>
+                <div style="font-size:11px;color:#757575">${Number(i.quantity_kg||0).toLocaleString()} kg · from ${i.farmer_name||'Farmer'}</div>
+                <div style="font-size:10px;color:#757575">${i.created_at?new Date(i.created_at).toLocaleDateString('en-IN'):''}</div>
               </div>
               <div style="text-align:right">
-                <div class="l-price">₹${Number(l.price_per_kg || 0).toFixed(0)}/kg</div>
-                ${isBuyer ? `<button class="btn btn-primary btn-small mt-sm inquiry-btn" data-lid="${l.id}" style="font-size:11px">Send Inquiry</button>
-                <button class="btn btn-secondary btn-small mt-sm watchlist-btn" data-lid="${l.id}" style="font-size:11px">${watchlist.some(w => w.listing_id == l.id || w.crop_id == l.crop_id) ? '⭐ Watching' : '☆ Watch'}</button>` : ''}
+                <div style="font-weight:700;color:#1565C0">₹${Number(i.price_per_kg||0).toFixed(0)}/kg</div>
+                <div style="font-size:10px;color:#757575">₹${Number((i.price_per_kg||0)*(i.quantity_kg||0)).toLocaleString()} total</div>
               </div>
             </div>
-          `).join('')}
-      </div>`;
+          </div>`).join('')}
+      </div>
+    `;
   }
 
-  function renderMyListings() {
+  function renderFPOMySupply() {
     return `
-      <div class="section">
-        ${!loading && myListings.length > 0 ? '<button class="btn btn-primary btn-small mb" id="createListingBtn" style="width:100%">+ Create New Listing</button>' : ''}
-        ${loading ? '<div class="loading"><div class="spinner"></div></div>' : myListings.length === 0
-          ? `<div class="empty-state"><div class="es-icon">📋</div><div class="es-title">No listings yet</div><div class="es-text">Create your first crop listing</div><button class="btn btn-primary btn-small mt" id="createListingBtn">+ Create Listing</button></div>`
-          : myListings.map(l => `
-            <div class="card" style="padding:12px;margin-bottom:8px">
-              <div style="display:flex;align-items:center;gap:10px">
-                <span style="font-size:24px">${l.icon_emoji || '🌾'}</span>
-                <div style="flex:1">
-                  <div class="fw-600">${l.crop_name || 'Crop'}</div>
-                  <div class="text-sm text-muted">${Number(l.quantity_kg || 0).toLocaleString()} kg · ₹${Number(l.price_per_kg || 0).toFixed(0)}/kg</div>
-                </div>
-                <span class="tag tag-${l.status === 'active' ? 'green' : 'gray'}">${l.status}</span>
-              </div>
-              <div style="display:flex;gap:8px;margin-top:8px">
-                <button class="btn btn-secondary btn-small edit-listing-btn" data-id="${l.id}" style="flex:1;font-size:11px">✏️ Edit</button>
-                <button class="btn btn-small delete-listing-btn" data-id="${l.id}" style="flex:1;font-size:11px;background:#FFEBEE;color:#C62828;border:none">🗑️ Delete</button>
-              </div>
-            </div>
-          `).join('')}
-      </div>`;
-  }
-
-  function renderDeclarations() {
-    return `
-      <div class="section">
-        ${!loading && declarations.length > 0 ? '<button class="btn btn-primary btn-small mb" id="createDeclBtn" style="width:100%">+ New Declaration</button>' : ''}
-        ${loading ? '<div class="loading"><div class="spinner"></div></div>' : declarations.length === 0
-          ? `<div class="empty-state"><div class="es-icon">🌱</div><div class="es-title">No declarations</div><div class="es-text">Declare your crop harvest</div><button class="btn btn-primary btn-small mt" id="createDeclBtn">+ New Declaration</button></div>`
-          : declarations.map(d => `
-            <div class="card" style="padding:12px;margin-bottom:8px">
-              <div class="flex-between">
-                <div><strong>${d.crop_name || 'Crop'}</strong> ${d.icon_emoji || ''}</div>
-                <span class="tag tag-green">${d.quality_grade || 'A'}</span>
-              </div>
-              <div class="text-sm text-muted mt-sm">${d.area_acres || 0} acres · Expected: ${Number(d.expected_yield || 0).toLocaleString()} kg</div>
-              <div class="text-sm text-muted">Sow: ${fmtDate(d.sow_date)} → Harvest: ${fmtDate(d.expected_harvest_date)}</div>
-              ${d.is_organic ? '<span class="tag tag-green mt-sm">🌿 Organic</span>' : ''}
-              <div style="display:flex;gap:8px;margin-top:8px">
-                <button class="btn btn-secondary btn-small edit-decl-btn" data-id="${d.id}" style="flex:1;font-size:11px">✏️ Edit</button>
-                <button class="btn btn-small delete-decl-btn" data-id="${d.id}" style="flex:1;font-size:11px;background:#FFEBEE;color:#C62828;border:none">🗑️ Delete</button>
-              </div>
-            </div>
-          `).join('')}
-      </div>`;
-  }
-
-  function renderInquiries() {
-    return `
-      <div class="section">
-        ${loading ? '<div class="loading"><div class="spinner"></div></div>' : inquiries.length === 0
-          ? '<div class="empty-state"><div class="es-icon">💬</div><div class="es-title">No inquiries</div><div class="es-text">Inquiries from buyers will appear here</div></div>'
-          : inquiries.map(q => {
-            const isPending = q.status === 'pending';
-            const isAccepted = q.status === 'accepted';
-            return `<div class="card" style="padding:12px;margin-bottom:8px">
-              <div class="flex-between">
-                <strong>${q.crop_name || 'Crop'}</strong>
-                <span class="tag tag-${q.status === 'accepted' ? 'green' : q.status === 'rejected' ? 'red' : 'blue'}">${q.status || 'pending'}</span>
-              </div>
-              <div class="text-sm text-muted mt-sm">Qty: ${q.quantity_needed || 'N/A'} kg${q.offered_price ? ' · Offered: ₹' + Number(q.offered_price).toFixed(0) + '/kg' : ''}</div>
-              <div class="text-sm text-muted">${q.buyer_name || 'Buyer'} ${q.timeline ? '· ' + q.timeline : ''}</div>
-              ${q.message ? `<div class="text-sm mt-sm" style="color:var(--text);font-style:italic">"${q.message}"</div>` : ''}
-              ${q.response_message ? `<div class="text-sm mt-sm" style="color:var(--primary)">Response: "${q.response_message}"</div>` : ''}
-              ${!isBuyer && isPending ? `<div style="display:flex;gap:8px;margin-top:10px">
-                <button class="btn btn-primary btn-small accept-inq-btn" data-id="${q.id}" style="flex:1;font-size:11px">✅ Accept</button>
-                <button class="btn btn-secondary btn-small negotiate-inq-btn" data-id="${q.id}" style="flex:1;font-size:11px">💬 Negotiate</button>
-                <button class="btn btn-small reject-inq-btn" data-id="${q.id}" style="flex:1;font-size:11px;background:#FFEBEE;color:#C62828;border:none">❌ Reject</button>
-              </div>` : ''}
-              ${!isBuyer && isAccepted ? `<button class="btn btn-primary btn-small create-order-btn mt" data-iq="${q.id}" style="width:100%;font-size:12px">📦 Create Order</button>` : ''}
-            </div>`;
-          }).join('')}
-      </div>`;
-  }
-
-  function attachEvents() {
-    container.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => { tab = btn.dataset.tab; render(); });
-    });
-    container.querySelector('#searchInput')?.addEventListener('input', e => { search = e.target.value; render(); });
-    container.querySelectorAll('.chip[data-crop]').forEach(c => {
-      c.addEventListener('click', () => { filterCrop = c.dataset.crop; render(); });
-    });
-    container.querySelectorAll('.listing-card[data-id]').forEach(c => {
-      c.addEventListener('click', () => showListingDetail(c.dataset.id));
-    });
-    container.querySelector('#createListingBtn')?.addEventListener('click', showCreateListing);
-    container.querySelector('#createDeclBtn')?.addEventListener('click', showCreateDeclaration);
-
-    // Edit/delete listings
-    container.querySelectorAll('.edit-listing-btn').forEach(b => {
-      b.addEventListener('click', () => {
-        const l = myListings.find(x => x.id == b.dataset.id);
-        if (!l) return;
-        showModal(`<div class="modal-handle"></div><h3>Edit Listing</h3>
-          <div class="form-group"><label>Quantity (kg)</label><input class="form-input" type="number" id="elQty" value="${l.quantity_kg || ''}"></div>
-          <div class="form-group"><label>Price per kg (₹)</label><input class="form-input" type="number" id="elPrice" value="${l.price_per_kg || ''}" step="0.5"></div>
-          <div class="form-group"><label>Grade</label><select class="form-input" id="elGrade"><option ${l.grade==='A'?'selected':''}>A</option><option ${l.grade==='B'?'selected':''}>B</option><option ${l.grade==='C'?'selected':''}>C</option></select></div>
-          <div class="form-group"><label>Status</label><select class="form-input" id="elStatus"><option value="active" ${l.status==='active'?'selected':''}>Active</option><option value="sold" ${l.status==='sold'?'selected':''}>Sold</option><option value="expired" ${l.status==='expired'?'selected':''}>Expired</option></select></div>
-          <div class="form-group"><label>Description</label><textarea class="form-input" id="elDesc" rows="2">${l.description || ''}</textarea></div>
-          <button class="btn btn-primary" id="saveEditListing" style="width:100%">Save Changes</button>`);
-        document.querySelector('#saveEditListing')?.addEventListener('click', async () => {
-          try {
-            await api.updateListing(l.id, { quantity_kg: Number(document.querySelector('#elQty').value), price_per_kg: Number(document.querySelector('#elPrice').value), grade: document.querySelector('#elGrade').value, status: document.querySelector('#elStatus').value, description: document.querySelector('#elDesc').value });
-            showToast('Listing updated!', 'success'); closeModal(); loadData();
-          } catch(e) { showToast(e.message, 'error'); }
-        });
-      });
-    });
-    container.querySelectorAll('.delete-listing-btn').forEach(b => {
-      b.addEventListener('click', async () => {
-        if (!confirm('Delete this listing?')) return;
-        try { await api.deleteListing(b.dataset.id); showToast('Listing deleted', 'success'); loadData(); } catch(e) { showToast(e.message, 'error'); }
-      });
-    });
-
-    // Edit/delete declarations
-    container.querySelectorAll('.edit-decl-btn').forEach(b => {
-      b.addEventListener('click', () => {
-        const d = declarations.find(x => x.id == b.dataset.id);
-        if (!d) return;
-        showModal(`<div class="modal-handle"></div><h3>Edit Declaration</h3>
-          <div class="form-group"><label>Area (acres)</label><input class="form-input" type="number" id="edArea" value="${d.area_acres || ''}"></div>
-          <div class="form-group"><label>Expected Yield (kg)</label><input class="form-input" type="number" id="edYield" value="${d.expected_yield || ''}"></div>
-          <div class="form-group"><label>Grade</label><select class="form-input" id="edGrade"><option ${d.quality_grade==='A'?'selected':''}>A</option><option ${d.quality_grade==='B'?'selected':''}>B</option><option ${d.quality_grade==='C'?'selected':''}>C</option></select></div>
-          <div class="form-group"><label>Harvest Date</label><input class="form-input" type="date" id="edDate" value="${d.expected_harvest_date ? d.expected_harvest_date.split('T')[0] : ''}"></div>
-          <div class="form-group"><label>Notes</label><textarea class="form-input" id="edNotes" rows="2">${d.notes || ''}</textarea></div>
-          <button class="btn btn-primary" id="saveEditDecl" style="width:100%">Save Changes</button>`);
-        document.querySelector('#saveEditDecl')?.addEventListener('click', async () => {
-          try {
-            await api.updateDeclaration(d.id, { area_acres: Number(document.querySelector('#edArea').value), expected_yield: Number(document.querySelector('#edYield').value), quality_grade: document.querySelector('#edGrade').value, expected_harvest_date: document.querySelector('#edDate').value, notes: document.querySelector('#edNotes').value });
-            showToast('Declaration updated!', 'success'); closeModal(); loadData();
-          } catch(e) { showToast(e.message, 'error'); }
-        });
-      });
-    });
-    container.querySelectorAll('.delete-decl-btn').forEach(b => {
-      b.addEventListener('click', async () => {
-        if (!confirm('Delete this declaration?')) return;
-        try { await api.deleteDeclaration(b.dataset.id); showToast('Declaration deleted', 'success'); loadData(); } catch(e) { showToast(e.message, 'error'); }
-      });
-    });
-
-    // Inquiry accept/reject/negotiate
-    container.querySelectorAll('.accept-inq-btn').forEach(b => {
-      b.addEventListener('click', async () => {
-        try { await api.respondInquiry(b.dataset.id, { status: 'accepted' }); showToast('Inquiry accepted!', 'success'); loadData(); } catch(e) { showToast(e.message, 'error'); }
-      });
-    });
-    container.querySelectorAll('.reject-inq-btn').forEach(b => {
-      b.addEventListener('click', async () => {
-        try { await api.respondInquiry(b.dataset.id, { status: 'rejected' }); showToast('Inquiry rejected', 'info'); loadData(); } catch(e) { showToast(e.message, 'error'); }
-      });
-    });
-    container.querySelectorAll('.negotiate-inq-btn').forEach(b => {
-      b.addEventListener('click', () => {
-        const q = inquiries.find(x => x.id == b.dataset.id);
-        showModal(`<div class="modal-handle"></div><h3>💬 Negotiate</h3>
-          <div class="form-group"><label>Counter Price (₹/kg)</label><input class="form-input" type="number" id="negPrice" placeholder="Your price"></div>
-          <div class="form-group"><label>Message</label><textarea class="form-input" id="negMsg" rows="2" placeholder="Your terms…"></textarea></div>
-          <button class="btn btn-primary" id="sendNeg" style="width:100%">Send Counter Offer</button>`);
-        document.querySelector('#sendNeg')?.addEventListener('click', async () => {
-          try {
-            await api.respondInquiry(q.id, { status: 'negotiating', counter_price: Number(document.querySelector('#negPrice').value), response_message: document.querySelector('#negMsg').value });
-            showToast('Counter offer sent!', 'success'); closeModal(); loadData();
-          } catch(e) { showToast(e.message, 'error'); }
-        });
-      });
-    });
-
-    // Create order from accepted inquiry
-    container.querySelectorAll('.create-order-btn').forEach(b => {
-      b.addEventListener('click', async () => {
-        const q = inquiries.find(x => x.id == b.dataset.iq);
-        if (!q) return;
-        try {
-          await api.createOrder({ inquiry_id: q.id, listing_id: q.listing_id, quantity_kg: q.quantity_needed, total_amount: (q.offered_price || 0) * (q.quantity_needed || 0) });
-          showToast('Order created!', 'success'); loadData();
-        } catch(e) { showToast(e.message, 'error'); }
-      });
-    });
-    container.querySelector('#addMemberBtn')?.addEventListener('click', () => {
-      showModal(`<div class="modal-handle"></div><h3>Add FPO Member</h3>
-        <div class="form-group"><label>Farmer Phone</label><input class="form-input" type="tel" id="memberPhone" placeholder="9876543210"></div>
-        <div class="form-group"><label>Name</label><input class="form-input" type="text" id="memberName" placeholder="Farmer name"></div>
-        <button class="btn btn-primary" id="submitMember">Add Member</button>`);
-      document.querySelector('#submitMember')?.addEventListener('click', async () => {
-        try {
-          await api.addFPOMember({ phone: document.querySelector('#memberPhone')?.value, name: document.querySelector('#memberName')?.value });
-          showToast('Member added!', 'success'); closeModal(); loadData();
-        } catch (e) { showToast(e.message, 'error'); }
-      });
-    });
-    container.querySelectorAll('.inquiry-btn').forEach(b => {
-      b.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const l = listings.find(x => x.id == b.dataset.lid);
-        if (!l) return;
-        showModal(`<div class="modal-handle"></div><h3>Send Inquiry — ${l.crop_name}</h3>
-          <div class="card" style="box-shadow:none;background:var(--bg);margin-bottom:12px">
-            <div class="flex-between mb"><span>Crop</span><span class="fw-600">${l.crop_name}</span></div>
-            <div class="flex-between mb"><span>District</span><span>${l.district_name || l.location_label || 'N/A'}</span></div>
-            <div class="flex-between"><span>Available</span><span>${Number(l.quantity_kg || 0).toLocaleString()} kg</span></div>
+      <div style="padding:12px 14px 0">
+        <div style="background:#E8EAF6;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#1a237e;line-height:1.5">
+          Supply listings published by your FPO are <strong>visible to buyers</strong> nationwide in Supply Search.
+          These represent your aggregated procurement from member farmers.
+        </div>
+        <button id="publishSupplyBtn" style="width:100%;padding:12px;background:#1565C0;color:white;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px">+ Publish Supply Listing</button>
+        ${myListings.length === 0 ? `
+          <div style="text-align:center;padding:30px 20px">
+            <div style="font-size:40px;margin-bottom:8px">📋</div>
+            <div style="font-weight:700;margin-bottom:4px">No supply listings yet</div>
+            <div style="font-size:12px;color:#757575">Publish your FPO's aggregated supply to attract buyers</div>
           </div>
-          <div class="form-group"><label>Required Quantity (kg)</label><input class="form-input" type="number" id="iqQty" placeholder="1000"></div>
-          <div class="form-group"><label>Preferred Price (₹/kg)</label><input class="form-input" type="number" id="iqPrice" placeholder="${l.price_per_kg || ''}"></div>
-          <div class="form-group"><label>Message</label><textarea class="form-input" id="iqMsg" rows="3" placeholder="Describe your requirements…"></textarea></div>
-          <button class="btn btn-primary" id="submitInquiry">Send Inquiry</button>
-          <div class="text-sm text-muted mt" style="text-align:center">🔒 Farmer identity hidden until they accept</div>`);
-        document.querySelector('#submitInquiry')?.addEventListener('click', async () => {
-          try {
-            await api.createInquiry({
-              listing_id: l.id,
-              quantity_needed: Number(document.querySelector('#iqQty')?.value),
-              offered_price: Number(document.querySelector('#iqPrice')?.value),
-              message: document.querySelector('#iqMsg')?.value,
-            });
-            showToast('Inquiry sent!', 'success'); closeModal();
-          } catch (e) { showToast(e.message, 'error'); }
-        });
-      });
-    });
-    // Buyer: watchlist toggle
-    container.querySelectorAll('.watchlist-btn').forEach(b => {
-      b.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const l = listings.find(x => x.id == b.dataset.lid);
-        if (!l) return;
-        const isWatching = watchlist.some(w => w.listing_id == l.id || w.crop_id == l.crop_id);
+        ` : myListings.map(l=>`
+          <div style="background:white;border-radius:10px;margin-bottom:6px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.06);border-left:4px solid #1565C0">
+            <div style="display:flex;justify-content:space-between">
+              <div>
+                <div style="font-weight:700;font-size:13px">${l.crop_name||'Crop'}</div>
+                <div style="font-size:11px;color:#757575">${Number(l.quantity_kg||0).toLocaleString()} kg · ₹${Number(l.price_per_kg||0).toFixed(0)}/kg</div>
+              </div>
+              <span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;align-self:flex-start">Live</span>
+            </div>
+          </div>`).join('')}
+      </div>
+    `;
+  }
+
+  // ─── EVENTS ───────────────────────────────────────────────────────────────
+  function attachEvents() {
+    container.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; render(); }));
+
+    // Farmer: My Crops
+    container.querySelector('#createDeclBtn')?.addEventListener('click', showCreateDeclaration);
+    container.querySelector('#createListingBtn')?.addEventListener('click', showCreateListing);
+    container.querySelectorAll('.edit-decl-btn').forEach(b => b.addEventListener('click', () => showEditDeclaration(b.dataset.id)));
+    container.querySelectorAll('.del-decl-btn').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Delete declaration?')) return;
+      try { await api.deleteDeclaration(b.dataset.id); showToast('Deleted','info'); loadData(); } catch(e){showToast(e.message,'error');}
+    }));
+    container.querySelectorAll('.edit-listing-btn').forEach(b => b.addEventListener('click', () => showEditListing(b.dataset.id)));
+    container.querySelectorAll('.del-listing-btn').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Delete listing?')) return;
+      try { await api.deleteListing(b.dataset.id); showToast('Deleted','info'); loadData(); } catch(e){showToast(e.message,'error');}
+    }));
+
+    // Inquiries
+    container.querySelectorAll('.accept-inq-btn').forEach(b => b.addEventListener('click', async () => {
+      try { await api.respondInquiry(b.dataset.id,{status:'accepted'}); showToast('Accepted!','success'); loadData(); } catch(e){showToast(e.message,'error');}
+    }));
+    container.querySelectorAll('.reject-inq-btn').forEach(b => b.addEventListener('click', async () => {
+      try { await api.respondInquiry(b.dataset.id,{status:'rejected'}); showToast('Rejected','info'); loadData(); } catch(e){showToast(e.message,'error');}
+    }));
+    container.querySelectorAll('.neg-inq-btn').forEach(b => b.addEventListener('click', () => {
+      const q = inquiries.find(x=>x.id==b.dataset.id);
+      showModal(`<div class="modal-handle"></div><h3>💬 Counter Offer</h3>
+        <div class="form-group"><label>Counter Price (₹/kg)</label><input class="form-input" type="number" id="negPrice"></div>
+        <div class="form-group"><label>Message</label><textarea class="form-input" id="negMsg" rows="2" placeholder="Your terms…"></textarea></div>
+        <button id="sendNeg" style="width:100%;padding:12px;background:#0277BD;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Send Counter Offer</button>`);
+      document.querySelector('#sendNeg')?.addEventListener('click', async () => {
         try {
-          if (isWatching) {
-            const wItem = watchlist.find(w => w.listing_id == l.id || w.crop_id == l.crop_id);
-            if (wItem) await api.removeWatchlist(wItem.id);
-            showToast('Removed from watchlist', 'info');
-          } else {
-            await api.addWatchlist({ crop_id: l.crop_id, listing_id: l.id });
-            showToast('Added to watchlist!', 'success');
-          }
-          loadData();
-        } catch(err) { showToast(err.message, 'error'); }
+          await api.respondInquiry(q.id,{status:'negotiating',counter_price:Number(document.querySelector('#negPrice').value),response_message:document.querySelector('#negMsg').value});
+          showToast('Counter sent!','success'); closeModal(); loadData();
+        } catch(e){showToast(e.message,'error');}
+      });
+    }));
+    container.querySelectorAll('.create-order-btn').forEach(b => b.addEventListener('click', async () => {
+      const q = inquiries.find(x=>x.id==b.dataset.iq);
+      if (!q) return;
+      try {
+        await api.createOrder({inquiry_id:q.id,listing_id:q.listing_id,quantity_kg:q.quantity_needed,total_amount:(q.offered_price||0)*(q.quantity_needed||0)});
+        showToast('Order created!','success'); loadData();
+      } catch(e){showToast(e.message,'error');}
+    }));
+
+    // Buyer: search
+    container.querySelector('#searchInput')?.addEventListener('input', e => { search = e.target.value; render(); });
+    container.querySelectorAll('[data-crop]').forEach(b => b.addEventListener('click', () => { filterCrop = b.dataset.crop; render(); }));
+    container.querySelectorAll('.inq-btn').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); showSendInquiry(b.dataset.lid); }));
+    container.querySelectorAll('.watch-btn').forEach(b => b.addEventListener('click', async e => {
+      e.stopPropagation();
+      const l = listings.find(x=>x.id==b.dataset.lid);
+      if (!l) return;
+      const already = watchlist.some(w=>w.listing_id==l.id||w.crop_id==l.crop_id);
+      try {
+        if (already) { const w = watchlist.find(x=>x.listing_id==l.id); if(w) await api.removeWatchlist(w.id); showToast('Removed','info'); }
+        else { await api.addWatchlist({crop_id:l.crop_id,listing_id:l.id}); showToast('Added to watchlist!','success'); }
+        loadData();
+      } catch(err){showToast(err.message,'error');}
+    }));
+    container.querySelectorAll('.unwatch-btn').forEach(b => b.addEventListener('click', async () => {
+      try { await api.removeWatchlist(b.dataset.wid); showToast('Removed','info'); loadData(); } catch(e){showToast(e.message,'error');}
+    }));
+
+    // FPO
+    container.querySelector('#addMemberBtn')?.addEventListener('click', () => {
+      showModal(`<div class="modal-handle"></div><h3>Add Member Farmer</h3>
+        <div class="form-group"><label>Phone</label><input class="form-input" type="tel" id="mPhone" placeholder="9876543210"></div>
+        <div class="form-group"><label>Name</label><input class="form-input" id="mName" placeholder="Farmer name"></div>
+        <button id="submitMember" style="width:100%;padding:12px;background:#1565C0;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Add Member</button>`);
+      document.querySelector('#submitMember')?.addEventListener('click', async () => {
+        try { await api.addFPOMember({phone:document.querySelector('#mPhone').value,name:document.querySelector('#mName').value}); showToast('Member added!','success'); closeModal(); loadData(); } catch(e){showToast(e.message,'error');}
       });
     });
-    // FPO: record procurement
     container.querySelector('#recordProcBtn')?.addEventListener('click', () => {
       showModal(`<div class="modal-handle"></div><h3>Record Procurement</h3>
-        <div class="form-group"><label>Crop</label><select class="form-input" id="procCrop">${crops.map(c => `<option value="${c.id}">${c.icon_emoji || ''} ${c.name}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Crop</label><select class="form-input" id="procCrop">${crops.map(c=>`<option value="${c.id}">${c.icon_emoji||''} ${c.name}</option>`).join('')}</select></div>
         <div class="form-group"><label>Farmer Phone</label><input class="form-input" type="tel" id="procFarmer" placeholder="9876543210"></div>
-        <div class="form-group"><label>Quantity (kg)</label><input class="form-input" type="number" id="procQty" placeholder="500"></div>
-        <div class="form-group"><label>Price per kg (₹)</label><input class="form-input" type="number" id="procPrice" placeholder="25"></div>
+        <div class="form-group"><label>Quantity (kg)</label><input class="form-input" type="number" id="procQty"></div>
+        <div class="form-group"><label>Price per kg (₹)</label><input class="form-input" type="number" id="procPrice"></div>
         <div class="form-group"><label>Grade</label><select class="form-input" id="procGrade"><option>A</option><option>B</option><option>C</option></select></div>
-        <button class="btn btn-primary" id="submitProc">Record</button>`);
+        <button id="submitProc" style="width:100%;padding:12px;background:#1565C0;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Record</button>`);
       document.querySelector('#submitProc')?.addEventListener('click', async () => {
-        try {
-          await api.recordProcurement({
-            crop_id: Number(document.querySelector('#procCrop')?.value),
-            farmer_phone: document.querySelector('#procFarmer')?.value,
-            quantity_kg: Number(document.querySelector('#procQty')?.value),
-            price_per_kg: Number(document.querySelector('#procPrice')?.value),
-            grade: document.querySelector('#procGrade')?.value,
-          });
-          showToast('Procurement recorded!', 'success'); closeModal(); loadData();
-        } catch (e) { showToast(e.message, 'error'); }
+        try { await api.recordProcurement({crop_id:Number(document.querySelector('#procCrop').value),farmer_phone:document.querySelector('#procFarmer').value,quantity_kg:Number(document.querySelector('#procQty').value),price_per_kg:Number(document.querySelector('#procPrice').value),grade:document.querySelector('#procGrade').value}); showToast('Recorded!','success'); closeModal(); loadData(); } catch(e){showToast(e.message,'error');}
       });
     });
-    // FPO: publish supply listing
     container.querySelector('#publishSupplyBtn')?.addEventListener('click', () => {
       showModal(`<div class="modal-handle"></div><h3>Publish Supply Listing</h3>
-        <div class="form-group"><label>Crop</label><select class="form-input" id="slCrop">${crops.map(c => `<option value="${c.id}">${c.icon_emoji || ''} ${c.name}</option>`).join('')}</select></div>
-        <div class="form-group"><label>Quantity (kg)</label><input class="form-input" type="number" id="slQty" placeholder="5000"></div>
-        <div class="form-group"><label>Price per kg (₹)</label><input class="form-input" type="number" id="slPrice" placeholder="30"></div>
+        <div class="form-group"><label>Crop</label><select class="form-input" id="slCrop">${crops.map(c=>`<option value="${c.id}">${c.icon_emoji||''} ${c.name}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Quantity (kg)</label><input class="form-input" type="number" id="slQty"></div>
+        <div class="form-group"><label>Price per kg (₹)</label><input class="form-input" type="number" id="slPrice"></div>
         <div class="form-group"><label>Available From</label><input class="form-input" type="date" id="slDate"></div>
-        <div class="form-group"><label>Description</label><textarea class="form-input" id="slDesc" rows="2" placeholder="FPO aggregated supply…"></textarea></div>
-        <button class="btn btn-primary" id="submitSupply">Publish</button>`);
+        <button id="submitSupply" style="width:100%;padding:12px;background:#1565C0;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Publish</button>`);
       document.querySelector('#submitSupply')?.addEventListener('click', async () => {
-        try {
-          await api.createSupplyListing({
-            crop_id: Number(document.querySelector('#slCrop')?.value),
-            quantity_kg: Number(document.querySelector('#slQty')?.value),
-            price_per_kg: Number(document.querySelector('#slPrice')?.value),
-            available_from: document.querySelector('#slDate')?.value,
-            description: document.querySelector('#slDesc')?.value,
-          });
-          showToast('Supply listing published!', 'success'); closeModal(); loadData();
-        } catch (e) { showToast(e.message, 'error'); }
+        try { await api.createSupplyListing({crop_id:Number(document.querySelector('#slCrop').value),quantity_kg:Number(document.querySelector('#slQty').value),price_per_kg:Number(document.querySelector('#slPrice').value),available_from:document.querySelector('#slDate').value}); showToast('Published!','success'); closeModal(); loadData(); } catch(e){showToast(e.message,'error');}
       });
     });
   }
 
-  function showListingDetail(id) {
-    const l = listings.find(x => x.id == id);
-    if (!l) return;
-    showModal(`
-      <div class="modal-handle"></div>
-      <h3>${l.icon_emoji || '🌾'} ${l.crop_name}</h3>
-      <div class="card" style="box-shadow:none;background:var(--bg)">
-        <div class="flex-between mb"><span class="fw-700">Price</span><span class="fw-700" style="color:var(--primary)">₹${Number(l.price_per_kg || 0).toFixed(2)}/kg</span></div>
-        <div class="flex-between mb"><span>Quantity</span><span>${Number(l.quantity_kg || 0).toLocaleString()} kg</span></div>
-        <div class="flex-between mb"><span>Grade</span><span>${l.grade || 'A'}</span></div>
-        <div class="flex-between mb"><span>Organic</span><span>${l.is_organic ? '✅ Yes' : '❌ No'}</span></div>
-        <div class="flex-between mb"><span>Seller</span><span>${l.farmer_name || 'N/A'}</span></div>
-        <div class="flex-between mb"><span>Location</span><span>${l.location_label || l.district_name || 'N/A'}</span></div>
-        <div class="flex-between"><span>Min Order</span><span>${l.min_order_kg || 0} kg</span></div>
-      </div>
-      ${l.description ? `<p class="text-sm text-muted mt">${l.description}</p>` : ''}
-      <div class="form-group mt-lg">
-        <label>Quantity Needed (kg)</label>
-        <input class="form-input" type="number" id="inqQty" placeholder="500" min="1">
-      </div>
-      <div class="form-group">
-        <label>Message (optional)</label>
-        <textarea class="form-input" id="inqMsg" placeholder="I need fresh produce for my store…"></textarea>
-      </div>
-      <button class="btn btn-primary" id="sendInquiry">Send Inquiry</button>
-    `);
-    document.querySelector('#sendInquiry')?.addEventListener('click', async () => {
-      const qty = document.querySelector('#inqQty')?.value;
-      const msg = document.querySelector('#inqMsg')?.value;
-      if (!qty) { showToast('Enter quantity', 'error'); return; }
+  // ─── MODALS ───────────────────────────────────────────────────────────────
+  function showCreateDeclaration() {
+    showModal(`<div class="modal-handle"></div><h3>🌱 Declare a Crop</h3>
+      <div style="font-size:12px;color:#757575;margin-bottom:12px">Tell us what you're growing. This adds to national supply forecasts (anonymous). You can list it for sale later.</div>
+      <div class="form-group"><label>Crop</label><select class="form-input" id="cdCrop">${crops.map(c=>`<option value="${c.id}">${c.icon_emoji||''} ${c.name}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Area (acres)</label><input class="form-input" type="number" id="cdArea" placeholder="5" step="0.5"></div>
+      <div class="form-group"><label>Expected Yield (kg)</label><input class="form-input" type="number" id="cdYield" placeholder="5000"></div>
+      <div class="form-group"><label>Sow Date</label><input class="form-input" type="date" id="cdSow"></div>
+      <div class="form-group"><label>Expected Harvest</label><input class="form-input" type="date" id="cdHarvest"></div>
+      <div class="form-group"><label>Grade</label><select class="form-input" id="cdGrade"><option>A</option><option>B</option><option>C</option></select></div>
+      <button id="submitDecl" style="width:100%;padding:12px;background:#2E7D32;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Declare Crop</button>`);
+    document.querySelector('#submitDecl')?.addEventListener('click', async () => {
       try {
-        await api.createInquiry({ listing_id: l.id, quantity_needed: Number(qty), message: msg });
-        showToast('Inquiry sent!', 'success');
-        closeModal();
-      } catch (e) { showToast(e.message, 'error'); }
+        await api.createDeclaration({crop_id:Number(document.querySelector('#cdCrop').value),area_acres:Number(document.querySelector('#cdArea').value),expected_yield:Number(document.querySelector('#cdYield').value)||undefined,sow_date:document.querySelector('#cdSow').value,expected_harvest_date:document.querySelector('#cdHarvest').value,quality_grade:document.querySelector('#cdGrade').value});
+        showToast('Declaration created!','success'); closeModal(); loadData();
+      } catch(e){showToast(e.message,'error');}
+    });
+  }
+
+  function showEditDeclaration(id) {
+    const d = declarations.find(x=>x.id==id);
+    if (!d) return;
+    showModal(`<div class="modal-handle"></div><h3>Edit Declaration</h3>
+      <div class="form-group"><label>Area (acres)</label><input class="form-input" type="number" id="edArea" value="${d.area_acres||''}"></div>
+      <div class="form-group"><label>Expected Yield (kg)</label><input class="form-input" type="number" id="edYield" value="${d.expected_yield||''}"></div>
+      <div class="form-group"><label>Harvest Date</label><input class="form-input" type="date" id="edDate" value="${d.expected_harvest_date?d.expected_harvest_date.split('T')[0]:''}"></div>
+      <button id="saveDecl" style="width:100%;padding:12px;background:#2E7D32;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Save</button>`);
+    document.querySelector('#saveDecl')?.addEventListener('click', async () => {
+      try { await api.updateDeclaration(d.id,{area_acres:Number(document.querySelector('#edArea').value),expected_yield:Number(document.querySelector('#edYield').value),expected_harvest_date:document.querySelector('#edDate').value}); showToast('Updated!','success'); closeModal(); loadData(); } catch(e){showToast(e.message,'error');}
     });
   }
 
   function showCreateListing() {
-    showModal(`
-      <div class="modal-handle"></div>
-      <h3>Create Listing</h3>
-      <div class="form-group"><label>Crop</label><select class="form-input" id="clCrop">${crops.map(c => `<option value="${c.id}">${c.icon_emoji || ''} ${c.name}</option>`).join('')}</select></div>
-      <div class="form-group"><label>District</label><select class="form-input" id="clDist"><option value="">Auto-detect</option>${districts.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}</select></div>
-      <div class="form-group"><label>Quantity (kg)</label><input class="form-input" type="number" id="clQty" placeholder="1000"></div>
+    showModal(`<div class="modal-handle"></div><h3>📋 List Crop for Sale</h3>
+      <div style="font-size:12px;color:#757575;margin-bottom:12px">Once listed, buyers across India can discover and send inquiries to you.</div>
+      <div class="form-group"><label>Crop</label><select class="form-input" id="clCrop">${crops.map(c=>`<option value="${c.id}">${c.icon_emoji||''} ${c.name}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Quantity available (kg)</label><input class="form-input" type="number" id="clQty" placeholder="1000"></div>
       <div class="form-group"><label>Price per kg (₹)</label><input class="form-input" type="number" id="clPrice" placeholder="25" step="0.5"></div>
-      <div class="form-group"><label>Min Order (kg)</label><input class="form-input" type="number" id="clMin" placeholder="100"></div>
       <div class="form-group"><label>Grade</label><select class="form-input" id="clGrade"><option>A</option><option>B</option><option>C</option></select></div>
-      <div class="form-group"><label>Organic?</label><select class="form-input" id="clOrganic"><option value="false">No</option><option value="true">Yes - Certified Organic</option></select></div>
-      <div class="form-group"><label>Location Label</label><input class="form-input" type="text" id="clLoc" placeholder="Near Guntur Mandi, AP"></div>
-      <div class="form-group"><label>Description</label><textarea class="form-input" id="clDesc" placeholder="Fresh produce from our farm…"></textarea></div>
-      <button class="btn btn-primary" id="submitListing">Create Listing</button>
-    `);
+      <div class="form-group"><label>Organic?</label><select class="form-input" id="clOrganic"><option value="false">No</option><option value="true">Yes — certified organic</option></select></div>
+      <div class="form-group"><label>Location label (optional)</label><input class="form-input" id="clLoc" placeholder="Near Guntur Mandi"></div>
+      <button id="submitListing" style="width:100%;padding:12px;background:#0277BD;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">List for Sale</button>`);
     document.querySelector('#submitListing')?.addEventListener('click', async () => {
       try {
-        await api.createListing({
-          crop_id: Number(document.querySelector('#clCrop')?.value),
-          district_id: document.querySelector('#clDist')?.value ? Number(document.querySelector('#clDist')?.value) : undefined,
-          quantity_kg: Number(document.querySelector('#clQty')?.value),
-          price_per_kg: Number(document.querySelector('#clPrice')?.value),
-          min_order_kg: Number(document.querySelector('#clMin')?.value) || undefined,
-          grade: document.querySelector('#clGrade')?.value,
-          is_organic: document.querySelector('#clOrganic')?.value === 'true',
-          location_label: document.querySelector('#clLoc')?.value || undefined,
-          description: document.querySelector('#clDesc')?.value,
-        });
-        showToast('Listing created!', 'success');
-        closeModal(); loadData();
-      } catch (e) { showToast(e.message, 'error'); }
+        await api.createListing({crop_id:Number(document.querySelector('#clCrop').value),quantity_kg:Number(document.querySelector('#clQty').value),price_per_kg:Number(document.querySelector('#clPrice').value),grade:document.querySelector('#clGrade').value,is_organic:document.querySelector('#clOrganic').value==='true',location_label:document.querySelector('#clLoc').value||undefined});
+        showToast('Listing created! Buyers can now discover it.','success'); closeModal(); loadData();
+      } catch(e){showToast(e.message,'error');}
     });
   }
 
-  function showCreateDeclaration() {
-    showModal(`
-      <div class="modal-handle"></div>
-      <h3>New Crop Declaration</h3>
-      <div class="form-group"><label>Crop</label><select class="form-input" id="cdCrop">${crops.map(c => `<option value="${c.id}">${c.icon_emoji || ''} ${c.name}</option>`).join('')}</select></div>
-      <div class="form-group"><label>District</label><select class="form-input" id="cdDist"><option value="">Select district</option>${districts.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}</select></div>
-      <div class="form-group"><label>Area (acres)</label><input class="form-input" type="number" id="cdArea" placeholder="5" step="0.5"></div>
-      <div class="form-group"><label>Expected Yield (kg)</label><input class="form-input" type="number" id="cdYield" placeholder="5000"></div>
-      <div class="form-group"><label>Quality Grade</label><select class="form-input" id="cdGrade"><option>A</option><option>B</option><option>C</option></select></div>
-      <div class="form-group"><label>Organic?</label><select class="form-input" id="cdOrganic"><option value="false">No</option><option value="true">Yes</option></select></div>
-      <div class="form-group"><label>Sow Date</label><input class="form-input" type="date" id="cdSow"></div>
-      <div class="form-group"><label>Expected Harvest Date</label><input class="form-input" type="date" id="cdHarvest"></div>
-      <div class="form-group"><label>Notes</label><textarea class="form-input" id="cdNotes" rows="2" placeholder="Soil type, irrigation method…"></textarea></div>
-      <button class="btn btn-primary" id="submitDecl">Create Declaration</button>
-    `);
-    document.querySelector('#submitDecl')?.addEventListener('click', async () => {
-      try {
-        await api.createDeclaration({
-          crop_id: Number(document.querySelector('#cdCrop')?.value),
-          district_id: document.querySelector('#cdDist')?.value ? Number(document.querySelector('#cdDist')?.value) : undefined,
-          area_acres: Number(document.querySelector('#cdArea')?.value),
-          expected_yield: Number(document.querySelector('#cdYield')?.value) || undefined,
-          quality_grade: document.querySelector('#cdGrade')?.value,
-          is_organic: document.querySelector('#cdOrganic')?.value === 'true',
-          sow_date: document.querySelector('#cdSow')?.value,
-          expected_harvest_date: document.querySelector('#cdHarvest')?.value,
-          notes: document.querySelector('#cdNotes')?.value || undefined,
-        });
-        showToast('Declaration created!', 'success');
-        closeModal(); loadData();
-      } catch (e) { showToast(e.message, 'error'); }
+  function showEditListing(id) {
+    const l = myListings.find(x=>x.id==id);
+    if (!l) return;
+    showModal(`<div class="modal-handle"></div><h3>Edit Listing</h3>
+      <div class="form-group"><label>Quantity (kg)</label><input class="form-input" type="number" id="elQty" value="${l.quantity_kg||''}"></div>
+      <div class="form-group"><label>Price per kg (₹)</label><input class="form-input" type="number" id="elPrice" value="${l.price_per_kg||''}" step="0.5"></div>
+      <div class="form-group"><label>Status</label><select class="form-input" id="elStatus"><option value="active" ${l.status==='active'?'selected':''}>Active</option><option value="sold" ${l.status==='sold'?'selected':''}>Sold</option></select></div>
+      <button id="saveListing" style="width:100%;padding:12px;background:#0277BD;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Save</button>`);
+    document.querySelector('#saveListing')?.addEventListener('click', async () => {
+      try { await api.updateListing(l.id,{quantity_kg:Number(document.querySelector('#elQty').value),price_per_kg:Number(document.querySelector('#elPrice').value),status:document.querySelector('#elStatus').value}); showToast('Updated!','success'); closeModal(); loadData(); } catch(e){showToast(e.message,'error');}
     });
   }
 
+  function showSendInquiry(lid) {
+    const l = listings.find(x=>x.id==lid);
+    if (!l) return;
+    showModal(`<div class="modal-handle"></div><h3>Send Inquiry — ${l.crop_name}</h3>
+      <div style="background:#FFF3E0;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px">
+        ${l.crop_name} · ${l.district_name||l.location_label||'District'} · ${Number(l.quantity_kg||0).toLocaleString()} kg available
+      </div>
+      <div class="form-group"><label>Quantity needed (kg)</label><input class="form-input" type="number" id="iqQty" placeholder="500"></div>
+      <div class="form-group"><label>Offered price (₹/kg)</label><input class="form-input" type="number" id="iqPrice" placeholder="${l.price_per_kg||''}"></div>
+      <div class="form-group"><label>Message</label><textarea class="form-input" id="iqMsg" rows="2" placeholder="Your requirements…"></textarea></div>
+      <button id="submitInq" style="width:100%;padding:12px;background:#E65100;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Send Inquiry</button>
+      <div style="font-size:10px;color:#757575;text-align:center;margin-top:6px">🔒 Farmer identity revealed only after they accept</div>`);
+    document.querySelector('#submitInq')?.addEventListener('click', async () => {
+      const qty = document.querySelector('#iqQty').value;
+      if (!qty) { showToast('Enter quantity','error'); return; }
+      try { await api.createInquiry({listing_id:l.id,quantity_needed:Number(qty),offered_price:Number(document.querySelector('#iqPrice').value)||undefined,message:document.querySelector('#iqMsg').value}); showToast('Inquiry sent!','success'); closeModal(); } catch(e){showToast(e.message,'error');}
+    });
+  }
+
+  // ─── DATA ─────────────────────────────────────────────────────────────────
   async function loadData() {
     loading = true; render();
     try {
-      const [listRes, cropRes, distRes] = await Promise.all([
-        isBuyer ? api.supplySearch().catch(() => api.getListings('?limit=30')) : api.getListings('?limit=30'),
+      const [listRes, cropRes] = await Promise.all([
+        isBuyer ? api.supplySearch().catch(()=>api.getListings('?limit=30')) : Promise.resolve([]),
         api.getCrops(),
-        api.getDistricts().catch(() => [])
       ]);
-      listings = Array.isArray(listRes) ? listRes : (listRes.listings || listRes.results || []);
-      crops = Array.isArray(cropRes) ? cropRes : (cropRes.crops || []);
-      districts = Array.isArray(distRes) ? distRes : (distRes.districts || []);
-    } catch (e) { console.error(e); }
+      listings  = Array.isArray(listRes) ? listRes : (listRes.listings||listRes.results||[]);
+      crops     = Array.isArray(cropRes) ? cropRes : (cropRes.crops||[]);
+    } catch(e) { console.error(e); }
 
     try {
       if (isBuyer) {
-        const wl = await api.getWatchlist().catch(() => []);
-        watchlist = Array.isArray(wl) ? wl : (wl.watchlist || []);
+        const wl = await api.getWatchlist().catch(()=>[]);
+        watchlist = Array.isArray(wl) ? wl : (wl.watchlist||[]);
       }
       if (isFPO) {
-        const [memRes, invRes, stRes] = await Promise.all([
-          api.getFPOMembers().catch(() => []),
-          api.getFPOInventory().catch(() => []),
-          api.getFPOStats().catch(() => ({})),
-        ]);
-        fpoMembers = Array.isArray(memRes) ? memRes : (memRes.members || []);
-        fpoInventory = Array.isArray(invRes) ? invRes : (invRes.inventory || []);
-        fpoStats = stRes?.stats || stRes || {};
+        const [memRes,invRes] = await Promise.all([api.getFPOMembers().catch(()=>[]),api.getFPOInventory().catch(()=>[])]);
+        fpoMembers  = Array.isArray(memRes) ? memRes : (memRes.members||[]);
+        fpoInventory= Array.isArray(invRes) ? invRes : (invRes.inventory||[]);
       }
-      const [ml, dl, iq] = await Promise.all([
-        (isFPO ? api.getFPOSupplyListings() : api.getMyListings()).catch(() => []),
-        api.getDeclarations().catch(() => []),
-        (isBuyer ? api.getBuyerInquiries() : api.getInquiries()).catch(() => []),
+      const [ml,dl,iq] = await Promise.all([
+        (isFPO ? api.getFPOSupplyListings() : api.getMyListings()).catch(()=>[]),
+        api.getDeclarations().catch(()=>[]),
+        (isBuyer ? api.getBuyerInquiries() : api.getInquiries()).catch(()=>[]),
       ]);
-      myListings = Array.isArray(ml) ? ml : (ml.listings || ml.supply_listings || []);
-      declarations = Array.isArray(dl) ? dl : (dl.declarations || []);
-      inquiries = Array.isArray(iq) ? iq : (iq.inquiries || []);
-    } catch (e) { console.error(e); }
-
+      myListings   = Array.isArray(ml) ? ml : (ml.listings||ml.supply_listings||[]);
+      declarations = Array.isArray(dl) ? dl : (dl.declarations||[]);
+      inquiries    = Array.isArray(iq) ? iq : (iq.inquiries||[]);
+    } catch(e) { console.error(e); }
+    // Fallback to sample data for new users
+    if (crops.length === 0) crops = SAMPLE_CROPS;
+    if (isBuyer && listings.length === 0) listings = SAMPLE_LISTINGS;
+    if (myListings.length === 0) myListings = SAMPLE_MY_LISTINGS;
+    if (declarations.length === 0) declarations = SAMPLE_DECLARATIONS;
+    if (inquiries.length === 0) inquiries = SAMPLE_INQUIRIES;
     loading = false; render();
   }
 
@@ -631,6 +719,6 @@ export function renderAgriFlow(container) {
 }
 
 function fmtDate(d) {
-  if (!d) return 'N/A';
-  return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-IN', {day:'numeric',month:'short'});
 }

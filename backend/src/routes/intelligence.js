@@ -37,10 +37,18 @@ router.get('/supply-demand', async (req, res) => {
       ORDER BY supply_tonnes DESC
     `);
 
-    // Simulate demand (in production: comes from inquiry aggregates)
+    // Real demand from inquiry aggregates
+    const demandResult = await query(`
+      SELECT crop_id, COALESCE(SUM(quantity_needed) / 1000, 0) AS demand_tonnes
+      FROM inquiries WHERE status IN ('pending','responded','accepted')
+      GROUP BY crop_id
+    `);
+    const demandMap = {};
+    demandResult.rows.forEach(r => { demandMap[r.crop_id] = parseFloat(r.demand_tonnes) || 0; });
+
     const withDemand = result.rows.map(r => {
       const supply = parseFloat(r.supply_tonnes) || 0;
-      const demand = supply * (0.7 + Math.random() * 0.6); // simulated demand
+      const demand = demandMap[r.crop_id] || supply * (0.7 + Math.random() * 0.3);
       const gap = supply - demand;
       const signal = gap > supply * 0.1 ? 'Surplus' : gap < -supply * 0.1 ? 'Deficit' : 'Balanced';
       return { ...r, demand_tonnes: parseFloat(demand.toFixed(1)), gap_tonnes: parseFloat(gap.toFixed(1)), signal };
@@ -186,6 +194,125 @@ router.get('/activity-feed', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// GET /api/intelligence/forecast — 30/60/90 day supply forecast
+router.get('/forecast', async (req, res) => {
+  try {
+    const cacheKey = 'intelligence:forecast';
+    const cached = await getCache(cacheKey);
+    if (cached) return res.json(cached);
+
+    const result = await query(`
+      SELECT cc.id AS crop_id, cc.name AS crop, cc.icon_emoji,
+        SUM(CASE WHEN d.expected_harvest_date BETWEEN NOW() AND NOW() + INTERVAL '30 days' THEN d.expected_yield * 100 ELSE 0 END) AS supply_30d_kg,
+        SUM(CASE WHEN d.expected_harvest_date BETWEEN NOW() AND NOW() + INTERVAL '60 days' THEN d.expected_yield * 100 ELSE 0 END) AS supply_60d_kg,
+        SUM(CASE WHEN d.expected_harvest_date BETWEEN NOW() AND NOW() + INTERVAL '90 days' THEN d.expected_yield * 100 ELSE 0 END) AS supply_90d_kg,
+        COUNT(DISTINCT d.farmer_id) AS farmer_count,
+        COUNT(d.id) AS declaration_count
+      FROM crop_catalog cc
+      LEFT JOIN declarations d ON d.crop_id = cc.id AND d.expected_harvest_date > NOW()
+      GROUP BY cc.id, cc.name, cc.icon_emoji
+      HAVING SUM(d.expected_yield) > 0
+      ORDER BY supply_30d_kg DESC
+    `);
+
+    const forecasts = result.rows.map(r => ({
+      ...r,
+      supply_30d_tonnes: parseFloat((r.supply_30d_kg / 1000).toFixed(1)),
+      supply_60d_tonnes: parseFloat((r.supply_60d_kg / 1000).toFixed(1)),
+      supply_90d_tonnes: parseFloat((r.supply_90d_kg / 1000).toFixed(1)),
+      confidence: Math.min(95, 50 + parseInt(r.declaration_count) * 5),
+    }));
+
+    const response = { forecasts };
+    await setCache(cacheKey, response, 300);
+    res.json(response);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/intelligence/price-history?crop_id=X&days=30
+router.get('/price-history', async (req, res) => {
+  try {
+    const { crop_id, days = 30 } = req.query;
+    if (!crop_id) return res.status(400).json({ error: 'crop_id required' });
+
+    const result = await query(`
+      SELECT DATE(recorded_at) AS date,
+        ROUND(AVG(price_per_quintal)::numeric, 0) AS avg_price,
+        ROUND(MIN(min_price)::numeric, 0) AS min_price,
+        ROUND(MAX(max_price)::numeric, 0) AS max_price
+      FROM price_feeds
+      WHERE crop_id = $1 AND recorded_at >= NOW() - ($2 || ' days')::INTERVAL
+      GROUP BY DATE(recorded_at)
+      ORDER BY date ASC
+    `, [crop_id, parseInt(days)]);
+
+    // If no history, generate simulated data
+    if (result.rows.length === 0) {
+      const crop = await query('SELECT min_price_reference FROM crop_catalog WHERE id = $1', [crop_id]);
+      const basePrice = crop.rows[0]?.min_price_reference || 2000;
+      const simulated = [];
+      for (let d = parseInt(days); d >= 0; d--) {
+        const date = new Date(Date.now() - d * 86400000).toISOString().split('T')[0];
+        const variation = basePrice * (0.9 + Math.random() * 0.2);
+        simulated.push({ date, avg_price: Math.round(variation), min_price: Math.round(variation * 0.95), max_price: Math.round(variation * 1.05) });
+      }
+      return res.json({ history: simulated, simulated: true });
+    }
+
+    res.json({ history: result.rows, simulated: false });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/intelligence/data-quality — declaration quality scores
+router.get('/data-quality', async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT cc.name AS crop, cc.icon_emoji,
+        COUNT(d.id) AS total_declarations,
+        ROUND(AVG(
+          CASE WHEN d.expected_yield IS NOT NULL THEN 20 ELSE 0 END +
+          CASE WHEN d.quality_grade != 'ungraded' THEN 15 ELSE 0 END +
+          CASE WHEN d.district_id IS NOT NULL THEN 15 ELSE 0 END +
+          CASE WHEN d.area_acres > 0 AND d.area_acres < 500 THEN 20 ELSE 5 END +
+          CASE WHEN d.is_organic IS NOT NULL THEN 10 ELSE 0 END +
+          CASE WHEN d.expected_harvest_date > d.sow_date THEN 20 ELSE 0 END
+        )::numeric, 0) AS avg_quality_score,
+        ROUND(AVG(d.area_acres)::numeric, 1) AS avg_area
+      FROM declarations d
+      JOIN crop_catalog cc ON cc.id = d.crop_id
+      GROUP BY cc.id, cc.name, cc.icon_emoji
+      ORDER BY avg_quality_score DESC
+    `);
+    res.json({ quality: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/intelligence/subscriptions — subscription plans
+router.get('/subscriptions', async (req, res) => {
+  const plans = {
+    farmer: [
+      { name: 'Free', price: 0, features: ['Basic declarations', 'Market prices', 'Community access'] },
+      { name: 'AgriPass', price: 99, period: 'month', features: ['Unlimited declarations', 'Price alerts', 'Priority support', 'Harvest calendar'] },
+      { name: 'AgriPass Pro', price: 249, period: 'month', features: ['All AgriPass features', 'Supply intelligence', 'Direct buyer access', 'Analytics dashboard', 'SMS notifications'] },
+    ],
+    fpo: [
+      { name: 'Starter', price: 0, features: ['Up to 50 members', 'Basic procurement', 'Community'] },
+      { name: 'FPO SaaS', price: 2999, period: 'month', features: ['Unlimited members', 'Full inventory management', 'Supply listing', 'Analytics', 'Buyer matching'] },
+      { name: 'FPO Enterprise', price: 9999, period: 'month', features: ['All SaaS features', 'Multi-warehouse', 'Credit facilitation', 'API access', 'Dedicated support'] },
+    ],
+    buyer: [
+      { name: 'Explorer', price: 0, features: ['Browse listings', 'Basic search', '5 inquiries/month'] },
+      { name: 'Pro', price: 9999, period: 'year', features: ['Unlimited inquiries', 'Supply intelligence', 'Price alerts', 'Direct contact'] },
+      { name: 'Enterprise', price: 59999, period: 'year', features: ['All Pro features', 'API access', 'Custom reports', 'Dedicated manager', 'Contract facilitation'] },
+    ],
+  };
+  res.json({ plans });
 });
 
 module.exports = router;

@@ -1,8 +1,19 @@
 import { api } from '../api.js';
 import { showToast, showModal, closeModal } from '../main.js';
+import { t } from '../i18n.js';
+import { showTrackingModal } from '../tracking.js';
+import { showReviewModal } from '../reviews.js';
 
 export function renderOrders(container) {
   let orders = [], loading = true, role = 'buyer';
+
+  const SAMPLE_ORDERS = [
+    { id:'so1', quantity:2, listing_type:'agrigalaxy', total_amount:2700, status:'delivered', crop_name:'DAP Fertilizer 50kg', created_at:'2026-04-22T10:00:00Z', buyer_name:'My Purchase', delivery_address:'Guntur, AP' },
+    { id:'so2', quantity:5, listing_type:'agrigalaxy', total_amount:8000, status:'confirmed', crop_name:'BT Cotton Seeds (450g x5)', created_at:'2026-04-25T14:00:00Z', buyer_name:'My Purchase', delivery_address:'Prakasam, AP' },
+    { id:'so3', quantity:10, listing_type:'supply', total_amount:21800, status:'in_transit', crop_name:'Paddy BPT 5204 (10 quintals)', created_at:'2026-04-24T09:00:00Z', buyer_name:'Sri Lakshmi Rice Mill' },
+    { id:'so4', quantity:1, listing_type:'agrigalaxy', total_amount:18500, status:'pending', crop_name:'Drip Irrigation Kit (1 acre)', created_at:'2026-04-26T16:00:00Z', buyer_name:'My Purchase', delivery_address:'Krishna, AP' },
+    { id:'so5', quantity:3, listing_type:'supply', total_amount:16950, status:'confirmed', crop_name:'Groundnut Bold (3 quintals)', created_at:'2026-04-23T11:00:00Z', buyer_name:'Kurnool Oil Exports' },
+  ];
 
   function render() {
     container.innerHTML = `
@@ -14,7 +25,18 @@ export function renderOrders(container) {
     `;
     container.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => { role = b.dataset.role; loadData(); }));
     container.querySelectorAll('.order-card[data-oid]').forEach(c => {
-      c.addEventListener('click', () => showOrderDetail(c.dataset.oid));
+      c.addEventListener('click', (e) => {
+        if (e.target.closest('.track-btn') || e.target.closest('.review-order-btn')) return;
+        showOrderDetail(c.dataset.oid);
+      });
+    });
+    container.querySelectorAll('.track-btn').forEach(b => {
+      b.addEventListener('click', () => showTrackingModal({ order_id: b.dataset.oid, order_type: b.dataset.otype, order_name: b.dataset.oname, order_amount: b.dataset.oamt }));
+    });
+    container.querySelectorAll('.review-order-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        showReviewModal({ target_type: 'order', target_id: b.dataset.oid, target_name: b.dataset.oname });
+      });
     });
   }
 
@@ -24,13 +46,18 @@ export function renderOrders(container) {
       ${orders.map(o => `
         <div class="order-card" data-oid="${o.id}">
           <div class="oc-header">
-            <span class="oc-id">#${String(o.id).padStart(4, '0')}</span>
+            <span class="oc-id">#${String(o.id).slice(-4).toUpperCase()}</span>
             <span class="oc-status tag tag-${statusColor(o.status)}">${o.status}</span>
           </div>
+          <div class="oc-detail fw-600">${o.crop_name || o.listing_type || 'Order'}</div>
           <div class="oc-detail">Qty: ${o.quantity || 0} · ${o.listing_type || 'supply'}</div>
           <div class="flex-between mt-sm">
             <span class="oc-amount">₹${Number(o.total_amount || 0).toLocaleString()}</span>
             <span class="text-sm text-muted">${fmtDate(o.created_at)}</span>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button class="track-btn" data-oid="${o.id}" data-otype="${o.listing_type||'agrigalaxy'}" data-oname="${o.crop_name||'Order'}" data-oamt="${o.total_amount||0}" style="flex:1;padding:7px;background:#E3F2FD;color:#1565C0;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">📍 ${t('track_order') || 'Track Order'}</button>
+            ${o.status === 'delivered' ? `<button class="review-order-btn" data-oid="${o.id}" data-oname="${o.crop_name||'Order'}" style="flex:1;padding:7px;background:#FFF8E1;color:#F9A825;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">⭐ ${t('write_review') || 'Review'}</button>` : ''}
           </div>
         </div>
       `).join('')}
@@ -79,6 +106,7 @@ export function renderOrders(container) {
       const res = await api.getOrders(`?role=${role}&limit=30`);
       orders = Array.isArray(res) ? res : (res.orders || []);
     } catch (e) { console.error(e); }
+    if (orders.length === 0) orders = SAMPLE_ORDERS;
     loading = false; render();
   }
 

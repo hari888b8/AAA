@@ -27,6 +27,12 @@ const farmerRouter = require('./routes/farmer');
 const weatherRouter = require('./routes/weather');
 const uploadRouter = require('./routes/upload');
 const { router: notificationsRouter } = require('./routes/pushnotifications');
+const agrigalaxyRouter2 = require('./routes/agrigalaxy');
+const bhoomiosRouter = require('./routes/bhoomios');
+const paymentsRouter = require('./routes/payments');
+const reviewsRouter = require('./routes/reviews');
+const chatRouter = require('./routes/chat');
+const trackingRouter = require('./routes/tracking');
 const path = require('path');
 
 const app = express();
@@ -74,6 +80,12 @@ app.use('/api/farmer', farmerRouter);
 app.use('/api/weather', weatherRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/agrigalaxy', agrigalaxyRouter2);
+app.use('/api/bhoomios', bhoomiosRouter);
+app.use('/api/payments', paymentsRouter);
+app.use('/api/reviews', reviewsRouter);
+app.use('/api/chat', chatRouter);
+app.use('/api/tracking', trackingRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
