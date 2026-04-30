@@ -380,6 +380,42 @@ class ApiClient {
   getCropDiseases(crop) { return this.get(`/crop-doctor/diseases/${crop}`); }
   getDiseaseTreatment(id) { return this.get(`/crop-doctor/treatment/${id}`); }
   reportCropDisease(d) { return this.post('/crop-doctor/report', d); }
+
+  // ─── Escrow ─────────────────────────────────────────────────
+  createEscrow(d) { return this.post('/escrow', d); }
+  getEscrow(id) { return this.get(`/escrow/${id}`); }
+  getEscrows(params = '') { return this.get(`/escrow${params}`); }
+  escrowAction(id, d) { return this.post(`/escrow/${id}/action`, d); }
+  disputeEscrow(id, d) { return this.post(`/escrow/${id}/dispute`, d); }
+
+  // ─── Subscriptions ──────────────────────────────────────────
+  getSubscriptionPlansAll() { return this.get('/subscriptions/plans'); }
+  getCurrentSubscription() { return this.get('/subscriptions/current'); }
+  subscribe(d) { return this.post('/subscriptions', d); }
+  cancelSubscription() { return this.post('/subscriptions/cancel', {}); }
+  getSubscriptionHistory() { return this.get('/subscriptions/history'); }
+  checkFeatureAccess(feature) { return this.post('/subscriptions/check-feature', { feature }); }
+
+  // ─── Watchlists ─────────────────────────────────────────────
+  getWatchlists() { return this.get('/watchlists'); }
+  createWatchlist(d) { return this.post('/watchlists', d); }
+  updateWatchlist(id, d) { return this.patch(`/watchlists/${id}`, d); }
+  deleteWatchlist(id) { return this.del(`/watchlists/${id}`); }
+  getWatchlistAlerts() { return this.get('/watchlists/alerts'); }
+
+  // ─── Favorites ──────────────────────────────────────────────
+  getFavorites(type = '') { return this.get(`/favorites${type ? `?type=${type}` : ''}`); }
+  addFavorite(d) { return this.post('/favorites', d); }
+  removeFavorite(id) { return this.del(`/favorites/${id}`); }
+  removeFavoriteByListing(type, listingId) { return this.del(`/favorites/by-listing/${type}/${listingId}`); }
+  checkFavorite(type, listingId) { return this.get(`/favorites/check/${type}/${listingId}`); }
+
+  // ─── Support Tickets ────────────────────────────────────────
+  createTicket(d) { return this.post('/tickets', d); }
+  getTickets(status = '') { return this.get(`/tickets${status ? `?status=${status}` : ''}`); }
+  getTicket(id) { return this.get(`/tickets/${id}`); }
+  addTicketMessage(id, d) { return this.post(`/tickets/${id}/messages`, d); }
+  closeTicket(id) { return this.patch(`/tickets/${id}`, { status: 'closed' }); }
 }
 
 export const api = new ApiClient();
