@@ -462,7 +462,7 @@ router.post('/reviews', authMiddleware, async (req, res) => {
     const { target_type, target_id, rating, comment } = req.body;
     if (!target_type || !target_id || !rating) return res.status(400).json({ error: 'target_type, target_id, rating required' });
     const result = await query(`
-      INSERT INTO reviews (id, user_id, target_type, target_id, rating, comment)
+      INSERT INTO reviews (id, user_id, target_type, target_id, rating, body)
       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *
     `, [uuidv4(), req.user.id, target_type, target_id, rating, comment]);
     // Update target rating
