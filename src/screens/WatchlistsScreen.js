@@ -68,10 +68,14 @@ function showWatchForm(container) {
   formEl.querySelector('#cancelWatchBtn').addEventListener('click', () => { formEl.style.display = 'none'; });
   formEl.querySelector('#saveWatchBtn').addEventListener('click', async () => {
     const watch_type = formEl.querySelector('#wType').value;
-    const crop_id = parseInt(formEl.querySelector('#wCropId').value) || null;
-    const district_id = parseInt(formEl.querySelector('#wDistrictId').value) || null;
-    const price_above = parseInt(formEl.querySelector('#wPriceAbove').value) || null;
-    const price_below = parseInt(formEl.querySelector('#wPriceBelow').value) || null;
+    const cropVal = formEl.querySelector('#wCropId').value;
+    const distVal = formEl.querySelector('#wDistrictId').value;
+    const crop_id = cropVal ? parseInt(cropVal) : null;
+    const district_id = distVal ? parseInt(distVal) : null;
+    const priceAboveVal = formEl.querySelector('#wPriceAbove').value;
+    const priceBelowVal = formEl.querySelector('#wPriceBelow').value;
+    const price_above = priceAboveVal ? parseInt(priceAboveVal) : null;
+    const price_below = priceBelowVal ? parseInt(priceBelowVal) : null;
 
     const conditions = {};
     if (price_above) conditions.price_above = price_above;

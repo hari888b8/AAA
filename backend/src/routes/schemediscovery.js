@@ -154,14 +154,14 @@ router.get('/discover', auth, async (req, res) => {
 
     // Check if user has active crops
     const { rows: declRows } = await pool.query(
-      `SELECT COUNT(*) as count FROM declarations WHERE farmer_id=$1 AND expected_harvest_date >= CURRENT_DATE`,
+      `SELECT COUNT(*) as count FROM declarations WHERE user_id=$1 AND expected_harvest_date >= CURRENT_DATE`,
       [req.user.id]
     );
     const hasActiveCrop = parseInt(declRows[0]?.count) > 0;
 
     // Check if user has ponds
     const { rows: pondRows } = await pool.query(
-      `SELECT COUNT(*) as count FROM ponds WHERE farmer_id=$1`,
+      `SELECT COUNT(*) as count FROM ponds WHERE user_id=$1`,
       [req.user.id]
     );
     const hasPonds = parseInt(pondRows[0]?.count) > 0;

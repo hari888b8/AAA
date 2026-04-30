@@ -102,7 +102,10 @@ async function loadEscrows(container, filter) {
     listEl.querySelectorAll('.esc-action-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const action = btn.dataset.action;
-        const escrowData = JSON.parse(btn.closest('.escrow-actions').dataset.escrow);
+        let escrowData;
+        try {
+          escrowData = JSON.parse(btn.closest('.escrow-actions').dataset.escrow);
+        } catch (parseErr) { alert('Error reading escrow data'); return; }
         
         let reason = '';
         if (action === 'dispute') {
