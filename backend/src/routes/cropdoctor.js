@@ -110,7 +110,10 @@ router.post('/analyze', auth, async (req, res) => {
     if (!crop_name) return res.status(400).json({ error: 'crop_name is required' });
 
     const cropKey = crop_name.toLowerCase().replace(/\s+/g, '');
-    const diseases = DISEASE_DB[cropKey] || DISEASE_DB.rice; // Fallback to rice
+    const diseases = DISEASE_DB[cropKey];
+    if (!diseases || !diseases.length) {
+      return res.status(400).json({ error: `Crop "${crop_name}" not supported. Available: ${Object.keys(DISEASE_DB).join(', ')}` });
+    }
 
     // Simulate AI analysis — pick most likely disease based on symptoms
     let detected = diseases[0];

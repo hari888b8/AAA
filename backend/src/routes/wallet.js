@@ -195,7 +195,8 @@ router.get('/referral', auth, async (req, res) => {
     );
     let code = rows[0]?.referral_code;
     if (!code) {
-      code = 'AGRI' + req.user.phone.slice(-4) + Math.random().toString(36).slice(2, 6).toUpperCase();
+      const randomPart = require('crypto').randomBytes(3).toString('hex').toUpperCase();
+      code = 'AGRI' + req.user.phone.slice(-4) + randomPart;
       await pool.query(`UPDATE users SET referral_code=$1 WHERE id=$2`, [code, req.user.id]);
     }
 
