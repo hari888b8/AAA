@@ -462,7 +462,7 @@ router.post('/reviews', authMiddleware, async (req, res) => {
     const { target_type, target_id, rating, comment } = req.body;
     if (!target_type || !target_id || !rating) return res.status(400).json({ error: 'target_type, target_id, rating required' });
     const result = await query(`
-      INSERT INTO reviews (id, reviewer_id, target_type, target_id, rating, comment)
+      INSERT INTO reviews (id, user_id, target_type, target_id, rating, comment)
       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *
     `, [uuidv4(), req.user.id, target_type, target_id, rating, comment]);
     // Update target rating
@@ -479,7 +479,7 @@ router.get('/reviews/:targetType/:targetId', async (req, res) => {
   try {
     const result = await query(`
       SELECT r.*, u.name AS reviewer_name FROM reviews r
-      JOIN users u ON u.id = r.reviewer_id
+      JOIN users u ON u.id = r.user_id
       WHERE r.target_type = $1 AND r.target_id = $2
       ORDER BY r.created_at DESC
     `, [req.params.targetType, req.params.targetId]);
