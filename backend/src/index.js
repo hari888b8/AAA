@@ -52,14 +52,22 @@ const server = http.createServer(app);
 
 // ─── Security Middleware ─────────────────────────────────────
 app.use(helmet({
-  contentSecurityPolicy: config.isProduction ? undefined : false,
+  contentSecurityPolicy: config.isProduction ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "wss:", "https:"],
+    },
+  } : false,
   crossOriginEmbedderPolicy: false,
 }));
 
-// CORS: restricted in production, open in dev
+// CORS: restricted in production, permissive in dev
 const corsOptions = config.isProduction
   ? { origin: config.cors.origins, credentials: true, optionsSuccessStatus: 200 }
-  : { origin: true, credentials: true };
+  : { origin: 'http://localhost:3000', credentials: true };
 app.use(cors(corsOptions));
 
 // Prevent HTTP parameter pollution

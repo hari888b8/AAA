@@ -5,12 +5,11 @@
  * Fails fast on missing critical env vars in production.
  */
 
-const logger = require('./logger');
-
 function requireEnv(name) {
   const value = process.env[name];
   if (!value) {
-    logger.fatal({ env: name }, `Missing required environment variable: ${name}`);
+    // Use console.error here to avoid circular dependency with logger
+    console.error(`FATAL: Missing required environment variable: ${name}`);
     process.exit(1);
   }
   return value;
