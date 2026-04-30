@@ -919,15 +919,20 @@ CREATE TABLE IF NOT EXISTS service_requests (
 -- TABLE: reviews (cross-platform review system)
 CREATE TABLE IF NOT EXISTS reviews (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  reviewer_id     UUID NOT NULL REFERENCES users(id),
+  user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   target_type     VARCHAR(30) NOT NULL,
-  target_id       UUID NOT NULL,
-  rating          DECIMAL(2,1) NOT NULL CHECK (rating >= 1 AND rating <= 5),
-  comment         TEXT,
+  target_id       VARCHAR(100) NOT NULL,
+  rating          SMALLINT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  title           VARCHAR(200),
+  body            TEXT,
+  photos          JSONB DEFAULT '[]',
+  helpful_count   INTEGER DEFAULT 0,
   order_id        UUID,
-  created_at      TIMESTAMPTZ DEFAULT NOW()
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_reviews_target ON reviews(target_type, target_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_user ON reviews(user_id);
 
 -- TABLE: society_management (FarmerConnect B2B)
 CREATE TABLE IF NOT EXISTS societies (
@@ -1284,23 +1289,6 @@ DO $$ BEGIN
   ALTER TABLE farmer_profiles ADD COLUMN IF NOT EXISTS kyc_status VARCHAR(20) DEFAULT 'pending';
   ALTER TABLE farmer_profiles ADD COLUMN IF NOT EXISTS kyc_documents JSONB DEFAULT '[]';
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
-
--- REVIEWS & RATINGS
-CREATE TABLE IF NOT EXISTS reviews (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  target_type VARCHAR(30) NOT NULL,
-  target_id   VARCHAR(100) NOT NULL,
-  rating      SMALLINT NOT NULL CHECK (rating >= 1 AND rating <= 5),
-  title       VARCHAR(200),
-  body        TEXT,
-  photos      JSONB DEFAULT '[]',
-  helpful_count INTEGER DEFAULT 0,
-  created_at  TIMESTAMPTZ DEFAULT NOW(),
-  updated_at  TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_reviews_target ON reviews(target_type, target_id);
-CREATE INDEX IF NOT EXISTS idx_reviews_user ON reviews(user_id);
 
 -- CHAT / MESSAGING
 CREATE TABLE IF NOT EXISTS conversations (

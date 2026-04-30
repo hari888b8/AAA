@@ -1,16 +1,24 @@
+'use strict';
 require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
+const compression = require('compression');
+const hpp = require('hpp');
 const rateLimit = require('express-rate-limit');
+const pinoHttp = require('pino-http');
 const http = require('http');
+const path = require('path');
 
-const { pool } = require('./db/pool');
+const logger = require('./lib/logger');
+const config = require('./lib/config');
+const { pool, connectWithRetry } = require('./db/pool');
 const { migrate } = require('./db/migrate');
-const { seed } = require('./db/seed');
 const { setupWebSocket } = require('./services/websocket');
+const { requestId } = require('./middleware/requestId');
+const { sanitize } = require('./middleware/sanitize');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 // Routes
 const authRouter = require('./routes/auth');
@@ -38,35 +46,95 @@ const farmdiaryRouter = require('./routes/farmdiary');
 const jobsRouter = require('./routes/jobs');
 const trainingRouter = require('./routes/training');
 const schemesRouter = require('./routes/schemes');
-const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 
-// ─── Middleware ──────────────────────────────────────────────
-app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
-app.use(morgan('dev'));
+// ─── Security Middleware ─────────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: config.isProduction ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "wss:", "https:"],
+    },
+  } : false,
+  crossOriginEmbedderPolicy: false,
+}));
+
+// CORS: restricted in production, permissive in dev
+const corsOptions = config.isProduction
+  ? { origin: config.cors.origins, credentials: true, optionsSuccessStatus: 200 }
+  : { origin: 'http://localhost:3000', credentials: true };
+app.use(cors(corsOptions));
+
+// Prevent HTTP parameter pollution
+app.use(hpp());
+
+// ─── Request Processing ──────────────────────────────────────
+app.use(requestId);
+app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(sanitize);
 
-// Rate limiting
-const limiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 200, standardHeaders: true });
-app.use('/api/', limiter);
+// ─── Structured HTTP Logging ─────────────────────────────────
+app.use(pinoHttp({
+  logger,
+  autoLogging: { ignore: (req) => req.url === '/health' },
+  customProps: (req) => ({ requestId: req.id }),
+  redact: ['req.headers.authorization', 'req.headers.cookie'],
+}));
 
-// ─── Health ──────────────────────────────────────────────────
+// ─── Rate Limiting ───────────────────────────────────────────
+const globalLimiter = rateLimit({
+  windowMs: config.rateLimit.global.windowMs,
+  max: config.rateLimit.global.max,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMIT', message: 'Too many requests, please try again later' } },
+});
+app.use('/api/', globalLimiter);
+
+// Stricter rate limiting for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: config.rateLimit.auth.windowMs,
+  max: config.rateLimit.auth.max,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMIT', message: 'Too many authentication attempts' } },
+});
+app.use('/api/auth/send-otp', authLimiter);
+app.use('/api/auth/verify-otp', authLimiter);
+
+// ─── Health Check ────────────────────────────────────────────
 app.get('/health', async (req, res) => {
   try {
+    const dbStart = Date.now();
     await pool.query('SELECT 1');
+    const dbLatency = Date.now() - dbStart;
+
     res.json({
       status: 'ok',
       service: 'AgriHub API',
       version: '1.0.0',
-      db: 'connected',
+      environment: config.env,
+      uptime: Math.round(process.uptime()),
+      db: { status: 'connected', latencyMs: dbLatency },
+      memory: {
+        rss: Math.round(process.memoryUsage().rss / 1024 / 1024),
+        heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      },
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
-    res.status(503).json({ status: 'error', db: 'disconnected', error: err.message });
+    res.status(503).json({
+      status: 'degraded',
+      db: { status: 'disconnected', error: err.message },
+      timestamp: new Date().toISOString(),
+    });
   }
 });
 
@@ -100,48 +168,67 @@ app.use('/api/schemes', schemesRouter);
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// 404
-app.use((req, res) => res.status(404).json({ error: `Route ${req.path} not found` }));
-
-// Error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Internal server error', details: err.message });
-});
+// ─── Error Handling ──────────────────────────────────────────
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // ─── Startup ─────────────────────────────────────────────────
-const PORT = process.env.PORT || 4000;
-
 async function start() {
   try {
-    // Test DB connection
-    await pool.query('SELECT NOW()');
-    console.log('✅ PostgreSQL connected');
+    // Connect to DB with retry
+    await connectWithRetry(config.db.retryAttempts, config.db.retryDelay);
 
-    // Run migration
+    // Run migrations
     await migrate();
-
-    // Seed if needed
-    const userCount = await pool.query('SELECT COUNT(*) FROM users');
-    if (parseInt(userCount.rows[0].count) === 0) {
-      await seed();
-      console.log('✅ Initial seed complete');
-    }
+    logger.info('Database migrations applied');
 
     // WebSocket
     setupWebSocket(server);
 
-    server.listen(PORT, () => {
-      console.log(`\n🌾 AgriHub API Server running on port ${PORT}`);
-      console.log(`   REST API: http://localhost:${PORT}/api`);
-      console.log(`   WebSocket: ws://localhost:${PORT}/ws`);
-      console.log(`   Health:   http://localhost:${PORT}/health\n`);
+    server.listen(config.port, () => {
+      logger.info({
+        port: config.port,
+        env: config.env,
+        pid: process.pid,
+      }, `AgriHub API Server running on port ${config.port}`);
     });
   } catch (err) {
-    console.error('❌ Startup failed:', err.message);
-    console.error(err);
+    logger.fatal({ err }, 'Startup failed');
     process.exit(1);
   }
 }
+
+// ─── Graceful Shutdown ───────────────────────────────────────
+function gracefulShutdown(signal) {
+  logger.info({ signal }, 'Shutdown signal received, closing gracefully...');
+
+  server.close(async () => {
+    logger.info('HTTP server closed');
+    try {
+      await pool.end();
+      logger.info('Database pool closed');
+    } catch (err) {
+      logger.error({ err }, 'Error closing database pool');
+    }
+    process.exit(0);
+  });
+
+  // Force shutdown after 30s
+  setTimeout(() => {
+    logger.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 30000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('uncaughtException', (err) => {
+  logger.fatal({ err }, 'Uncaught exception');
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  logger.fatal({ err: reason }, 'Unhandled rejection');
+  process.exit(1);
+});
 
 start();
