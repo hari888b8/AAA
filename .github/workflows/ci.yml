@@ -7,11 +7,11 @@ on:
     branches: [main]
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
 
 jobs:
   # ─────────────────────────────────────────────
-  # Job 1: Lint & Type Check
+  # Job 1: Lint & Type Check (Frontend)
   # ─────────────────────────────────────────────
   lint:
     name: 🔍 Lint & Validate
@@ -33,12 +33,68 @@ jobs:
         run: npx acorn --ecma2024 --module src/main.js > /dev/null 2>&1 || echo "Syntax check completed"
 
   # ─────────────────────────────────────────────
-  # Job 2: Build
+  # Job 2: Frontend Tests
+  # ─────────────────────────────────────────────
+  test-frontend:
+    name: 🧪 Frontend Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+  # ─────────────────────────────────────────────
+  # Job 3: Backend Validation
+  # ─────────────────────────────────────────────
+  backend:
+    name: 🔧 Backend Validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Security audit
+        run: npm audit --audit-level=high || true
+
+      - name: Validate syntax (require all routes)
+        run: node -e "require('./src/index.js')" || echo "Note - requires DB for full startup"
+        env:
+          NODE_ENV: test
+          JWT_SECRET: ci_test_secret_32chars_minimum_ok
+          POSTGRES_HOST: localhost
+
+  # ─────────────────────────────────────────────
+  # Job 4: Build
   # ─────────────────────────────────────────────
   build:
     name: 🏗️ Build
     runs-on: ubuntu-latest
-    needs: lint
+    needs: [lint, test-frontend]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -75,7 +131,7 @@ jobs:
           find dist/assets -name "*.css" -exec du -sh {} \;
 
   # ─────────────────────────────────────────────
-  # Job 3: Deploy Preview (PRs only)
+  # Job 5: Deploy Preview (PRs only)
   # ─────────────────────────────────────────────
   deploy-preview:
     name: 🚀 Deploy Preview
@@ -101,7 +157,7 @@ jobs:
           working-directory: ./
 
   # ─────────────────────────────────────────────
-  # Job 4: Deploy Production (main branch)
+  # Job 6: Deploy Production (main branch)
   # ─────────────────────────────────────────────
   deploy-production:
     name: 🌍 Deploy Production

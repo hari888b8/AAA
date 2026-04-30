@@ -1,17 +1,20 @@
+'use strict';
+
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { query } = require('../db/pool');
+const config = require('../lib/config');
+const logger = require('../lib/logger');
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'agrihub_secret_key';
 
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 function signToken(userId) {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRY || '7d' });
+  return jwt.sign({ userId }, config.jwt.secret, { expiresIn: config.jwt.expiry });
 }
 
 // POST /api/auth/send-otp
@@ -19,9 +22,8 @@ router.post('/send-otp', async (req, res) => {
   try {
     const { phone } = req.body;
     if (!phone || !/^[6-9]\d{9}$/.test(phone)) {
-      return res.status(400).json({ error: 'Invalid phone number' });
+      return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid phone number' } });
     }
-    // In production: send via MSG91 / Fast2SMS. Dev: return OTP directly.
     const code = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
@@ -31,15 +33,14 @@ router.post('/send-otp', async (req, res) => {
       [uuidv4(), phone, code, expiresAt]
     );
 
-    // Dev: return OTP in response. Production: send SMS, return { message: 'OTP sent' }
-    const isDev = process.env.NODE_ENV !== 'production';
-    return res.json({
-      message: 'OTP sent successfully',
-      ...(isDev && { otp: code, note: 'OTP visible in dev mode only' }),
-    });
+    // In production: send SMS via MSG91/Fast2SMS.
+    // OTP is NEVER returned in the response. Use /api/admin/debug-otp for dev debugging.
+    logger.info({ phone: phone.slice(-4) }, 'OTP generated for phone ending in ****');
+
+    return res.json({ message: 'OTP sent successfully' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to send OTP' });
+    logger.error({ err }, 'Failed to send OTP');
+    res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to send OTP' } });
   }
 });
 
@@ -47,13 +48,13 @@ router.post('/send-otp', async (req, res) => {
 router.post('/verify-otp', async (req, res) => {
   try {
     const { phone, otp, name, role } = req.body;
-    if (!phone || !otp) return res.status(400).json({ error: 'Phone and OTP required' });
+    if (!phone || !otp) return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Phone and OTP required' } });
 
     const otpResult = await query(
       `SELECT * FROM otps WHERE phone = $1 AND code = $2 AND used = false AND expires_at > NOW()`,
       [phone, otp]
     );
-    if (!otpResult.rows.length) return res.status(400).json({ error: 'Invalid or expired OTP' });
+    if (!otpResult.rows.length) return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid or expired OTP' } });
 
     // Mark OTP used
     await query(`UPDATE otps SET used = true WHERE id = $1`, [otpResult.rows[0].id]);
@@ -74,7 +75,7 @@ router.post('/verify-otp', async (req, res) => {
 
     const token = signToken(user.id);
     const refreshToken = uuidv4();
-    const refreshExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    const refreshExpiry = new Date(Date.now() + config.jwt.refreshExpiry * 1000);
     await query(
       `INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)`,
       [user.id, refreshToken, refreshExpiry]
@@ -93,8 +94,8 @@ router.post('/verify-otp', async (req, res) => {
       },
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Verification failed' });
+    logger.error({ err }, 'OTP verification failed');
+    res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Verification failed' } });
   }
 });
 
