@@ -30,6 +30,11 @@ import { renderTraining } from './screens/TrainingScreen.js';
 import { renderWallet } from './screens/WalletScreen.js';
 import { renderSchemeDiscovery } from './screens/SchemeDiscoveryScreen.js';
 import { renderCropDoctor } from './screens/CropDoctorScreen.js';
+import { renderSubscriptions } from './screens/SubscriptionsScreen.js';
+import { renderFavorites } from './screens/FavoritesScreen.js';
+import { renderTickets } from './screens/TicketsScreen.js';
+import { renderEscrow } from './screens/EscrowScreen.js';
+import { renderWatchlists } from './screens/WatchlistsScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -69,6 +74,11 @@ const ROUTES = {
   wallet:        { title: 'Wallet',        icon: '💎', render: renderWallet,       back: 'profile' },
   schemediscovery: { title: 'Schemes AI',  icon: '🏛️', render: renderSchemeDiscovery, back: 'home' },
   cropdoctor:    { title: 'Crop Doctor',   icon: '🩺', render: renderCropDoctor,   back: 'home'    },
+  subscriptions: { title: 'Plans',         icon: '⭐', render: renderSubscriptions,back: 'profile' },
+  favorites:     { title: 'Favorites',     icon: '❤️', render: renderFavorites,    back: 'profile' },
+  tickets:       { title: 'Support',       icon: '🎫', render: renderTickets,      back: 'profile' },
+  escrow:        { title: 'Escrow',        icon: '🔐', render: renderEscrow,       back: 'orders'  },
+  watchlists:    { title: 'Watchlists',    icon: '👁️', render: renderWatchlists,   back: 'home'    },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────
@@ -156,6 +166,15 @@ function renderApp() {
             {icon:'📦',label:t('orders')||'Orders',route:'orders'},
             {icon:'🏗️',label:t('platform_map')||'Platform Map',route:'architecture'},
             {icon:'💬',label:t('community')||'Community',route:'community'},
+          ].map(m=>`<button class="menu-nav-btn" data-route="${m.route}" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:none;background:transparent;cursor:pointer;text-align:left;font-size:13px;color:#424242"><span style="font-size:18px">${m.icon}</span>${m.label}</button>`).join('')}
+          <div style="height:1px;background:#E0E0E0;margin:8px 16px"></div>
+          <div style="padding:4px 16px;font-size:10px;font-weight:700;color:#9E9E9E;text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">Tools & Services</div>
+          ${[
+            {icon:'⭐',label:'Subscription Plans',route:'subscriptions'},
+            {icon:'❤️',label:'My Favorites',route:'favorites'},
+            {icon:'👁️',label:'Watchlists & Alerts',route:'watchlists'},
+            {icon:'🔐',label:'Escrow Payments',route:'escrow'},
+            {icon:'🎫',label:'Support Tickets',route:'tickets'},
           ].map(m=>`<button class="menu-nav-btn" data-route="${m.route}" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:none;background:transparent;cursor:pointer;text-align:left;font-size:13px;color:#424242"><span style="font-size:18px">${m.icon}</span>${m.label}</button>`).join('')}
           <div style="height:1px;background:#E0E0E0;margin:8px 16px"></div>
           <button id="logoutMenuBtn" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:none;background:transparent;cursor:pointer;text-align:left;font-size:13px;color:#C62828"><span style="font-size:18px">🚪</span>${t('logout') || 'Logout'}</button>
