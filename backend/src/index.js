@@ -46,6 +46,9 @@ const farmdiaryRouter = require('./routes/farmdiary');
 const jobsRouter = require('./routes/jobs');
 const trainingRouter = require('./routes/training');
 const schemesRouter = require('./routes/schemes');
+const walletRouter = require('./routes/wallet');
+const schemeDiscoveryRouter = require('./routes/schemediscovery');
+const cropDoctorRouter = require('./routes/cropdoctor');
 
 const app = express();
 const server = http.createServer(app);
@@ -164,6 +167,9 @@ app.use('/api/farmdiary', farmdiaryRouter);
 app.use('/api/jobs', jobsRouter);
 app.use('/api/training', trainingRouter);
 app.use('/api/schemes', schemesRouter);
+app.use('/api/wallet', walletRouter);
+app.use('/api/scheme-discovery', schemeDiscoveryRouter);
+app.use('/api/crop-doctor', cropDoctorRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

@@ -27,6 +27,9 @@ import { renderFarmDiary } from './screens/FarmDiaryScreen.js';
 import { renderSchemes } from './screens/SchemesScreen.js';
 import { renderJobs } from './screens/JobsScreen.js';
 import { renderTraining } from './screens/TrainingScreen.js';
+import { renderWallet } from './screens/WalletScreen.js';
+import { renderSchemeDiscovery } from './screens/SchemeDiscoveryScreen.js';
+import { renderCropDoctor } from './screens/CropDoctorScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -63,6 +66,9 @@ const ROUTES = {
   schemes:       { title: 'Schemes',       icon: '🏛️', render: renderSchemes,      back: 'home'    },
   jobs:          { title: 'Agri Jobs',     icon: '👷', render: renderJobs,         back: 'home'    },
   training:      { title: 'Training',      icon: '🎓', render: renderTraining,     back: 'home'    },
+  wallet:        { title: 'Wallet',        icon: '💎', render: renderWallet,       back: 'profile' },
+  schemediscovery: { title: 'Schemes AI',  icon: '🏛️', render: renderSchemeDiscovery, back: 'home' },
+  cropdoctor:    { title: 'Crop Doctor',   icon: '🩺', render: renderCropDoctor,   back: 'home'    },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────

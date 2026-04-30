@@ -354,6 +354,32 @@ class ApiClient {
 
   // Equipment Availability
   getEquipmentAvailability(id, year, month) { return this.get(`/kisanconnect/equipment/${id}/availability?year=${year}&month=${month}`); }
+
+  // ─── Wallet & Credits ───────────────────────────────────────
+  getWalletBalance() { return this.get('/wallet/balance'); }
+  earnWalletCredits(d) { return this.post('/wallet/earn', d); }
+  spendWalletCredits(d) { return this.post('/wallet/spend', d); }
+  getWalletHistory(params = '') { return this.get(`/wallet/history${params}`); }
+  getWalletReferral() { return this.get('/wallet/referral'); }
+  applyReferralCode(d) { return this.post('/wallet/referral/apply', d); }
+  getWalletLeaderboard() { return this.get('/wallet/leaderboard'); }
+
+  // ─── Scheme Discovery ───────────────────────────────────────
+  discoverSchemes() { return this.get('/scheme-discovery/discover'); }
+  applyForScheme(d) { return this.post('/scheme-discovery/apply', d); }
+  getSchemeApplications(params = '') { return this.get(`/scheme-discovery/applications${params}`); }
+  updateSchemeApplication(id, d) { return this.patch(`/scheme-discovery/applications/${id}`, d); }
+  getSchemeDeadlines() { return this.get('/scheme-discovery/deadlines'); }
+  getSchemeCategories() { return this.get('/scheme-discovery/categories'); }
+
+  // ─── Crop Doctor (Disease Detection) ────────────────────────
+  analyzeCropDisease(d) { return this.post('/crop-doctor/analyze', d); }
+  getCropDoctorHistory() { return this.get('/crop-doctor/history'); }
+  getCropDoctorOutbreaks() { return this.get('/crop-doctor/outbreaks'); }
+  getCropDoctorCrops() { return this.get('/crop-doctor/crops'); }
+  getCropDiseases(crop) { return this.get(`/crop-doctor/diseases/${crop}`); }
+  getDiseaseTreatment(id) { return this.get(`/crop-doctor/treatment/${id}`); }
+  reportCropDisease(d) { return this.post('/crop-doctor/report', d); }
 }
 
 export const api = new ApiClient();
