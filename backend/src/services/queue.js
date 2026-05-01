@@ -47,10 +47,11 @@ async function enqueue(type, payload, options = {}) {
 
   // Persist to database for crash recovery
   try {
+    const nextRunAt = new Date(Date.now() + delayMs);
     await query(
       `INSERT INTO job_queue (id, type, payload, status, priority, max_retries, attempt, next_run_at)
-       VALUES ($1, $2, $3, 'pending', $4, $5, 0, NOW() + interval '${delayMs} milliseconds')`,
-      [jobId, type, JSON.stringify(payload), priority, maxRetries]
+       VALUES ($1, $2, $3, 'pending', $4, $5, 0, $6)`,
+      [jobId, type, JSON.stringify(payload), priority, maxRetries, nextRunAt]
     );
   } catch (err) {
     // If job_queue table doesn't exist yet, just process in-memory
