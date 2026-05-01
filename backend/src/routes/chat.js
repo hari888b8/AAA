@@ -190,20 +190,15 @@ router.post('/translate', auth, async (req, res) => {
     const msg = await pool.query(`SELECT * FROM messages WHERE id = $1`, [message_id]);
     if (!msg.rows.length) return res.status(404).json({ error: 'Message not found' });
 
-    // In production: call Google Translate / Azure Translator API
-    // For now: return simulated translation
-    const translations = {
-      'te': '[Telugu translation placeholder]',
-      'hi': '[Hindi translation placeholder]',
-      'en': msg.rows[0].body, // English = original
-      'kn': '[Kannada translation placeholder]',
-    };
+    const { translate } = require('../services/translate');
+    const result = await translate(msg.rows[0].body, target_language, 'auto');
 
     res.json({
       original: msg.rows[0].body,
-      translated: translations[target_language] || msg.rows[0].body,
+      translated: result.translated,
       target_language,
-      confidence: 0.92,
+      provider: result.provider,
+      confidence: result.confidence,
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

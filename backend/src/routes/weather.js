@@ -1,6 +1,7 @@
 const express = require('express');
 const { query } = require('../db/pool');
 const { optionalAuth } = require('../middleware/auth');
+const weatherService = require('../services/weather');
 
 const router = express.Router();
 
@@ -117,25 +118,49 @@ function getCropAdvisories(forecast, crops = []) {
   return advisories;
 }
 
-// GET /api/weather/forecast?district_id=&days=7
+// GET /api/weather/forecast?district_id=&days=7&lat=&lng=
 router.get('/forecast', optionalAuth, async (req, res) => {
   try {
-    const { district_id, days = 7 } = req.query;
+    const { district_id, days = 7, lat, lng } = req.query;
     let districtName = 'Your Location';
     let stateName = 'India';
+    let coords = { lat: parseFloat(lat) || 0, lng: parseFloat(lng) || 0 };
 
     if (district_id) {
       const distResult = await query('SELECT name, state_name FROM districts WHERE id = $1', [district_id]);
       if (distResult.rows.length) {
         districtName = distResult.rows[0].name;
         stateName = distResult.rows[0].state_name;
+        coords = weatherService.getDistrictCoords(districtName);
       }
     }
 
+    // Try real weather API first
+    if (weatherService.IS_CONFIGURED && (coords.lat || coords.lng)) {
+      const [current, forecast] = await Promise.all([
+        weatherService.getCurrentWeather(coords.lat, coords.lng),
+        weatherService.getForecast(coords.lat, coords.lng),
+      ]);
+
+      if (current && forecast) {
+        return res.json({
+          source: 'openweathermap',
+          location: { district: current.location_name || districtName, state: stateName },
+          current: {
+            ...current,
+            uv_index: current.clouds_pct < 30 ? 8 : current.clouds_pct < 60 ? 5 : 2,
+          },
+          forecast: forecast.slice(0, parseInt(days)),
+        });
+      }
+    }
+
+    // Fallback: season-aware simulated data
     const forecast = generateForecast(Math.min(parseInt(days), 14));
     const today = forecast[0];
 
     res.json({
+      source: 'simulated',
       location: { district: districtName, state: stateName },
       current: {
         ...today,

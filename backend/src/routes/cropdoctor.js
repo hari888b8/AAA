@@ -106,8 +106,24 @@ const DISEASE_DB = {
 // ─── POST /analyze — Analyze a crop image for disease ─────────
 router.post('/analyze', auth, async (req, res) => {
   try {
-    const { image_url, crop_name, symptoms_text, location } = req.body;
+    const { image, image_url, crop_name, symptoms_text, location } = req.body;
     if (!crop_name) return res.status(400).json({ error: 'crop_name is required' });
+
+    // If base64 image provided, upload it first
+    let finalImageUrl = image_url;
+    if (image && !image_url) {
+      const { uploadFile, parseBase64Image } = require('../services/storage');
+      const parsed = parseBase64Image(image);
+      if (parsed.valid) {
+        const result = await uploadFile(parsed.buffer, {
+          context: 'disease',
+          extension: parsed.extension,
+          contentType: parsed.contentType,
+          userId: req.user.id,
+        });
+        finalImageUrl = result.url;
+      }
+    }
 
     const cropKey = crop_name.toLowerCase().replace(/\s+/g, '');
     const diseases = DISEASE_DB[cropKey];
@@ -133,7 +149,7 @@ router.post('/analyze', auth, async (req, res) => {
     const { rows } = await pool.query(
       `INSERT INTO disease_detections (user_id, crop_name, disease_id, disease_name, confidence, severity, image_url, location_label, symptoms_reported)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-      [req.user.id, crop_name, detected.id, detected.name, confidence, detected.severity, image_url, location, symptoms_text]
+      [req.user.id, crop_name, detected.id, detected.name, confidence, detected.severity, finalImageUrl, location, symptoms_text]
     );
 
     // Check for outbreak (3+ detections in same district within 7 days)

@@ -58,6 +58,7 @@ const favoritesRouter = require('./routes/favorites');
 const ticketsRouter = require('./routes/tickets');
 const tradeRouter = require('./routes/trade');
 const healthRouter = require('./routes/health');
+const translateRouter = require('./routes/translate');
 
 const app = express();
 const server = http.createServer(app);
@@ -186,6 +187,7 @@ app.use('/api/favorites', favoritesRouter);
 app.use('/api/tickets', ticketsRouter);
 app.use('/api/trade', tradeRouter);
 app.use('/api/health', healthRouter);
+app.use('/api/translate', translateRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
