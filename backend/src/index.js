@@ -15,6 +15,7 @@ const logger = require('./lib/logger');
 const config = require('./lib/config');
 const { pool, connectWithRetry } = require('./db/pool');
 const { migrate } = require('./db/migrate');
+const { migrateV2 } = require('./db/migrate-v2');
 const { setupWebSocket } = require('./services/websocket');
 const { requestId } = require('./middleware/requestId');
 const { sanitize } = require('./middleware/sanitize');
@@ -196,6 +197,7 @@ async function start() {
 
     // Run migrations
     await migrate();
+    await migrateV2();
     logger.info('Database migrations applied');
 
     // WebSocket
