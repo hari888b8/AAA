@@ -281,4 +281,180 @@ router.get('/leaderboard', auth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════════
+// AGRI-CREDIT SCORE — Farm-based creditworthiness
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/credit-score', auth, async (req, res) => {
+  try {
+    // Calculate credit score based on farming history
+    const [declarations, transactions, activity, profile] = await Promise.all([
+      pool.query(`SELECT COUNT(*) AS count FROM declarations WHERE user_id = $1`, [req.user.id]),
+      pool.query(`SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total FROM transactions WHERE user_id = $1 AND status = 'completed'`, [req.user.id]),
+      pool.query(`SELECT COUNT(*) AS count FROM farm_activities WHERE user_id = $1`, [req.user.id]),
+      pool.query(`SELECT * FROM users WHERE id = $1`, [req.user.id]),
+    ]);
+
+    const declCount = parseInt(declarations.rows[0]?.count) || 0;
+    const txnCount = parseInt(transactions.rows[0]?.count) || 0;
+    const txnTotal = parseFloat(transactions.rows[0]?.total) || 0;
+    const actCount = parseInt(activity.rows[0]?.count) || 0;
+    const isVerified = profile.rows[0]?.is_verified || false;
+
+    // Scoring algorithm (max 900)
+    let score = 300; // Base
+    score += Math.min(declCount * 20, 100); // Declarations (max +100)
+    score += Math.min(txnCount * 10, 150);  // Transactions (max +150)
+    score += Math.min(actCount * 5, 100);   // Farm activity (max +100)
+    score += isVerified ? 100 : 0;          // Verification (+100)
+    score += Math.min(Math.floor(txnTotal / 10000) * 10, 150); // Transaction volume (max +150)
+
+    const rating = score >= 750 ? 'Excellent' : score >= 600 ? 'Good' : score >= 450 ? 'Fair' : 'Building';
+
+    res.json({
+      score: Math.min(score, 900),
+      max_score: 900,
+      rating,
+      factors: {
+        declarations: { count: declCount, points: Math.min(declCount * 20, 100), max: 100 },
+        transactions: { count: txnCount, points: Math.min(txnCount * 10, 150), max: 150 },
+        farm_activity: { count: actCount, points: Math.min(actCount * 5, 100), max: 100 },
+        verification: { verified: isVerified, points: isVerified ? 100 : 0, max: 100 },
+        volume: { total: txnTotal, points: Math.min(Math.floor(txnTotal / 10000) * 10, 150), max: 150 },
+      },
+      eligible_for: score >= 600 ? ['Trade Financing', 'Input Credit', 'Equipment Lease'] :
+                    score >= 450 ? ['Input Credit (limited)'] : ['Build your score by trading & logging activities'],
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// TRADE FINANCING — Short-term crop loan against confirmed order
+// ═══════════════════════════════════════════════════════════════
+
+router.post('/trade-finance/apply', auth, async (req, res) => {
+  try {
+    const { order_id, amount_requested, purpose } = req.body;
+    if (!amount_requested) return res.status(400).json({ error: 'amount_requested required' });
+
+    // Check credit score eligibility
+    const { rows } = await pool.query(
+      `SELECT COUNT(*) AS txn_count FROM transactions WHERE user_id = $1 AND status = 'completed'`,
+      [req.user.id]
+    );
+    if (parseInt(rows[0].txn_count) < 3) {
+      return res.status(400).json({ error: 'Minimum 3 completed transactions required for trade financing' });
+    }
+
+    const result = await pool.query(`
+      INSERT INTO trade_finance_applications (id, user_id, order_id, amount_requested, purpose, status)
+      VALUES (gen_random_uuid(), $1, $2, $3, $4, 'pending') RETURNING *
+    `, [req.user.id, order_id, amount_requested, purpose || 'working_capital']);
+
+    res.status(201).json({ application: result.rows[0], message: 'Application submitted for review' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get('/trade-finance', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM trade_finance_applications WHERE user_id = $1 ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+    res.json({ applications: result.rows });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SPLIT PAYMENTS — Multiple buyers split payment for one lot
+// ═══════════════════════════════════════════════════════════════
+
+router.post('/split-payment', auth, async (req, res) => {
+  try {
+    const { listing_id, splits } = req.body;
+    // splits: [{ buyer_id, amount, quantity_kg }]
+    if (!listing_id || !splits || splits.length < 2) {
+      return res.status(400).json({ error: 'listing_id and at least 2 splits required' });
+    }
+
+    const totalAmount = splits.reduce((sum, s) => sum + s.amount, 0);
+    const splitId = require('uuid').v4();
+
+    // Create split payment record
+    await pool.query(`
+      INSERT INTO split_payments (id, listing_id, total_amount, status, created_by)
+      VALUES ($1, $2, $3, 'pending', $4)
+    `, [splitId, listing_id, totalAmount, req.user.id]);
+
+    // Create individual split entries
+    for (const split of splits) {
+      await pool.query(`
+        INSERT INTO split_payment_parts (split_id, buyer_id, amount, quantity_kg, status)
+        VALUES ($1, $2, $3, $4, 'pending')
+      `, [splitId, split.buyer_id, split.amount, split.quantity_kg]);
+    }
+
+    res.status(201).json({ split_id: splitId, total: totalAmount, parts: splits.length });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// DISPUTE RESOLUTION — Evidence-based mediation
+// ═══════════════════════════════════════════════════════════════
+
+router.post('/disputes', auth, async (req, res) => {
+  try {
+    const { transaction_id, reason, description, evidence_urls } = req.body;
+    if (!transaction_id || !reason) return res.status(400).json({ error: 'transaction_id and reason required' });
+
+    const result = await pool.query(`
+      INSERT INTO payment_disputes (id, user_id, transaction_id, reason, description, evidence_urls, status)
+      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, 'open') RETURNING *
+    `, [req.user.id, transaction_id, reason, description, evidence_urls ? JSON.stringify(evidence_urls) : null]);
+
+    res.status(201).json({ dispute: result.rows[0] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get('/disputes', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM payment_disputes WHERE user_id = $1 ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+    res.json({ disputes: result.rows });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// FPO GROUP SAVINGS — Collective pool for bulk purchases
+// ═══════════════════════════════════════════════════════════════
+
+router.post('/group-savings/contribute', auth, async (req, res) => {
+  try {
+    const { fpo_id, amount, purpose } = req.body;
+    if (!fpo_id || !amount) return res.status(400).json({ error: 'fpo_id and amount required' });
+
+    const result = await pool.query(`
+      INSERT INTO group_savings (id, fpo_id, user_id, amount, purpose, status)
+      VALUES (gen_random_uuid(), $1, $2, $3, $4, 'active') RETURNING *
+    `, [fpo_id, req.user.id, amount, purpose || 'bulk_purchase']);
+
+    res.status(201).json({ contribution: result.rows[0] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get('/group-savings/:fpoId', auth, async (req, res) => {
+  try {
+    const { rows: contributions } = await pool.query(
+      `SELECT gs.*, u.name AS contributor_name FROM group_savings gs
+       JOIN users u ON u.id = gs.user_id
+       WHERE gs.fpo_id = $1 ORDER BY gs.created_at DESC`,
+      [req.params.fpoId]
+    );
+    const total = contributions.reduce((sum, c) => sum + parseFloat(c.amount), 0);
+    res.json({ contributions, total_pool: total, member_count: new Set(contributions.map(c => c.user_id)).size });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;

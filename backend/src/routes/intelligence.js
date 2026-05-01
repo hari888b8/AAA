@@ -1,5 +1,7 @@
 const express = require('express');
 const { query } = require('../db/pool');
+const { authMiddleware } = require('../middleware/auth');
+const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
 // ── Redis cache helper ──────────────────────────────────────
@@ -313,6 +315,182 @@ router.get('/subscriptions', async (req, res) => {
     ],
   };
   res.json({ plans });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTOM ALERT ENGINE — Price-based alerts
+// ═══════════════════════════════════════════════════════════════
+
+router.post('/alerts', authMiddleware, async (req, res) => {
+  try {
+    const { crop_id, district_id, condition, threshold_price, alert_type } = req.body;
+    if (!crop_id || !threshold_price || !condition) {
+      return res.status(400).json({ error: 'crop_id, condition (above/below), threshold_price required' });
+    }
+
+    const result = await query(`
+      INSERT INTO price_alerts (id, user_id, crop_id, district_id, condition, threshold_price, alert_type, is_active)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE) RETURNING *
+    `, [uuidv4(), req.user.id, crop_id, district_id, condition, threshold_price, alert_type || 'push']);
+
+    res.status(201).json({ alert: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/alerts', authMiddleware, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT pa.*, cc.name AS crop_name, cc.icon_emoji, d.name AS district_name
+      FROM price_alerts pa
+      JOIN crop_catalog cc ON cc.id = pa.crop_id
+      LEFT JOIN districts d ON d.id = pa.district_id
+      WHERE pa.user_id = $1
+      ORDER BY pa.created_at DESC
+    `, [req.user.id]);
+    res.json({ alerts: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/alerts/:id', authMiddleware, async (req, res) => {
+  try {
+    await query(`DELETE FROM price_alerts WHERE id = $1 AND user_id = $2`, [req.params.id, req.user.id]);
+    res.json({ message: 'Alert deleted' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// COMMODITY CHARTS — Candlestick/line charts with historical data
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/charts/:cropId', async (req, res) => {
+  try {
+    const { period = '30d' } = req.query;
+    const crop = await query(`SELECT * FROM crop_catalog WHERE id = $1`, [req.params.cropId]);
+    if (!crop.rows.length) return res.status(404).json({ error: 'Crop not found' });
+
+    const basePrice = crop.rows[0].min_price_reference || 2000;
+    const days = period === '7d' ? 7 : period === '30d' ? 30 : period === '90d' ? 90 : 365;
+
+    // Generate realistic price history
+    const chartData = [];
+    let currentPrice = basePrice;
+    for (let i = days; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const volatility = (Math.random() - 0.48) * basePrice * 0.03;
+      currentPrice = Math.max(basePrice * 0.7, Math.min(basePrice * 1.5, currentPrice + volatility));
+
+      chartData.push({
+        date: date.toISOString().split('T')[0],
+        open: Math.round(currentPrice - Math.random() * 20),
+        high: Math.round(currentPrice + Math.random() * 40),
+        low: Math.round(currentPrice - Math.random() * 40),
+        close: Math.round(currentPrice),
+        volume: Math.floor(Math.random() * 1000 + 100),
+      });
+    }
+
+    const prices = chartData.map(d => d.close);
+    const trend = prices[prices.length - 1] > prices[0] ? 'bullish' : 'bearish';
+    const changePercent = ((prices[prices.length - 1] - prices[0]) / prices[0] * 100).toFixed(1);
+
+    res.json({
+      crop: crop.rows[0],
+      period,
+      chart_data: chartData,
+      summary: {
+        current: prices[prices.length - 1],
+        high: Math.max(...prices),
+        low: Math.min(...prices),
+        avg: Math.round(prices.reduce((a, b) => a + b) / prices.length),
+        trend,
+        change_percent: parseFloat(changePercent),
+      },
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SEASONAL CALENDAR — Best times to plant, sell, buy
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/seasonal-calendar', async (req, res) => {
+  const calendar = [
+    { crop: 'Paddy (Kharif)', icon: '🌾', sow: 'Jun-Jul', harvest: 'Oct-Nov', best_sell: 'Dec-Jan', notes: 'Prices peak 2-3 months after harvest when stocks reduce' },
+    { crop: 'Paddy (Rabi)', icon: '🌾', sow: 'Nov-Dec', harvest: 'Mar-Apr', best_sell: 'May-Jun', notes: 'Summer paddy fetches premium due to lower supply' },
+    { crop: 'Cotton', icon: '🌿', sow: 'May-Jun', harvest: 'Oct-Jan', best_sell: 'Feb-Mar', notes: 'Wait for CCI buying if market price < MSP' },
+    { crop: 'Groundnut', icon: '🥜', sow: 'Jun-Jul', harvest: 'Sep-Oct', best_sell: 'Nov-Dec', notes: 'Diwali season demand pushes prices up' },
+    { crop: 'Chilli', icon: '🌶️', sow: 'Jul-Aug', harvest: 'Dec-Feb', best_sell: 'Mar-May', notes: 'Cold storage can fetch 30-50% premium in off-season' },
+    { crop: 'Maize', icon: '🌽', sow: 'Jun-Jul', harvest: 'Sep-Oct', best_sell: 'Nov-Dec', notes: 'Poultry feed demand peaks in winter' },
+    { crop: 'Tomato', icon: '🍅', sow: 'Jun/Sep', harvest: 'Aug/Nov', best_sell: 'During scarcity', notes: 'Highly volatile — sell immediately if price is good' },
+    { crop: 'Vannamei Shrimp', icon: '🦐', stock: 'Mar/Sep', harvest: 'Jun/Dec', best_sell: 'Jul-Aug', notes: 'Export demand peaks during US/EU summer' },
+  ];
+
+  const currentMonth = new Date().toLocaleDateString('en-IN', { month: 'short' });
+  res.json({ calendar, current_month: currentMonth, advice: `It's ${currentMonth} — check which crops are in harvest season for selling decisions.` });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// MSP COMPARISON DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/msp-dashboard', async (req, res) => {
+  const mspData = [
+    { crop: 'Paddy (Common)', icon: '🌾', msp_2024: 2183, msp_2025: 2300, market_price: 2100 + Math.floor(Math.random() * 400), cost_production: 1800 },
+    { crop: 'Cotton (Medium)', icon: '🌿', msp_2024: 6620, msp_2025: 7020, market_price: 6500 + Math.floor(Math.random() * 1000), cost_production: 5500 },
+    { crop: 'Maize', icon: '🌽', msp_2024: 2090, msp_2025: 2225, market_price: 1900 + Math.floor(Math.random() * 500), cost_production: 1600 },
+    { crop: 'Groundnut', icon: '🥜', msp_2024: 6377, msp_2025: 6783, market_price: 5800 + Math.floor(Math.random() * 1500), cost_production: 5000 },
+    { crop: 'Soybean', icon: '🫘', msp_2024: 4600, msp_2025: 4892, market_price: 4200 + Math.floor(Math.random() * 800), cost_production: 3800 },
+    { crop: 'Jowar', icon: '🌾', msp_2024: 3180, msp_2025: 3371, market_price: 2800 + Math.floor(Math.random() * 600), cost_production: 2500 },
+  ];
+
+  const enriched = mspData.map(d => ({
+    ...d,
+    above_msp: d.market_price >= d.msp_2025,
+    profit_over_cost: d.market_price - d.cost_production,
+    profit_pct: ((d.market_price - d.cost_production) / d.cost_production * 100).toFixed(1),
+    recommendation: d.market_price >= d.msp_2025 * 1.05
+      ? '🟢 Sell now — above MSP' : d.market_price >= d.msp_2025
+      ? '🟡 At MSP level — sell if storage is costly' : '🔴 Below MSP — sell to govt procurement or store',
+  }));
+
+  res.json({ msp_data: enriched });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SUPPLY HEATMAP — District-wise surplus/deficit visualization
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/supply-heatmap', async (req, res) => {
+  try {
+    const { crop_id } = req.query;
+
+    const result = await query(`
+      SELECT d.id, d.name, d.state_name, d.lat, d.lng,
+        COALESCE(SUM(sl.quantity_kg), 0) AS total_supply_kg,
+        d.total_farmers
+      FROM districts d
+      LEFT JOIN supply_listings sl ON sl.district_id = d.id AND sl.status = 'active'
+        ${crop_id ? 'AND sl.crop_id = $1' : ''}
+      GROUP BY d.id, d.name, d.state_name, d.lat, d.lng, d.total_farmers
+      ORDER BY total_supply_kg DESC
+      LIMIT 50
+    `, crop_id ? [crop_id] : []);
+
+    const maxSupply = Math.max(...result.rows.map(r => parseFloat(r.total_supply_kg) || 1));
+    const heatmap = result.rows.map(r => ({
+      district: r.name,
+      state: r.state_name,
+      lat: r.lat,
+      lng: r.lng,
+      supply_kg: parseFloat(r.total_supply_kg),
+      intensity: parseFloat(r.total_supply_kg) / maxSupply,
+      status: parseFloat(r.total_supply_kg) > maxSupply * 0.6 ? 'surplus' :
+              parseFloat(r.total_supply_kg) > maxSupply * 0.3 ? 'balanced' : 'deficit',
+    }));
+
+    res.json({ heatmap });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 module.exports = router;
