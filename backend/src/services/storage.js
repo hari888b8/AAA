@@ -145,11 +145,17 @@ async function uploadFile(buffer, { context = 'general', extension = 'jpeg', con
     }
   }
 
-  // Local filesystem fallback
-  const localDir = path.join(LOCAL_UPLOADS_DIR, safeContext);
+  // Local filesystem fallback — verify paths stay within uploads dir
+  const localDir = path.resolve(LOCAL_UPLOADS_DIR, safeContext);
+  if (!localDir.startsWith(path.resolve(LOCAL_UPLOADS_DIR))) {
+    throw new Error('Invalid upload context');
+  }
   if (!fs.existsSync(localDir)) fs.mkdirSync(localDir, { recursive: true });
 
-  const localPath = path.join(localDir, filename);
+  const localPath = path.resolve(localDir, filename);
+  if (!localPath.startsWith(path.resolve(LOCAL_UPLOADS_DIR))) {
+    throw new Error('Invalid upload path');
+  }
   fs.writeFileSync(localPath, buffer);
 
   const localUrl = `/uploads/${safeContext}/${filename}`;
