@@ -1625,18 +1625,18 @@ textarea:focus-visible,
 }
 
 /* ─── ENHANCED SIDE MENU ─── */
-#sideMenu .menu-panel {
-  transform: translateX(100%);
-  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-}
-#sideMenu.open .menu-panel {
-  transform: translateX(0);
-}
-#sideMenu #menuOverlay {
+#sideMenu .side-menu-backdrop {
   opacity: 0;
   transition: opacity 0.3s ease;
 }
-#sideMenu.open #menuOverlay {
+#sideMenu .side-menu-panel {
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+#sideMenu.open .side-menu-panel {
+  transform: translateX(0);
+}
+#sideMenu.open .side-menu-backdrop {
   opacity: 1;
 }
 

@@ -138,8 +138,8 @@ function renderApp() {
     <button id="hamburgerBtn" style="position:fixed;top:12px;right:14px;z-index:999;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.25);backdrop-filter:blur(8px);border:none;color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">☰</button>
     <!-- SIDE MENU OVERLAY -->
     <div id="sideMenu" class="side-menu-container" style="visibility:hidden;position:fixed;inset:0;z-index:9999">
-      <div id="menuOverlay" class="side-menu-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.5);opacity:0;transition:opacity 0.3s ease"></div>
-      <div class="side-menu-panel" style="position:absolute;top:0;right:0;width:280px;height:100%;background:white;box-shadow:-4px 0 20px rgba(0,0,0,0.15);overflow-y:auto;padding:0;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1)">
+      <div id="menuOverlay" class="side-menu-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.5)"></div>
+      <div class="side-menu-panel" style="position:absolute;top:0;right:0;width:280px;height:100%;background:white;box-shadow:-4px 0 20px rgba(0,0,0,0.15);overflow-y:auto;padding:0">
         <div style="background:linear-gradient(135deg,#1a237e,#311b92);color:white;padding:20px 16px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
             <div style="font-weight:800;font-size:16px">AgriHub</div>

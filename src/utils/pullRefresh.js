@@ -53,7 +53,9 @@ export function attachPullToRefresh(container, onRefresh) {
       indicator.classList.add('refreshing');
       try {
         await onRefresh();
-      } catch (e) { /* silent */ }
+      } catch (e) {
+        console.warn('[PullRefresh] Refresh failed:', e.message || e);
+      }
       // Brief delay so user sees the spinner
       await new Promise(r => setTimeout(r, 400));
     }
