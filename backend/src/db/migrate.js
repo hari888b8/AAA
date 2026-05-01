@@ -1417,6 +1417,81 @@ INSERT INTO aqua_products (id, name, category, brand, price, unit, species_tags,
   (gen_random_uuid(), 'DO Booster Tablets', 'supplement', 'AquaZyme', 250, 'pack', ARRAY['vannamei', 'rohu'], 'Emergency dissolved oxygen booster'),
   (gen_random_uuid(), 'Biofloc Culture Starter', 'supplement', 'BioFloc India', 1200, 'kit', ARRAY['vannamei'], 'Complete biofloc starter kit')
 ON CONFLICT DO NOTHING;
+
+-- ============================================================
+-- Machine Connect — Farmer-Driver Connectivity Platform
+-- ============================================================
+
+-- Machine operators / drivers who provide services
+CREATE TABLE IF NOT EXISTS machine_operators (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID NOT NULL REFERENCES users(id),
+  operator_name   VARCHAR(100) NOT NULL,
+  phone           VARCHAR(15) NOT NULL,
+  machine_type    VARCHAR(50) NOT NULL,
+  machine_name    VARCHAR(150),
+  machine_model   VARCHAR(100),
+  hourly_rate     DECIMAL(10,2),
+  daily_rate      DECIMAL(10,2),
+  experience_years INTEGER DEFAULT 0,
+  location_label  VARCHAR(200),
+  district_id     INTEGER REFERENCES districts(id),
+  lat             DECIMAL(10,7),
+  lng             DECIMAL(10,7),
+  is_available    BOOLEAN DEFAULT TRUE,
+  is_verified     BOOLEAN DEFAULT FALSE,
+  rating          DECIMAL(3,2) DEFAULT 0,
+  total_jobs      INTEGER DEFAULT 0,
+  bio             TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_machine_operators_type ON machine_operators(machine_type);
+CREATE INDEX IF NOT EXISTS idx_machine_operators_available ON machine_operators(is_available);
+CREATE INDEX IF NOT EXISTS idx_machine_operators_district ON machine_operators(district_id);
+
+-- Instant machine requests from farmers
+CREATE TABLE IF NOT EXISTS machine_requests (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  farmer_id       UUID NOT NULL REFERENCES users(id),
+  machine_type    VARCHAR(50) NOT NULL,
+  urgency         VARCHAR(20) DEFAULT 'normal',
+  description     TEXT,
+  location_label  VARCHAR(200),
+  district_id     INTEGER REFERENCES districts(id),
+  lat             DECIMAL(10,7),
+  lng             DECIMAL(10,7),
+  needed_date     DATE,
+  needed_time     VARCHAR(20),
+  duration_hours  INTEGER,
+  budget_max      DECIMAL(10,2),
+  acres           DECIMAL(6,2),
+  status          VARCHAR(30) DEFAULT 'open',
+  matched_operator_id UUID REFERENCES machine_operators(id),
+  accepted_at     TIMESTAMPTZ,
+  completed_at    TIMESTAMPTZ,
+  farmer_rating   DECIMAL(3,2),
+  operator_rating DECIMAL(3,2),
+  total_cost      DECIMAL(10,2),
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_machine_requests_status ON machine_requests(status);
+CREATE INDEX IF NOT EXISTS idx_machine_requests_type ON machine_requests(machine_type);
+CREATE INDEX IF NOT EXISTS idx_machine_requests_farmer ON machine_requests(farmer_id);
+
+-- Operator responses to requests
+CREATE TABLE IF NOT EXISTS machine_request_responses (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  request_id      UUID NOT NULL REFERENCES machine_requests(id),
+  operator_id     UUID NOT NULL REFERENCES machine_operators(id),
+  proposed_rate   DECIMAL(10,2),
+  eta_minutes     INTEGER,
+  message         TEXT,
+  status          VARCHAR(20) DEFAULT 'offered',
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_request_responses_request ON machine_request_responses(request_id);
 `;
 
 async function migrate() {

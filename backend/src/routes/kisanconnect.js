@@ -487,4 +487,309 @@ router.get('/reviews/:targetType/:targetId', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ══════════════════════════════════════════════════════════════
+// Machine Connect — Farmer-Driver Real-time Connectivity
+// ══════════════════════════════════════════════════════════════
+
+// GET /api/kisanconnect/operators — list available machine operators
+router.get('/operators', optionalAuth, async (req, res) => {
+  try {
+    const { machine_type, district_id, available_only, search, limit = 20, offset = 0 } = req.query;
+    let conditions = [];
+    let params = [];
+    let i = 1;
+
+    if (machine_type) { conditions.push(`mo.machine_type = $${i++}`); params.push(machine_type); }
+    if (district_id) { conditions.push(`mo.district_id = $${i++}`); params.push(district_id); }
+    if (available_only === 'true') { conditions.push(`mo.is_available = true`); }
+    if (search) { conditions.push(`(mo.operator_name ILIKE $${i} OR mo.machine_name ILIKE $${i} OR mo.location_label ILIKE $${i})`); params.push(`%${search}%`); i++; }
+
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    params.push(parseInt(limit), parseInt(offset));
+
+    const result = await query(`
+      SELECT mo.*, d.name AS district_name, u.name AS user_name
+      FROM machine_operators mo
+      LEFT JOIN districts d ON d.id = mo.district_id
+      JOIN users u ON u.id = mo.user_id
+      ${whereClause}
+      ORDER BY mo.is_available DESC, mo.rating DESC, mo.total_jobs DESC
+      LIMIT $${i++} OFFSET $${i++}
+    `, params);
+
+    res.json({ operators: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/kisanconnect/operators — register as machine operator
+router.post('/operators', authMiddleware, async (req, res) => {
+  try {
+    const { operator_name, phone, machine_type, machine_name, machine_model,
+            hourly_rate, daily_rate, experience_years, location_label, district_id,
+            lat, lng, bio } = req.body;
+
+    if (!operator_name || !machine_type || !phone) {
+      return res.status(400).json({ error: 'operator_name, machine_type, and phone are required' });
+    }
+
+    const result = await query(`
+      INSERT INTO machine_operators (id, user_id, operator_name, phone, machine_type, machine_name,
+        machine_model, hourly_rate, daily_rate, experience_years, location_label, district_id, lat, lng, bio)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *
+    `, [uuidv4(), req.user.id, operator_name, phone, machine_type, machine_name || null,
+        machine_model || null, hourly_rate || null, daily_rate || null,
+        experience_years || 0, location_label || null, district_id || null,
+        lat || null, lng || null, bio || null]);
+
+    res.status(201).json({ operator: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/kisanconnect/operators/:id — update operator profile / toggle availability
+router.patch('/operators/:id', authMiddleware, async (req, res) => {
+  try {
+    const { is_available, hourly_rate, daily_rate, location_label, lat, lng, bio } = req.body;
+    const existing = await query('SELECT * FROM machine_operators WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+    if (!existing.rows.length) return res.status(404).json({ error: 'Operator profile not found' });
+
+    const result = await query(`
+      UPDATE machine_operators SET
+        is_available = COALESCE($1, is_available),
+        hourly_rate = COALESCE($2, hourly_rate),
+        daily_rate = COALESCE($3, daily_rate),
+        location_label = COALESCE($4, location_label),
+        lat = COALESCE($5, lat), lng = COALESCE($6, lng),
+        bio = COALESCE($7, bio), updated_at = NOW()
+      WHERE id = $8 RETURNING *
+    `, [is_available, hourly_rate, daily_rate, location_label, lat, lng, bio, req.params.id]);
+
+    res.json({ operator: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/kisanconnect/machine-requests — farmer creates instant request
+router.post('/machine-requests', authMiddleware, async (req, res) => {
+  try {
+    const { machine_type, urgency, description, location_label, district_id,
+            lat, lng, needed_date, needed_time, duration_hours, budget_max, acres } = req.body;
+
+    if (!machine_type) return res.status(400).json({ error: 'machine_type is required' });
+
+    const result = await query(`
+      INSERT INTO machine_requests (id, farmer_id, machine_type, urgency, description,
+        location_label, district_id, lat, lng, needed_date, needed_time, duration_hours, budget_max, acres)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *
+    `, [uuidv4(), req.user.id, machine_type, urgency || 'normal', description || null,
+        location_label || null, district_id || null, lat || null, lng || null,
+        needed_date || null, needed_time || null, duration_hours || null,
+        budget_max || null, acres || null]);
+
+    // Notify nearby available operators
+    const operators = await query(`
+      SELECT mo.user_id FROM machine_operators mo
+      WHERE mo.machine_type = $1 AND mo.is_available = true
+      ${district_id ? 'AND mo.district_id = $2' : ''}
+      LIMIT 10
+    `, district_id ? [machine_type, district_id] : [machine_type]);
+
+    for (const op of operators.rows) {
+      await createNotification(
+        op.user_id, 'machine_request',
+        '🚜 New Machine Request',
+        `A farmer needs a ${machine_type} ${urgency === 'urgent' ? '(URGENT)' : ''} in ${location_label || 'your area'}`,
+        { request_id: result.rows[0].id }
+      );
+    }
+
+    res.status(201).json({ request: result.rows[0], operators_notified: operators.rows.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/kisanconnect/machine-requests — list machine requests
+router.get('/machine-requests', optionalAuth, async (req, res) => {
+  try {
+    const { status, machine_type, my_requests, limit = 20, offset = 0 } = req.query;
+    let conditions = [];
+    let params = [];
+    let i = 1;
+
+    if (status) { conditions.push(`mr.status = $${i++}`); params.push(status); }
+    if (machine_type) { conditions.push(`mr.machine_type = $${i++}`); params.push(machine_type); }
+    if (my_requests === 'true' && req.user) { conditions.push(`mr.farmer_id = $${i++}`); params.push(req.user.id); }
+
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    params.push(parseInt(limit), parseInt(offset));
+
+    const result = await query(`
+      SELECT mr.*, u.name AS farmer_name, d.name AS district_name,
+             mo.operator_name AS matched_operator_name, mo.phone AS operator_phone
+      FROM machine_requests mr
+      JOIN users u ON u.id = mr.farmer_id
+      LEFT JOIN districts d ON d.id = mr.district_id
+      LEFT JOIN machine_operators mo ON mo.id = mr.matched_operator_id
+      ${whereClause}
+      ORDER BY mr.created_at DESC
+      LIMIT $${i++} OFFSET $${i++}
+    `, params);
+
+    res.json({ requests: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/kisanconnect/machine-requests/:id/respond — operator responds to a request
+router.post('/machine-requests/:id/respond', authMiddleware, async (req, res) => {
+  try {
+    const { proposed_rate, eta_minutes, message } = req.body;
+
+    // Verify user is an operator
+    const operator = await query('SELECT * FROM machine_operators WHERE user_id = $1', [req.user.id]);
+    if (!operator.rows.length) return res.status(403).json({ error: 'Only registered operators can respond' });
+
+    const request = await query('SELECT * FROM machine_requests WHERE id = $1 AND status = $2', [req.params.id, 'open']);
+    if (!request.rows.length) return res.status(404).json({ error: 'Request not found or no longer open' });
+
+    const result = await query(`
+      INSERT INTO machine_request_responses (id, request_id, operator_id, proposed_rate, eta_minutes, message)
+      VALUES ($1,$2,$3,$4,$5,$6) RETURNING *
+    `, [uuidv4(), req.params.id, operator.rows[0].id, proposed_rate || null, eta_minutes || null, message || null]);
+
+    // Notify farmer about the response
+    await createNotification(
+      request.rows[0].farmer_id, 'machine_response',
+      '✅ Operator Responded',
+      `${operator.rows[0].operator_name} can reach you${eta_minutes ? ` in ~${eta_minutes} min` : ''}${proposed_rate ? ` at ₹${proposed_rate}` : ''}`,
+      { request_id: req.params.id, response_id: result.rows[0].id }
+    );
+
+    res.status(201).json({ response: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/kisanconnect/machine-requests/:id/responses — get all responses for a request
+router.get('/machine-requests/:id/responses', authMiddleware, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT mrr.*, mo.operator_name, mo.machine_name, mo.machine_type,
+             mo.rating, mo.total_jobs, mo.phone AS operator_phone, mo.experience_years
+      FROM machine_request_responses mrr
+      JOIN machine_operators mo ON mo.id = mrr.operator_id
+      WHERE mrr.request_id = $1
+      ORDER BY mrr.created_at ASC
+    `, [req.params.id]);
+
+    res.json({ responses: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/kisanconnect/machine-requests/:id/accept — farmer accepts an operator's response
+router.post('/machine-requests/:id/accept', authMiddleware, async (req, res) => {
+  try {
+    const { response_id } = req.body;
+    if (!response_id) return res.status(400).json({ error: 'response_id is required' });
+
+    const request = await query('SELECT * FROM machine_requests WHERE id = $1 AND farmer_id = $2', [req.params.id, req.user.id]);
+    if (!request.rows.length) return res.status(404).json({ error: 'Request not found' });
+    if (request.rows[0].status !== 'open') return res.status(400).json({ error: 'Request already matched' });
+
+    const response = await query('SELECT * FROM machine_request_responses WHERE id = $1 AND request_id = $2', [response_id, req.params.id]);
+    if (!response.rows.length) return res.status(404).json({ error: 'Response not found' });
+
+    // Update request status and match
+    await query(`
+      UPDATE machine_requests SET status = 'accepted', matched_operator_id = $1, accepted_at = NOW(), updated_at = NOW()
+      WHERE id = $2
+    `, [response.rows[0].operator_id, req.params.id]);
+
+    // Mark response as accepted
+    await query(`UPDATE machine_request_responses SET status = 'accepted' WHERE id = $1`, [response_id]);
+
+    // Mark other responses as rejected
+    await query(`UPDATE machine_request_responses SET status = 'rejected' WHERE request_id = $1 AND id != $2`, [req.params.id, response_id]);
+
+    // Notify operator
+    const operator = await query('SELECT * FROM machine_operators WHERE id = $1', [response.rows[0].operator_id]);
+    if (operator.rows.length) {
+      await createNotification(
+        operator.rows[0].user_id, 'request_accepted',
+        '🎉 Request Accepted!',
+        `Farmer accepted your offer. Please proceed to ${request.rows[0].location_label || 'the farm'}`,
+        { request_id: req.params.id }
+      );
+    }
+
+    res.json({ message: 'Operator accepted', request_id: req.params.id });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/kisanconnect/machine-requests/:id/status — update request status
+router.patch('/machine-requests/:id/status', authMiddleware, async (req, res) => {
+  try {
+    const { status, farmer_rating, operator_rating, total_cost } = req.body;
+    const allowed = ['en_route', 'arrived', 'in_progress', 'completed', 'cancelled'];
+    if (!allowed.includes(status)) return res.status(400).json({ error: `Status must be one of: ${allowed.join(', ')}` });
+
+    const updates = [`status = $1`, `updated_at = NOW()`];
+    const params = [status];
+    let i = 2;
+
+    if (status === 'completed') {
+      updates.push(`completed_at = NOW()`);
+      if (farmer_rating) { updates.push(`farmer_rating = $${i++}`); params.push(farmer_rating); }
+      if (operator_rating) { updates.push(`operator_rating = $${i++}`); params.push(operator_rating); }
+      if (total_cost) { updates.push(`total_cost = $${i++}`); params.push(total_cost); }
+    }
+
+    params.push(req.params.id);
+    const result = await query(`
+      UPDATE machine_requests SET ${updates.join(', ')} WHERE id = $${i} RETURNING *
+    `, params);
+
+    if (!result.rows.length) return res.status(404).json({ error: 'Request not found' });
+
+    // If completed, update operator stats
+    if (status === 'completed' && result.rows[0].matched_operator_id) {
+      await query(`UPDATE machine_operators SET total_jobs = total_jobs + 1 WHERE id = $1`, [result.rows[0].matched_operator_id]);
+      if (operator_rating) {
+        const avg = await query(
+          `SELECT AVG(operator_rating) AS avg FROM machine_requests WHERE matched_operator_id = $1 AND operator_rating IS NOT NULL`,
+          [result.rows[0].matched_operator_id]
+        );
+        await query(`UPDATE machine_operators SET rating = $1 WHERE id = $2`, [avg.rows[0].avg, result.rows[0].matched_operator_id]);
+      }
+    }
+
+    res.json({ request: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/kisanconnect/connect-stats — connectivity platform stats
+router.get('/connect-stats', async (req, res) => {
+  try {
+    const [operators, requests] = await Promise.all([
+      query(`SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE is_available = true) AS available FROM machine_operators`),
+      query(`SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE status = 'open') AS open,
+              COUNT(*) FILTER (WHERE status = 'completed') AS completed FROM machine_requests`),
+    ]);
+    res.json({
+      stats: {
+        total_operators: parseInt(operators.rows[0].total),
+        available_operators: parseInt(operators.rows[0].available),
+        total_requests: parseInt(requests.rows[0].total),
+        open_requests: parseInt(requests.rows[0].open),
+        completed_requests: parseInt(requests.rows[0].completed),
+      }
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
