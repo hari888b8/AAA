@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../db/pool');
 const { authMiddleware: auth } = require('../middleware/auth');
+const { v4: uuidv4 } = require('uuid');
 
 // ─── GET /chat/conversations — List user's conversations ───────────────────
 router.get('/conversations', auth, async (req, res) => {
@@ -276,7 +277,7 @@ router.post('/groups', auth, async (req, res) => {
     const { name, description, member_ids } = req.body;
     if (!name) return res.status(400).json({ error: 'Group name required' });
 
-    const groupId = require('uuid').v4();
+    const groupId = uuidv4();
     await pool.query(
       `INSERT INTO chat_groups (id, name, description, created_by, avatar_url)
        VALUES ($1, $2, $3, $4, NULL)`,
