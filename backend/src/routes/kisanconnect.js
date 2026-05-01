@@ -794,4 +794,215 @@ router.get('/connect-stats', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════════
+// DYNAMIC PRICING ENGINE — Demand-based pricing
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/pricing/calculate', async (req, res) => {
+  try {
+    const { equipment_id, hours, distance_km, urgency } = req.query;
+    if (!equipment_id || !hours) return res.status(400).json({ error: 'equipment_id and hours required' });
+
+    const equipment = await query(`SELECT * FROM equipment WHERE id = $1`, [equipment_id]);
+    if (!equipment.rows.length) return res.status(404).json({ error: 'Equipment not found' });
+
+    const eq = equipment.rows[0];
+    const baseRate = parseFloat(eq.hourly_rate) || parseFloat(eq.daily_rate) / 8 || 500;
+
+    // Dynamic pricing factors
+    const demandMultiplier = 1.0 + Math.random() * 0.3; // 1.0 - 1.3 based on current demand
+    const distanceFactor = distance_km ? 1 + (parseFloat(distance_km) * 0.01) : 1.0;
+    const urgencySurcharge = urgency === 'urgent' ? 1.5 : urgency === 'same_day' ? 1.25 : 1.0;
+    const timeDiscount = parseFloat(hours) >= 8 ? 0.9 : 1.0; // 10% discount for full day
+
+    const totalRate = Math.round(baseRate * demandMultiplier * distanceFactor * urgencySurcharge * timeDiscount);
+    const totalCost = Math.round(totalRate * parseFloat(hours));
+
+    res.json({
+      equipment: { id: eq.id, name: eq.name, type: eq.equipment_type },
+      pricing: {
+        base_rate_per_hour: baseRate,
+        demand_multiplier: demandMultiplier.toFixed(2),
+        distance_factor: distanceFactor.toFixed(2),
+        urgency_surcharge: urgencySurcharge,
+        full_day_discount: timeDiscount < 1 ? '10%' : 'none',
+        effective_rate_per_hour: totalRate,
+        estimated_hours: parseFloat(hours),
+        estimated_total: totalCost,
+      },
+      breakdown: `₹${baseRate}/hr × ${demandMultiplier.toFixed(1)} demand × ${distanceFactor.toFixed(1)} distance × ${urgencySurcharge} urgency${timeDiscount < 1 ? ' × 0.9 full-day' : ''} = ₹${totalRate}/hr`,
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ADVANCE BOOKING CALENDAR — Book ahead, get discount
+// ═══════════════════════════════════════════════════════════════
+
+router.post('/advance-booking', authMiddleware, async (req, res) => {
+  try {
+    const { equipment_id, booking_date, hours, notes } = req.body;
+    if (!equipment_id || !booking_date || !hours) {
+      return res.status(400).json({ error: 'equipment_id, booking_date, hours required' });
+    }
+
+    const bookDate = new Date(booking_date);
+    const today = new Date();
+    const daysAhead = Math.floor((bookDate - today) / 86400000);
+
+    if (daysAhead < 1) return res.status(400).json({ error: 'Booking must be at least 1 day ahead' });
+
+    // Discount for advance booking
+    const discount = daysAhead >= 14 ? 0.10 : daysAhead >= 7 ? 0.05 : 0;
+
+    const equipment = await query(`SELECT * FROM equipment WHERE id = $1`, [equipment_id]);
+    if (!equipment.rows.length) return res.status(404).json({ error: 'Equipment not found' });
+
+    const baseRate = parseFloat(equipment.rows[0].hourly_rate) || 500;
+    const totalCost = Math.round(baseRate * hours * (1 - discount));
+
+    const result = await query(`
+      INSERT INTO equipment_bookings (id, equipment_id, renter_id, booking_date, hours, total_cost, discount_pct, status, notes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'confirmed', $8) RETURNING *
+    `, [require('uuid').v4(), equipment_id, req.user.id, booking_date, hours, totalCost, discount * 100, notes]);
+
+    res.status(201).json({
+      booking: result.rows[0],
+      discount_applied: `${(discount * 100).toFixed(0)}%`,
+      savings: Math.round(baseRate * hours * discount),
+      message: discount > 0 ? `🎉 ${(discount * 100).toFixed(0)}% advance booking discount applied! You saved ₹${Math.round(baseRate * hours * discount)}` : 'Booking confirmed!',
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// FLEET MANAGEMENT — Dashboard for equipment owners with 5+ machines
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/fleet/dashboard', authMiddleware, async (req, res) => {
+  try {
+    // Get all equipment owned by user
+    const equipment = await query(
+      `SELECT e.*, 
+        (SELECT COUNT(*) FROM equipment_bookings WHERE equipment_id = e.id) AS total_bookings,
+        (SELECT COUNT(*) FROM equipment_bookings WHERE equipment_id = e.id AND status = 'completed') AS completed_bookings,
+        (SELECT COALESCE(SUM(total_cost), 0) FROM equipment_bookings WHERE equipment_id = e.id AND status = 'completed') AS total_revenue,
+        (SELECT AVG(rating) FROM reviews WHERE target_id = e.id::text) AS avg_rating
+       FROM equipment e WHERE e.owner_id = $1
+       ORDER BY total_revenue DESC`,
+      [req.user.id]
+    );
+
+    if (!equipment.rows.length) return res.json({ message: 'No equipment registered', fleet_size: 0 });
+
+    const totalRevenue = equipment.rows.reduce((sum, e) => sum + parseFloat(e.total_revenue || 0), 0);
+    const totalBookings = equipment.rows.reduce((sum, e) => sum + parseInt(e.total_bookings || 0), 0);
+    const avgUtilization = equipment.rows.length > 0
+      ? Math.round(equipment.rows.reduce((sum, e) => sum + parseInt(e.total_bookings || 0), 0) / equipment.rows.length * 10)
+      : 0;
+
+    res.json({
+      fleet_size: equipment.rows.length,
+      total_revenue: totalRevenue,
+      total_bookings: totalBookings,
+      avg_utilization_pct: Math.min(avgUtilization, 100),
+      equipment: equipment.rows.map(e => ({
+        id: e.id,
+        name: e.name,
+        type: e.equipment_type,
+        status: e.status,
+        bookings: parseInt(e.total_bookings),
+        revenue: parseFloat(e.total_revenue),
+        rating: e.avg_rating ? parseFloat(e.avg_rating).toFixed(1) : 'N/A',
+      })),
+      insights: [
+        totalBookings > 20 ? '📈 Good booking frequency!' : '💡 Consider reducing prices to attract more bookings',
+        avgUtilization < 40 ? '⚠️ Low utilization — list on more channels' : '✅ Healthy utilization rate',
+      ],
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// MULTI-MACHINE PACKAGES — Bundle services
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/packages', async (req, res) => {
+  const packages = [
+    { id: 'pkg1', name: 'Land Preparation Complete', icon: '🌾', equipment: ['Plowing', 'Rotavator', 'Leveling'], discount_pct: 15, description: 'Full land prep: plow + rotavate + level in one booking', estimated_hours: 12, suitable_for: 'All crops, 2-5 acres' },
+    { id: 'pkg2', name: 'Paddy Transplanting', icon: '🌱', equipment: ['Puddler', 'Leveler', 'Transplanter'], discount_pct: 12, description: 'Complete transplanting package for wetland paddy', estimated_hours: 10, suitable_for: 'Paddy, 2-5 acres' },
+    { id: 'pkg3', name: 'Harvest & Transport', icon: '🚜', equipment: ['Harvester', 'Trailer'], discount_pct: 10, description: 'Combined harvesting + transport to mandi/warehouse', estimated_hours: 8, suitable_for: 'Paddy, Wheat, Maize' },
+    { id: 'pkg4', name: 'Orchard Maintenance', icon: '🍊', equipment: ['Sprayer', 'Pruner', 'Brush Cutter'], discount_pct: 12, description: 'Spray + prune + clean in one visit', estimated_hours: 6, suitable_for: 'Mango, Citrus, Guava' },
+    { id: 'pkg5', name: 'Pond Preparation', icon: '🐟', equipment: ['JCB Excavator', 'Compactor', 'Laser Leveler'], discount_pct: 18, description: 'Complete aquaculture pond preparation', estimated_hours: 16, suitable_for: 'Shrimp/Fish ponds, 1-3 acres' },
+  ];
+  res.json({ packages });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// OPERATOR RATING & REVIEW SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
+router.post('/bookings/:id/review', authMiddleware, async (req, res) => {
+  try {
+    const { rating, comment, work_photos } = req.body;
+    if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error: 'Rating 1-5 required' });
+
+    // Verify booking belongs to user and is completed
+    const booking = await query(
+      `SELECT * FROM equipment_bookings WHERE id = $1 AND renter_id = $2`,
+      [req.params.id, req.user.id]
+    );
+    if (!booking.rows.length) return res.status(404).json({ error: 'Booking not found' });
+
+    const result = await query(`
+      INSERT INTO reviews (id, reviewer_id, target_id, target_type, rating, comment, photos)
+      VALUES ($1, $2, $3, 'equipment_booking', $4, $5, $6) RETURNING *
+    `, [require('uuid').v4(), req.user.id, req.params.id, rating, comment, work_photos ? JSON.stringify(work_photos) : null]);
+
+    // Update equipment average rating
+    const equipId = booking.rows[0].equipment_id;
+    await query(`
+      UPDATE equipment SET rating = (
+        SELECT AVG(r.rating) FROM reviews r
+        JOIN equipment_bookings eb ON eb.id = r.target_id::uuid
+        WHERE eb.equipment_id = $1 AND r.target_type = 'equipment_booking'
+      ) WHERE id = $1
+    `, [equipId]);
+
+    res.status(201).json({ review: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SERVICE HISTORY & MAINTENANCE LOG
+// ═══════════════════════════════════════════════════════════════
+
+router.post('/equipment/:id/maintenance', authMiddleware, async (req, res) => {
+  try {
+    const { service_type, description, cost, next_service_date } = req.body;
+    if (!service_type) return res.status(400).json({ error: 'service_type required' });
+
+    // Verify ownership
+    const eq = await query(`SELECT * FROM equipment WHERE id = $1 AND owner_id = $2`, [req.params.id, req.user.id]);
+    if (!eq.rows.length) return res.status(403).json({ error: 'Not your equipment' });
+
+    const result = await query(`
+      INSERT INTO maintenance_logs (id, equipment_id, service_type, description, cost, next_service_date)
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
+    `, [require('uuid').v4(), req.params.id, service_type, description, cost, next_service_date]);
+
+    res.status(201).json({ log: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/equipment/:id/maintenance', async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT * FROM maintenance_logs WHERE equipment_id = $1 ORDER BY created_at DESC LIMIT 20`,
+      [req.params.id]
+    );
+    res.json({ logs: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

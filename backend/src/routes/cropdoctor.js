@@ -2,7 +2,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../db/pool');
+const { pool, query } = require('../db/pool');
 const { authMiddleware: auth } = require('../middleware/auth');
 const { createNotification } = require('./pushnotifications');
 
@@ -299,6 +299,192 @@ router.post('/report', auth, async (req, res) => {
 
     res.json({ success: true, message: 'Disease report submitted. Community has been alerted.' });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SEVERITY SCORE — How bad is the disease (0-100) + spread risk
+// ═══════════════════════════════════════════════════════════════
+
+router.post('/severity-assess', auth, async (req, res) => {
+  try {
+    const { disease_id, photos, affected_area_pct, plant_stage, days_since_noticed } = req.body;
+    if (!disease_id) return res.status(400).json({ error: 'disease_id required' });
+
+    // AI severity calculation (simulated - in production: ML model)
+    const baseSeverity = (affected_area_pct || 10) * 0.7;
+    const timeFactor = Math.min((days_since_noticed || 1) * 5, 30);
+    const stageFactor = plant_stage === 'fruiting' ? 15 : plant_stage === 'flowering' ? 12 : 5;
+    const severity = Math.min(100, Math.round(baseSeverity + timeFactor + stageFactor));
+
+    const spreadRisk = severity > 60 ? 'high' : severity > 30 ? 'medium' : 'low';
+    const yieldImpact = severity > 70 ? '30-50% yield loss expected' :
+                        severity > 40 ? '10-25% yield loss if untreated' : 'Minimal if treated promptly';
+
+    const result = await query(`
+      INSERT INTO disease_assessments (id, user_id, disease_id, severity_score, spread_risk, affected_area_pct, plant_stage)
+      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *
+    `, [require('uuid').v4(), req.user.id, disease_id, severity, spreadRisk, affected_area_pct, plant_stage]);
+
+    res.json({
+      assessment: result.rows[0],
+      severity_score: severity,
+      severity_label: severity > 70 ? 'Critical' : severity > 40 ? 'Moderate' : 'Mild',
+      spread_risk: spreadRisk,
+      yield_impact: yieldImpact,
+      urgency: severity > 60 ? 'Treat immediately — within 24 hours' :
+               severity > 30 ? 'Treat within 2-3 days' : 'Monitor and preventive spray',
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// TREATMENT PROTOCOL — Exact product, dosage, schedule
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/treatment-protocol/:diseaseId', async (req, res) => {
+  const treatments = {
+    'blast': {
+      disease: 'Rice Blast',
+      crop: 'Paddy',
+      protocols: [
+        { type: 'chemical', product: 'Tricyclazole 75% WP', brand: 'Beam / Baan', dosage: '0.6 g/L water', spray_interval_days: 10, safety_period_days: 21, per_acre: '300L spray solution/acre' },
+        { type: 'chemical', product: 'Isoprothiolane 40% EC', brand: 'Fujione', dosage: '1.5 ml/L', spray_interval_days: 12, safety_period_days: 14, per_acre: '200L/acre' },
+        { type: 'biological', product: 'Pseudomonas fluorescens', brand: 'Various', dosage: '10g/L', spray_interval_days: 7, safety_period_days: 0, per_acre: '500L/acre' },
+      ],
+      prevention: ['Avoid excess nitrogen', 'Maintain proper spacing', 'Use resistant varieties (MTU 1010)'],
+    },
+    'blight': {
+      disease: 'Bacterial Leaf Blight',
+      crop: 'Paddy',
+      protocols: [
+        { type: 'chemical', product: 'Streptomycin sulphate + Tetracycline', brand: 'Plantomycin', dosage: '0.5 g/L', spray_interval_days: 7, safety_period_days: 14, per_acre: '200L/acre' },
+        { type: 'chemical', product: 'Copper oxychloride 50% WP', brand: 'Blitox', dosage: '3 g/L', spray_interval_days: 10, safety_period_days: 7, per_acre: '300L/acre' },
+      ],
+      prevention: ['Balanced NPK fertilization', 'Avoid excess nitrogen', 'Good field drainage'],
+    },
+    'whitespot': {
+      disease: 'White Spot Syndrome',
+      crop: 'Shrimp',
+      protocols: [
+        { type: 'management', product: 'Reduce/Stop feeding', dosage: 'Reduce by 50%', notes: 'Minimize organic load' },
+        { type: 'water', product: 'Increase aeration', dosage: '24-hour continuous', notes: 'Maintain DO > 5 ppm' },
+        { type: 'biological', product: 'Probiotics (Bacillus)', brand: 'Sanolife / Biomin', dosage: '500g/acre', notes: 'Improve water quality' },
+      ],
+      prevention: ['PCR-tested seed', 'Biosecurity protocols', 'Quarantine new stock', 'Crab/carrier exclusion'],
+    },
+    'early_blight': {
+      disease: 'Early Blight',
+      crop: 'Tomato',
+      protocols: [
+        { type: 'chemical', product: 'Mancozeb 75% WP', brand: 'Dithane M-45', dosage: '2.5 g/L', spray_interval_days: 7, safety_period_days: 14, per_acre: '300L/acre' },
+        { type: 'chemical', product: 'Chlorothalonil 75% WP', brand: 'Kavach', dosage: '2 g/L', spray_interval_days: 10, safety_period_days: 7, per_acre: '200L/acre' },
+        { type: 'biological', product: 'Trichoderma viride', brand: 'Various', dosage: '5g/L', spray_interval_days: 7, safety_period_days: 0, per_acre: '500L/acre' },
+      ],
+      prevention: ['Crop rotation', 'Remove infected debris', 'Proper spacing for air circulation', 'Mulching'],
+    },
+  };
+
+  const treatment = treatments[req.params.diseaseId];
+  if (!treatment) return res.status(404).json({ error: 'Disease protocol not found', available: Object.keys(treatments) });
+  res.json(treatment);
+});
+
+// ═══════════════════════════════════════════════════════════════
+// REGIONAL OUTBREAK MAP — Disease spread visualization
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/outbreak-map', async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+
+    // In production: aggregate from disease_assessments table
+    // Simulated outbreak data for demonstration
+    const outbreaks = [
+      { district: 'Guntur', lat: 16.30, lng: 80.44, disease: 'Blast', crop: 'Paddy', reports: 45, severity_avg: 55, trend: 'increasing' },
+      { district: 'Krishna', lat: 16.57, lng: 80.63, disease: 'BPH', crop: 'Paddy', reports: 32, severity_avg: 40, trend: 'stable' },
+      { district: 'Nellore', lat: 14.45, lng: 79.98, disease: 'White Spot', crop: 'Shrimp', reports: 18, severity_avg: 72, trend: 'critical' },
+      { district: 'Prakasam', lat: 15.84, lng: 80.04, disease: 'Leaf Curl', crop: 'Chilli', reports: 28, severity_avg: 48, trend: 'spreading' },
+      { district: 'Kurnool', lat: 15.83, lng: 78.04, disease: 'Bollworm', crop: 'Cotton', reports: 22, severity_avg: 35, trend: 'declining' },
+    ];
+
+    res.json({
+      outbreaks,
+      period_days: parseInt(days),
+      advisory: 'Preventive spraying recommended in affected areas. Check treatment protocols.',
+      total_reports: outbreaks.reduce((s, o) => s + o.reports, 0),
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// EXPERT SECOND OPINION — Paid consultation
+// ═══════════════════════════════════════════════════════════════
+
+router.post('/expert-consultation', auth, async (req, res) => {
+  try {
+    const { photos, crop, description, urgency } = req.body;
+    if (!photos || !photos.length || !crop) return res.status(400).json({ error: 'photos and crop required' });
+
+    const consultationId = require('uuid').v4();
+    const fee = urgency === 'urgent' ? 199 : 99;
+
+    const result = await query(`
+      INSERT INTO expert_consultations (id, user_id, crop, photos, description, urgency, fee, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending') RETURNING *
+    `, [consultationId, req.user.id, crop, JSON.stringify(photos), description, urgency || 'normal', fee]);
+
+    res.status(201).json({
+      consultation: result.rows[0],
+      message: `Expert will respond within ${urgency === 'urgent' ? '2 hours' : '12 hours'}`,
+      fee,
+      credits_deducted: fee,
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// HISTORICAL DISEASE LOG — Field disease history
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/assessment-history', auth, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT da.*, u.name FROM disease_assessments da
+      JOIN users u ON u.id = da.user_id
+      WHERE da.user_id = $1
+      ORDER BY da.created_at DESC LIMIT 50
+    `, [req.user.id]);
+    res.json({ history: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// WEATHER-LINKED RISK — Disease risk based on forecast
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/weather-risk', async (req, res) => {
+  try {
+    const { crop } = req.query;
+    // Simulated weather-linked disease risk
+    const month = new Date().getMonth();
+    const isRainy = month >= 5 && month <= 9;
+    const isWinter = month >= 10 || month <= 1;
+
+    const risks = [];
+    if (isRainy) {
+      risks.push({ disease: 'Blast', crop: 'Paddy', risk_level: 'high', reason: 'High humidity + warm temperatures favor blast fungus', action: 'Preventive spray with Tricyclazole before rain' });
+      risks.push({ disease: 'Leaf Blight', crop: 'Paddy', risk_level: 'medium', reason: 'Wet conditions spread bacterial infection', action: 'Ensure proper drainage, avoid excess N fertilizer' });
+      risks.push({ disease: 'Fungal Wilt', crop: 'Tomato', risk_level: 'high', reason: 'Waterlogging promotes soil fungi', action: 'Raised beds, Trichoderma soil application' });
+    }
+    if (isWinter) {
+      risks.push({ disease: 'Powdery Mildew', crop: 'Vegetables', risk_level: 'medium', reason: 'Cool nights + warm days create ideal conditions', action: 'Sulphur dust or Karathane spray' });
+    }
+    if (!isRainy && !isWinter) {
+      risks.push({ disease: 'Thrips', crop: 'Chilli', risk_level: 'high', reason: 'Dry hot conditions favor thrips population', action: 'Blue sticky traps + Fipronil spray' });
+    }
+
+    res.json({ risks, season: isRainy ? 'monsoon' : isWinter ? 'winter' : 'summer' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 module.exports = router;
