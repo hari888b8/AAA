@@ -46,6 +46,14 @@ const farmdiaryRouter = require('./routes/farmdiary');
 const jobsRouter = require('./routes/jobs');
 const trainingRouter = require('./routes/training');
 const schemesRouter = require('./routes/schemes');
+const walletRouter = require('./routes/wallet');
+const schemeDiscoveryRouter = require('./routes/schemediscovery');
+const cropDoctorRouter = require('./routes/cropdoctor');
+const escrowRouter = require('./routes/escrow');
+const subscriptionsRouter = require('./routes/subscriptions');
+const watchlistsRouter = require('./routes/watchlists');
+const favoritesRouter = require('./routes/favorites');
+const ticketsRouter = require('./routes/tickets');
 
 const app = express();
 const server = http.createServer(app);
@@ -164,6 +172,14 @@ app.use('/api/farmdiary', farmdiaryRouter);
 app.use('/api/jobs', jobsRouter);
 app.use('/api/training', trainingRouter);
 app.use('/api/schemes', schemesRouter);
+app.use('/api/wallet', walletRouter);
+app.use('/api/scheme-discovery', schemeDiscoveryRouter);
+app.use('/api/crop-doctor', cropDoctorRouter);
+app.use('/api/escrow', escrowRouter);
+app.use('/api/subscriptions', subscriptionsRouter);
+app.use('/api/watchlists', watchlistsRouter);
+app.use('/api/favorites', favoritesRouter);
+app.use('/api/tickets', ticketsRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -184,6 +200,10 @@ async function start() {
 
     // WebSocket
     setupWebSocket(server);
+
+    // Background scheduler
+    const { startScheduler } = require('./scheduler');
+    startScheduler();
 
     server.listen(config.port, () => {
       logger.info({

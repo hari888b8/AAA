@@ -1343,6 +1343,65 @@ CREATE TABLE IF NOT EXISTS notification_prefs (
 );
 CREATE INDEX IF NOT EXISTS idx_notif_prefs_user ON notification_prefs(user_id);
 
+-- ════════════════════════════════════════════════════════════════
+-- SPRINT 1: UNIFIED WALLET & CREDIT SYSTEM
+-- ════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS wallet_credits (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  credits     INTEGER NOT NULL,
+  type        VARCHAR(10) NOT NULL CHECK (type IN ('earn', 'spend')),
+  action      VARCHAR(50) NOT NULL,
+  description TEXT,
+  reference_id VARCHAR(100),
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_wallet_credits_user ON wallet_credits(user_id);
+CREATE INDEX IF NOT EXISTS idx_wallet_credits_type ON wallet_credits(user_id, type);
+
+-- ════════════════════════════════════════════════════════════════
+-- SPRINT 1: SCHEME DISCOVERY & APPLICATION ENGINE
+-- ════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS scheme_applications (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id             UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  scheme_id           VARCHAR(50) NOT NULL,
+  scheme_title        VARCHAR(300) NOT NULL,
+  category            VARCHAR(50),
+  application_data    JSONB DEFAULT '{}',
+  documents_pending   JSONB DEFAULT '[]',
+  documents_uploaded  JSONB DEFAULT '[]',
+  status              VARCHAR(30) DEFAULT 'submitted',
+  notes               TEXT,
+  reviewed_by         UUID REFERENCES users(id),
+  reviewed_at         TIMESTAMPTZ,
+  created_at          TIMESTAMPTZ DEFAULT NOW(),
+  updated_at          TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_scheme_apps_user ON scheme_applications(user_id);
+CREATE INDEX IF NOT EXISTS idx_scheme_apps_scheme ON scheme_applications(scheme_id);
+CREATE INDEX IF NOT EXISTS idx_scheme_apps_status ON scheme_applications(status);
+
+-- ════════════════════════════════════════════════════════════════
+-- SPRINT 1: CROP DISEASE DETECTION (AI)
+-- ════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS disease_detections (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  crop_name       VARCHAR(100) NOT NULL,
+  disease_id      VARCHAR(100),
+  disease_name    VARCHAR(200),
+  confidence      INTEGER,
+  severity        VARCHAR(20) DEFAULT 'medium',
+  image_url       TEXT,
+  location_label  VARCHAR(200),
+  symptoms_reported TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_disease_det_user ON disease_detections(user_id);
+CREATE INDEX IF NOT EXISTS idx_disease_det_disease ON disease_detections(disease_id);
+CREATE INDEX IF NOT EXISTS idx_disease_det_date ON disease_detections(created_at DESC);
+
 -- Seed aqua products
 INSERT INTO aqua_products (id, name, category, brand, price, unit, species_tags, description) VALUES
   (gen_random_uuid(), 'Vannamei Starter Feed', 'feed', 'CP Aquaculture', 85, 'kg', ARRAY['vannamei'], 'High-protein starter feed for PL stage'),
