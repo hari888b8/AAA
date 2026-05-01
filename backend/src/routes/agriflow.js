@@ -7,7 +7,9 @@ const router = express.Router();
 // GET /api/agriflow/listings — public supply marketplace
 router.get('/listings', optionalAuth, async (req, res) => {
   try {
-    const { crop_id, district_id, is_organic, grade, limit = 20, offset = 0 } = req.query;
+    const { crop_id, district_id, is_organic, grade, limit = 20, offset = 0,
+            min_price, max_price, min_qty, max_qty, sort_by, search,
+            radius_km, lat, lng } = req.query;
     let conditions = [`sl.status = 'active'`];
     let params = [];
     let i = 1;
@@ -16,22 +18,50 @@ router.get('/listings', optionalAuth, async (req, res) => {
     if (district_id){ conditions.push(`sl.district_id = $${i++}`);params.push(district_id); }
     if (is_organic !== undefined) { conditions.push(`sl.is_organic = $${i++}`); params.push(is_organic === 'true'); }
     if (grade)      { conditions.push(`sl.grade = $${i++}`);      params.push(grade); }
+    if (min_price)  { conditions.push(`sl.price_per_kg >= $${i++}`); params.push(Number(min_price)); }
+    if (max_price)  { conditions.push(`sl.price_per_kg <= $${i++}`); params.push(Number(max_price)); }
+    if (min_qty)    { conditions.push(`sl.quantity_kg >= $${i++}`); params.push(Number(min_qty)); }
+    if (max_qty)    { conditions.push(`sl.quantity_kg <= $${i++}`); params.push(Number(max_qty)); }
+    if (search) {
+      conditions.push(`(cc.name ILIKE $${i} OR sl.description ILIKE $${i} OR sl.location_label ILIKE $${i})`);
+      params.push(`%${search}%`); i++;
+    }
+
+    // Proximity filter using Haversine formula
+    let distanceSelect = '';
+    let distanceCondition = '';
+    if (radius_km && lat && lng) {
+      const latNum = Number(lat), lngNum = Number(lng), radiusNum = Number(radius_km);
+      distanceSelect = `, ( 6371 * acos( cos(radians($${i})) * cos(radians(sl.lat)) * cos(radians(sl.lng) - radians($${i+1})) + sin(radians($${i})) * sin(radians(sl.lat)) ) ) AS distance_km`;
+      distanceCondition = ` AND ( 6371 * acos( cos(radians($${i})) * cos(radians(sl.lat)) * cos(radians(sl.lng) - radians($${i+1})) + sin(radians($${i})) * sin(radians(sl.lat)) ) ) <= $${i+2}`;
+      params.push(latNum, lngNum, radiusNum); i += 3;
+    }
+
+    // Sort
+    let orderClause = 'sl.created_at DESC';
+    if (sort_by === 'price_asc') orderClause = 'sl.price_per_kg ASC NULLS LAST';
+    else if (sort_by === 'price_desc') orderClause = 'sl.price_per_kg DESC NULLS LAST';
+    else if (sort_by === 'newest') orderClause = 'sl.created_at DESC';
+    else if (sort_by === 'quantity') orderClause = 'sl.quantity_kg DESC';
+    else if (sort_by === 'distance' && distanceSelect) orderClause = 'distance_km ASC';
 
     params.push(parseInt(limit), parseInt(offset));
 
     const result = await query(`
       SELECT sl.*, cc.name AS crop_name, cc.icon_emoji, cc.category,
-             d.name AS district_name, d.state_name
+             d.name AS district_name, d.state_name${distanceSelect}
       FROM supply_listings sl
       JOIN crop_catalog cc ON cc.id = sl.crop_id
       LEFT JOIN districts d ON d.id = sl.district_id
-      WHERE ${conditions.join(' AND ')}
-      ORDER BY sl.created_at DESC
+      WHERE ${conditions.join(' AND ')}${distanceCondition}
+      ORDER BY ${orderClause}
       LIMIT $${i++} OFFSET $${i++}
     `, params);
 
     const countResult = await query(`
-      SELECT COUNT(*) FROM supply_listings sl WHERE ${conditions.join(' AND ')}
+      SELECT COUNT(*) FROM supply_listings sl
+      JOIN crop_catalog cc ON cc.id = sl.crop_id
+      WHERE ${conditions.join(' AND ')}${distanceCondition}
     `, params.slice(0, -2));
 
     res.json({ listings: result.rows, total: parseInt(countResult.rows[0].count) });
@@ -45,16 +75,17 @@ router.get('/listings', optionalAuth, async (req, res) => {
 router.post('/listings', authMiddleware, async (req, res) => {
   try {
     const { crop_id, district_id, quantity_kg, grade = 'ungraded', is_organic = false,
-            price_per_kg, min_order_kg, collection_center, description, farmer_name, location_label } = req.body;
+            price_per_kg, min_order_kg, collection_center, description, farmer_name, location_label, photos } = req.body;
 
     if (!crop_id || !quantity_kg) return res.status(400).json({ error: 'crop_id and quantity_kg required' });
 
     const result = await query(`
       INSERT INTO supply_listings (id, fpo_id, crop_id, district_id, quantity_kg, grade, is_organic,
-        price_per_kg, min_order_kg, collection_center, description, farmer_name, location_label)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *
+        price_per_kg, min_order_kg, collection_center, description, farmer_name, location_label, photos)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *
     `, [uuidv4(), req.user.id, crop_id, district_id, quantity_kg, grade, is_organic,
-        price_per_kg, min_order_kg, collection_center, description, farmer_name, location_label]);
+        price_per_kg, min_order_kg, collection_center, description, farmer_name, location_label,
+        JSON.stringify(photos || [])]);
 
     res.status(201).json({ listing: result.rows[0] });
   } catch (err) {

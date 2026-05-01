@@ -304,13 +304,12 @@ router.patch('/equipment/:id', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// DELETE /api/kisanconnect/equipment/:id
+// DELETE /api/kisanconnect/equipment/:id — soft delete (owner only)
 router.delete('/equipment/:id', authMiddleware, async (req, res) => {
   try {
     const existing = await query('SELECT * FROM equipment WHERE id = $1 AND owner_id = $2', [req.params.id, req.user.id]);
     if (!existing.rows.length) return res.status(404).json({ error: 'Equipment not found' });
-    await query('DELETE FROM equipment_bookings WHERE equipment_id = $1', [req.params.id]);
-    await query('DELETE FROM equipment WHERE id = $1', [req.params.id]);
+    await query(`UPDATE equipment SET status = 'deleted', updated_at = NOW() WHERE id = $1`, [req.params.id]);
     res.json({ message: 'Equipment deleted' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -1002,6 +1001,82 @@ router.get('/equipment/:id/maintenance', async (req, res) => {
       [req.params.id]
     );
     res.json({ logs: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// EQUIPMENT PROVIDER DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+
+// GET /api/kisanconnect/my-equipment — list equipment owned by current user
+router.get('/my-equipment', authMiddleware, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT e.*, d.name AS district_name,
+             (SELECT COUNT(*) FROM equipment_bookings eb WHERE eb.equipment_id = e.id) AS total_bookings_count
+      FROM equipment e
+      LEFT JOIN districts d ON d.id = e.district_id
+      WHERE e.owner_id = $1 AND e.status != 'deleted'
+      ORDER BY e.created_at DESC
+    `, [req.user.id]);
+    res.json({ equipment: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/kisanconnect/equipment/:id/bookings — list bookings for owned equipment
+router.get('/equipment/:id/bookings', authMiddleware, async (req, res) => {
+  try {
+    const equip = await query('SELECT * FROM equipment WHERE id = $1 AND owner_id = $2', [req.params.id, req.user.id]);
+    if (!equip.rows.length) return res.status(404).json({ error: 'Equipment not found or not owned by you' });
+    const result = await query(`
+      SELECT eb.*, u.name AS renter_name, u.phone AS renter_phone
+      FROM equipment_bookings eb
+      JOIN users u ON u.id = eb.renter_id
+      WHERE eb.equipment_id = $1
+      ORDER BY eb.created_at DESC
+    `, [req.params.id]);
+    res.json({ bookings: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/kisanconnect/bookings/:id/status — accept/reject booking (owner only)
+router.patch('/bookings/:id/status', authMiddleware, async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!['confirmed', 'rejected'].includes(status))
+      return res.status(400).json({ error: 'Status must be confirmed or rejected' });
+
+    // Verify the booking belongs to equipment owned by current user
+    const booking = await query(`
+      SELECT eb.*, e.owner_id, e.name AS equipment_name
+      FROM equipment_bookings eb
+      JOIN equipment e ON e.id = eb.equipment_id
+      WHERE eb.id = $1
+    `, [req.params.id]);
+    if (!booking.rows.length) return res.status(404).json({ error: 'Booking not found' });
+    if (booking.rows[0].owner_id !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
+
+    const result = await query(`
+      UPDATE equipment_bookings SET status = $1 WHERE id = $2 RETURNING *
+    `, [status, req.params.id]);
+
+    // If rejected, make equipment available again
+    if (status === 'rejected') {
+      await query(`UPDATE equipment SET status = 'available' WHERE id = $1`, [booking.rows[0].equipment_id]);
+    }
+
+    // Notify the renter
+    if (createNotification) {
+      const b = booking.rows[0];
+      await createNotification(
+        b.renter_id, 'booking',
+        status === 'confirmed' ? '✅ Booking Accepted' : '❌ Booking Rejected',
+        `Your booking for ${b.equipment_name} has been ${status}.`,
+        { booking_id: b.id, equipment_id: b.equipment_id }
+      );
+    }
+
+    res.json({ booking: result.rows[0] });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
