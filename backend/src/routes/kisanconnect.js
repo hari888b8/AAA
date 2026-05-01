@@ -506,6 +506,7 @@ router.get('/operators', optionalAuth, async (req, res) => {
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     params.push(parseInt(limit), parseInt(offset));
+    const limitIdx = i++; const offsetIdx = i++;
 
     const result = await query(`
       SELECT mo.*, d.name AS district_name, u.name AS user_name
@@ -514,7 +515,7 @@ router.get('/operators', optionalAuth, async (req, res) => {
       JOIN users u ON u.id = mo.user_id
       ${whereClause}
       ORDER BY mo.is_available DESC, mo.rating DESC, mo.total_jobs DESC
-      LIMIT $${i++} OFFSET $${i++}
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
     `, params);
 
     res.json({ operators: result.rows });
@@ -625,6 +626,7 @@ router.get('/machine-requests', optionalAuth, async (req, res) => {
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     params.push(parseInt(limit), parseInt(offset));
+    const limitIdx = i++; const offsetIdx = i++;
 
     const result = await query(`
       SELECT mr.*, u.name AS farmer_name, d.name AS district_name,
@@ -635,7 +637,7 @@ router.get('/machine-requests', optionalAuth, async (req, res) => {
       LEFT JOIN machine_operators mo ON mo.id = mr.matched_operator_id
       ${whereClause}
       ORDER BY mr.created_at DESC
-      LIMIT $${i++} OFFSET $${i++}
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}
     `, params);
 
     res.json({ requests: result.rows });
