@@ -7,6 +7,8 @@ const { query } = require('../db/pool');
 const config = require('../lib/config');
 const logger = require('../lib/logger');
 
+const { sendOTP: sendSMS } = require('../services/sms');
+
 const router = express.Router();
 
 function generateOTP() {
@@ -33,9 +35,14 @@ router.post('/send-otp', async (req, res) => {
       [uuidv4(), phone, code, expiresAt]
     );
 
-    // In production: send SMS via MSG91/Fast2SMS.
-    // OTP is NEVER returned in the response. Use /api/admin/debug-otp for dev debugging.
-    logger.info({ phone: phone.slice(-4) }, 'OTP generated for phone ending in ****');
+    // Send OTP via SMS (MSG91 → Fast2SMS fallback)
+    const smsResult = await sendSMS(phone, code);
+    if (!smsResult.success && config.isProduction) {
+      logger.error({ phone: phone.slice(-4), error: smsResult.error }, 'SMS delivery failed');
+      return res.status(503).json({ error: { code: 'SMS_FAILED', message: 'Could not send OTP. Please try again.' } });
+    }
+
+    logger.info({ phone: phone.slice(-4), provider: smsResult.provider }, 'OTP sent');
 
     return res.json({ message: 'OTP sent successfully' });
   } catch (err) {

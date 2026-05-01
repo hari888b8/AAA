@@ -56,6 +56,42 @@ const config = {
     port: parseInt(process.env.REDIS_PORT || '6379', 10),
   },
 
+  // SMS
+  sms: {
+    msg91AuthKey: process.env.MSG91_AUTH_KEY,
+    msg91TemplateId: process.env.MSG91_TEMPLATE_ID,
+    msg91SenderId: process.env.MSG91_SENDER_ID || 'AGRIHB',
+    fast2smsApiKey: process.env.FAST2SMS_API_KEY,
+  },
+
+  // Payments
+  payments: {
+    razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+    razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET,
+    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET,
+    commissionRate: parseFloat(process.env.PLATFORM_COMMISSION_RATE || '0.03'),
+  },
+
+  // Push Notifications
+  push: {
+    firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
+    firebaseServerKey: process.env.FIREBASE_SERVER_KEY,
+  },
+
+  // Cloud Storage
+  storage: {
+    r2AccessKeyId: process.env.R2_ACCESS_KEY_ID,
+    r2SecretKey: process.env.R2_SECRET_ACCESS_KEY,
+    r2Bucket: process.env.R2_BUCKET_NAME || 'agrihub-media',
+    r2Endpoint: process.env.R2_ENDPOINT,
+    r2PublicUrl: process.env.R2_PUBLIC_URL,
+  },
+
+  // Monitoring
+  monitoring: {
+    sentryDsn: process.env.SENTRY_DSN,
+  },
+
   // Rate limiting
   rateLimit: {
     global: { windowMs: 60_000, max: 200 },

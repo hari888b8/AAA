@@ -57,6 +57,7 @@ const watchlistsRouter = require('./routes/watchlists');
 const favoritesRouter = require('./routes/favorites');
 const ticketsRouter = require('./routes/tickets');
 const tradeRouter = require('./routes/trade');
+const healthRouter = require('./routes/health');
 
 const app = express();
 const server = http.createServer(app);
@@ -184,6 +185,7 @@ app.use('/api/watchlists', watchlistsRouter);
 app.use('/api/favorites', favoritesRouter);
 app.use('/api/tickets', ticketsRouter);
 app.use('/api/trade', tradeRouter);
+app.use('/api/health', healthRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -202,7 +204,13 @@ async function start() {
     await migrate();
     await migrateV2();
     await migrateV3Trade();
+    const { migrateV4 } = require('./db/migrate-v4-infrastructure');
+    await migrateV4();
     logger.info('Database migrations applied');
+
+    // Recover any pending jobs from previous crash
+    const { recoverPendingJobs } = require('./services/queue');
+    recoverPendingJobs().catch(() => {});
 
     // WebSocket
     setupWebSocket(server);
