@@ -16,6 +16,7 @@ const config = require('./lib/config');
 const { pool, connectWithRetry } = require('./db/pool');
 const { migrate } = require('./db/migrate');
 const { migrateV2 } = require('./db/migrate-v2');
+const { migrateV3Trade } = require('./db/migrate-v3-trade');
 const { setupWebSocket } = require('./services/websocket');
 const { requestId } = require('./middleware/requestId');
 const { sanitize } = require('./middleware/sanitize');
@@ -55,6 +56,7 @@ const subscriptionsRouter = require('./routes/subscriptions');
 const watchlistsRouter = require('./routes/watchlists');
 const favoritesRouter = require('./routes/favorites');
 const ticketsRouter = require('./routes/tickets');
+const tradeRouter = require('./routes/trade');
 
 const app = express();
 const server = http.createServer(app);
@@ -181,6 +183,7 @@ app.use('/api/subscriptions', subscriptionsRouter);
 app.use('/api/watchlists', watchlistsRouter);
 app.use('/api/favorites', favoritesRouter);
 app.use('/api/tickets', ticketsRouter);
+app.use('/api/trade', tradeRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -198,6 +201,7 @@ async function start() {
     // Run migrations
     await migrate();
     await migrateV2();
+    await migrateV3Trade();
     logger.info('Database migrations applied');
 
     // WebSocket
