@@ -58,15 +58,17 @@ router.post('/listings', auth, async (req, res) => {
     }
 
     const id = uuidv4();
+    const farmerId = req.user.id;
+    const fpoId = req.user.role === 'fpo' ? req.user.id : null;
     const result = await pool.query(`
       INSERT INTO supply_listings (
         id, fpo_id, farmer_id, crop_id, district_id, quantity_kg, grade, is_organic,
         price_per_kg, min_order_kg, collection_center, description,
         lat, lng, photos, voice_note_url, farmer_name, location_label
       )
-      VALUES ($1,$2,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
       RETURNING *
-    `, [id, req.user.id, crop_id, district_id, quantity_kg, grade, is_organic,
+    `, [id, fpoId, farmerId, crop_id, district_id, quantity_kg, grade, is_organic,
         price_per_kg, min_order_kg, collection_center, description,
         lat, lng, JSON.stringify(photos), voice_note_url, farmer_name, location_label]);
 

@@ -136,7 +136,7 @@ DO $$ BEGIN
   ALTER TABLE supply_listings ADD COLUMN IF NOT EXISTS lng DECIMAL(10,7);
   ALTER TABLE supply_listings ADD COLUMN IF NOT EXISTS photos JSONB DEFAULT '[]';
   ALTER TABLE supply_listings ADD COLUMN IF NOT EXISTS voice_note_url TEXT;
-  ALTER TABLE supply_listings ADD COLUMN IF NOT EXISTS farmer_id UUID;
+  ALTER TABLE supply_listings ADD COLUMN IF NOT EXISTS farmer_id UUID REFERENCES users(id);
 END $$;
 `;
 
