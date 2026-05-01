@@ -128,13 +128,16 @@ async function uploadToCloud(buffer, key, contentType) {
  * @returns {Promise<{url: string, key: string, size: number, storage: string}>}
  */
 async function uploadFile(buffer, { context = 'general', extension = 'jpeg', contentType = 'image/jpeg', userId } = {}) {
-  const filename = `${uuidv4()}.${extension}`;
-  const key = `${context}/${new Date().toISOString().slice(0, 7)}/${filename}`;
+  // Sanitize inputs to prevent path traversal
+  const safeContext = context.replace(/[^a-z0-9_-]/gi, '');
+  const safeExtension = extension.replace(/[^a-z0-9]/gi, '');
+  const filename = `${uuidv4()}.${safeExtension}`;
+  const key = `${safeContext}/${new Date().toISOString().slice(0, 7)}/${filename}`;
 
   if (IS_CLOUD_CONFIGURED) {
     try {
       const result = await uploadToCloud(buffer, key, contentType);
-      logger.info({ key, size: buffer.length, context }, '[Storage] Uploaded to cloud');
+      logger.info({ key, size: buffer.length, context: safeContext }, '[Storage] Uploaded to cloud');
       return { ...result, storage: 'cloud' };
     } catch (err) {
       logger.error({ err, key }, '[Storage] Cloud upload failed, falling back to local');
@@ -143,14 +146,14 @@ async function uploadFile(buffer, { context = 'general', extension = 'jpeg', con
   }
 
   // Local filesystem fallback
-  const localDir = path.join(LOCAL_UPLOADS_DIR, context);
+  const localDir = path.join(LOCAL_UPLOADS_DIR, safeContext);
   if (!fs.existsSync(localDir)) fs.mkdirSync(localDir, { recursive: true });
 
   const localPath = path.join(localDir, filename);
   fs.writeFileSync(localPath, buffer);
 
-  const localUrl = `/uploads/${context}/${filename}`;
-  logger.info({ key: localUrl, size: buffer.length, context }, '[Storage] Saved locally (dev mode)');
+  const localUrl = `/uploads/${safeContext}/${filename}`;
+  logger.info({ key: localUrl, size: buffer.length, context: safeContext }, '[Storage] Saved locally (dev mode)');
   return { url: localUrl, key: localUrl, size: buffer.length, storage: 'local' };
 }
 
@@ -181,10 +184,18 @@ async function deleteFile(key) {
     });
   }
 
-  // Local delete
-  const localPath = path.join(LOCAL_UPLOADS_DIR, key.replace(/^\/uploads\//, ''));
-  if (fs.existsSync(localPath)) {
-    fs.unlinkSync(localPath);
+  // Local delete — sanitize key to prevent path traversal
+  const sanitizedKey = key.replace(/^\/uploads\//, '').replace(/\.\./g, '').replace(/[^a-z0-9_\-/.]/gi, '');
+  const localPath = path.join(LOCAL_UPLOADS_DIR, sanitizedKey);
+
+  // Verify resolved path is within uploads directory
+  const resolvedPath = path.resolve(localPath);
+  if (!resolvedPath.startsWith(path.resolve(LOCAL_UPLOADS_DIR))) {
+    return false;
+  }
+
+  if (fs.existsSync(resolvedPath)) {
+    fs.unlinkSync(resolvedPath);
     return true;
   }
   return false;
