@@ -13,13 +13,19 @@ export function _registerNavigator(fn) { _navigate = fn; }
 export function navigate(route) { return _navigate(route); }
 
 export function showToast(msg, type = 'info') {
+  // Remove existing toasts to avoid stacking
+  document.querySelectorAll('.toast').forEach(el => el.remove());
   const t = document.createElement('div');
   t.className = `toast toast-${type}`;
   t.setAttribute('role', 'status');
   t.setAttribute('aria-live', 'polite');
   t.textContent = msg;
   document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3200);
+  setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(-10px)';
+    setTimeout(() => t.remove(), 300);
+  }, 3000);
 }
 
 export function showModal(html) {
@@ -29,7 +35,7 @@ export function showModal(html) {
   overlay.id = 'modalOverlay';
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-modal', 'true');
-  overlay.innerHTML = `<div class="modal-sheet">${html}</div>`;
+  overlay.innerHTML = `<div class="modal-sheet"><div class="modal-handle"></div>${html}</div>`;
   overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
   document.body.appendChild(overlay);
   // Trap focus to first focusable
