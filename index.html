@@ -18,6 +18,21 @@
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌾</text></svg>" />
 </head>
 <body>
+  <!-- Skip navigation for accessibility -->
+  <a href="#app" class="skip-link">Skip to main content</a>
+
+  <!-- Splash Screen -->
+  <div id="splashScreen" class="splash-screen" role="status" aria-label="Loading AgriHub">
+    <div class="splash-content">
+      <div class="splash-logo">🌾</div>
+      <div class="splash-title">AgriHub</div>
+      <div class="splash-sub">India's Agriculture Super-Platform</div>
+      <div class="splash-loader">
+        <div class="splash-bar"></div>
+      </div>
+    </div>
+  </div>
+
   <div id="app"></div>
   <script type="module" src="/src/main.js"></script>
   <script>

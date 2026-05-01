@@ -4,6 +4,7 @@ import { api } from './api.js';
 import { getState, setState, subscribe, getRole } from './store.js';
 import { t, getLang, setLang, LANGUAGES } from './i18n.js';
 import { activateLazyImages } from './utils/perf.js';
+import { attachPullToRefresh } from './utils/pullRefresh.js';
 import { installErrorBoundary } from './utils/errors.js';
 import { renderLogin } from './screens/LoginScreen.js';
 import { renderHome } from './screens/HomeScreen.js';
@@ -136,9 +137,9 @@ function renderApp() {
     <!-- HAMBURGER MENU BUTTON (floating) -->
     <button id="hamburgerBtn" style="position:fixed;top:12px;right:14px;z-index:999;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.25);backdrop-filter:blur(8px);border:none;color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">☰</button>
     <!-- SIDE MENU OVERLAY -->
-    <div id="sideMenu" style="display:none;position:fixed;inset:0;z-index:9999">
-      <div id="menuOverlay" style="position:absolute;inset:0;background:rgba(0,0,0,0.5)"></div>
-      <div style="position:absolute;top:0;right:0;width:280px;height:100%;background:white;box-shadow:-4px 0 20px rgba(0,0,0,0.15);overflow-y:auto;padding:0">
+    <div id="sideMenu" class="side-menu-container" style="visibility:hidden;position:fixed;inset:0;z-index:9999">
+      <div id="menuOverlay" class="side-menu-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.5);opacity:0;transition:opacity 0.3s ease"></div>
+      <div class="side-menu-panel" style="position:absolute;top:0;right:0;width:280px;height:100%;background:white;box-shadow:-4px 0 20px rgba(0,0,0,0.15);overflow-y:auto;padding:0;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.32,0.72,0,1)">
         <div style="background:linear-gradient(135deg,#1a237e,#311b92);color:white;padding:20px 16px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
             <div style="font-weight:800;font-size:16px">AgriHub</div>
@@ -204,27 +205,42 @@ function renderApp() {
     navigate(route.back || 'home');
   });
 
-  // Hamburger menu
-  appEl.querySelector('#hamburgerBtn')?.addEventListener('click', () => {
-    appEl.querySelector('#sideMenu').style.display = 'block';
-  });
-  appEl.querySelector('#menuOverlay')?.addEventListener('click', () => {
-    appEl.querySelector('#sideMenu').style.display = 'none';
-  });
-  appEl.querySelector('#closeMenuBtn')?.addEventListener('click', () => {
-    appEl.querySelector('#sideMenu').style.display = 'none';
-  });
+  // Hamburger menu — animated slide-in
+  const sideMenu = appEl.querySelector('#sideMenu');
+  const menuPanel = sideMenu?.querySelector('.side-menu-panel');
+  const menuBackdrop = sideMenu?.querySelector('.side-menu-backdrop');
+
+  function openMenu() {
+    if (!sideMenu) return;
+    sideMenu.style.visibility = 'visible';
+    requestAnimationFrame(() => {
+      menuBackdrop.style.opacity = '1';
+      menuPanel.style.transform = 'translateX(0)';
+    });
+  }
+  function closeMenu() {
+    if (!sideMenu) return;
+    menuBackdrop.style.opacity = '0';
+    menuPanel.style.transform = 'translateX(100%)';
+    setTimeout(() => { sideMenu.style.visibility = 'hidden'; }, 350);
+  }
+
+  appEl.querySelector('#hamburgerBtn')?.addEventListener('click', openMenu);
+  appEl.querySelector('#menuOverlay')?.addEventListener('click', closeMenu);
+  appEl.querySelector('#closeMenuBtn')?.addEventListener('click', closeMenu);
   appEl.querySelectorAll('.menu-nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      appEl.querySelector('#sideMenu').style.display = 'none';
-      navigate(btn.dataset.route);
+      closeMenu();
+      setTimeout(() => navigate(btn.dataset.route), 150);
     });
   });
   appEl.querySelector('#logoutMenuBtn')?.addEventListener('click', () => {
-    appEl.querySelector('#sideMenu').style.display = 'none';
-    api.setToken(null);
-    setState({ isLoggedIn: false, user: null });
-    navigate('login');
+    closeMenu();
+    setTimeout(() => {
+      api.setToken(null);
+      setState({ isLoggedIn: false, user: null });
+      navigate('login');
+    }, 150);
   });
 
   // Render screen content
@@ -232,6 +248,11 @@ function renderApp() {
   if (content && route.render) {
     route.render(content);
     requestAnimationFrame(() => activateLazyImages(content));
+    // Attach pull-to-refresh to screen content
+    attachPullToRefresh(content, async () => {
+      if (route.render) route.render(content);
+      requestAnimationFrame(() => activateLazyImages(content));
+    });
   }
 }
 
@@ -264,6 +285,19 @@ async function init() {
 
   // Initial render
   navigate(getState().isLoggedIn ? 'home' : 'login');
+
+  // Dismiss splash screen with smooth animation
+  dismissSplash();
+}
+
+function dismissSplash() {
+  const splash = document.getElementById('splashScreen');
+  if (!splash) return;
+  // Allow a brief delay so the splash feels intentional
+  setTimeout(() => {
+    splash.classList.add('hide');
+    setTimeout(() => splash.remove(), 600);
+  }, 800);
 }
 
 init();

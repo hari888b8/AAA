@@ -809,12 +809,18 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
   font-weight: 600;
   color: white;
   z-index: 200;
-  animation: slideDown 0.3s, fadeOut 0.3s 2.7s forwards;
+  animation: toastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   max-width: 400px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 .toast-success { background: var(--success); }
 .toast-error { background: var(--danger); }
 .toast-info { background: var(--info); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-16px) scale(0.95); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
 
 /* ===== LOADING ===== */
 .loading {
@@ -1536,4 +1542,326 @@ textarea:focus-visible,
 @keyframes typingBounce {
   0%, 60%, 100% { transform: translateY(0) }
   30% { transform: translateY(-4px) }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ✨ PREMIUM POLISH — Splash, Transitions, Micro-interactions
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─── SPLASH SCREEN ─── */
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: linear-gradient(135deg, #0D3B12 0%, #1B5E20 40%, #2E7D32 70%, #43A047 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.splash-screen.hide {
+  opacity: 0;
+  transform: scale(1.05);
+  pointer-events: none;
+}
+.splash-content {
+  text-align: center;
+  color: white;
+  animation: splashIn 0.6s ease-out;
+}
+.splash-logo {
+  font-size: 72px;
+  animation: splashPulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 4px 24px rgba(255,255,255,0.2));
+}
+.splash-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-top: 12px;
+}
+.splash-sub {
+  font-size: 14px;
+  opacity: 0.75;
+  margin-top: 6px;
+  font-weight: 500;
+}
+.splash-loader {
+  width: 120px;
+  height: 3px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  margin: 24px auto 0;
+  overflow: hidden;
+}
+.splash-bar {
+  width: 40%;
+  height: 100%;
+  background: rgba(255,255,255,0.9);
+  border-radius: 2px;
+  animation: splashLoad 1.2s ease-in-out infinite;
+}
+@keyframes splashIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes splashPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+@keyframes splashLoad {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(200%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* ─── PAGE TRANSITIONS ─── */
+.screen-content {
+  animation: pageEnter 0.3s ease-out;
+}
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── ENHANCED SIDE MENU ─── */
+#sideMenu .menu-panel {
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+#sideMenu.open .menu-panel {
+  transform: translateX(0);
+}
+#sideMenu #menuOverlay {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+#sideMenu.open #menuOverlay {
+  opacity: 1;
+}
+
+/* ─── BUTTON MICRO-INTERACTIONS ─── */
+.btn {
+  position: relative;
+  overflow: hidden;
+}
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255,255,255,0.3) 0%, transparent 60%);
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.4s, transform 0.5s;
+}
+.btn:active::after {
+  opacity: 1;
+  transform: scale(2.5);
+  transition: opacity 0s, transform 0s;
+}
+
+/* ─── CARD ENTRANCE ANIMATIONS ─── */
+.tile-v2, .action-card, .price-row, .listing-card, .pond-card {
+  animation: cardSlideUp 0.4s ease-out both;
+}
+.tile-v2:nth-child(1), .action-card:nth-child(1), .price-row:nth-child(1) { animation-delay: 0.05s; }
+.tile-v2:nth-child(2), .action-card:nth-child(2), .price-row:nth-child(2) { animation-delay: 0.1s; }
+.tile-v2:nth-child(3), .action-card:nth-child(3), .price-row:nth-child(3) { animation-delay: 0.15s; }
+.tile-v2:nth-child(4), .action-card:nth-child(4), .price-row:nth-child(4) { animation-delay: 0.2s; }
+.tile-v2:nth-child(5), .price-row:nth-child(5) { animation-delay: 0.25s; }
+.tile-v2:nth-child(6) { animation-delay: 0.3s; }
+
+@keyframes cardSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── PULL TO REFRESH INDICATOR ─── */
+.pull-indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(-40px);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  z-index: 50;
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  opacity: 0;
+}
+.pull-indicator.visible {
+  transform: translateX(-50%) translateY(12px);
+  opacity: 1;
+}
+.pull-indicator.refreshing .pull-spinner {
+  animation: spin 0.8s linear infinite;
+}
+.pull-spinner { transition: transform 0.2s; }
+
+/* ─── ENHANCED NAV TAB BOUNCE ─── */
+.bottom-nav-v2 .nav-tab:active .nav-icon {
+  animation: tabBounce 0.3s ease;
+}
+@keyframes tabBounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.85); }
+  70% { transform: scale(1.15); }
+  100% { transform: scale(1.1); }
+}
+
+/* ─── TOAST ENHANCEMENTS ─── */
+.toast {
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toast::before {
+  font-size: 16px;
+}
+.toast-success::before { content: '✓'; }
+.toast-error::before { content: '✕'; }
+.toast-info::before { content: 'ℹ'; }
+
+/* ─── HERO ENTRANCE ─── */
+.hero-v2 {
+  animation: heroReveal 0.5s ease-out;
+}
+@keyframes heroReveal {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── SMOOTH SCROLLBAR ─── */
+.screen-content {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.15) transparent;
+}
+.screen-content::-webkit-scrollbar { width: 4px; }
+.screen-content::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.12);
+  border-radius: 2px;
+}
+
+/* ─── GLASSMORPHISM HAMBURGER ─── */
+#hamburgerBtn {
+  transition: transform 0.2s, background 0.2s !important;
+}
+#hamburgerBtn:active {
+  transform: scale(0.88) !important;
+}
+#hamburgerBtn:hover {
+  background: rgba(0,0,0,0.35) !important;
+}
+
+/* ─── LOGIN SCREEN POLISH ─── */
+.login-screen .login-logo {
+  animation: loginHeroIn 0.6s ease-out;
+}
+.login-screen .login-form {
+  animation: loginFormSlide 0.5s ease-out 0.15s both;
+}
+@keyframes loginHeroIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes loginFormSlide {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── OTP INPUT FOCUS GLOW ─── */
+.otp-input input:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+  border-color: var(--primary);
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+}
+
+/* ─── ENHANCED SHORTCUT HOVER ─── */
+.shortcut-v2:hover .sc-icon {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--sc-from, #4CAF50) 40%, transparent);
+}
+.shortcut-v2 .sc-icon {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* ─── NOTIFICATION BADGE PULSE ─── */
+.hero-icon-btn .badge-dot {
+  animation: badgePulse 2s infinite;
+}
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.7; }
+}
+
+/* ─── TICKER SMOOTH FADE EDGES ─── */
+.ticker {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+
+/* ─── MODAL BACKDROP BLUR ─── */
+.modal-overlay {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ─── ENHANCED SCROLLABLE CHIPS ─── */
+.sticky-chips,
+.scroll-x {
+  -webkit-mask-image: linear-gradient(90deg, black 90%, transparent 100%);
+  mask-image: linear-gradient(90deg, black 90%, transparent 100%);
+}
+
+/* ─── SMOOTH INPUT TRANSITIONS ─── */
+.form-input,
+.phone-input input,
+.search-input-v2 {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.phone-input:focus-within {
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+/* ─── STATUS BAR SAFE AREA ─── */
+@supports (padding: env(safe-area-inset-top)) {
+  .hero-v2 { padding-top: calc(18px + env(safe-area-inset-top)); }
+  #hamburgerBtn { top: calc(12px + env(safe-area-inset-top)) !important; }
+}
+
+/* ─── HIGH-CONTRAST MODE ─── */
+@media (prefers-contrast: high) {
+  :root {
+    --shadow: 0 2px 8px rgba(0,0,0,0.15);
+    --border: #C0C0C0;
+  }
+  .tile-v2, .card-v2, .action-card, .price-row {
+    border-width: 2px;
+  }
+}
+
+/* ─── DARK MODE ENHANCED ─── */
+[data-theme="dark"] .splash-screen {
+  background: linear-gradient(135deg, #0a1a0d 0%, #1a3a1f 40%, #1B5E20 100%);
+}
+[data-theme="dark"] .bottom-nav-v2 {
+  border-top-color: #21262D;
+  background: color-mix(in srgb, #161B22 95%, transparent);
+}
+[data-theme="dark"] .action-card,
+[data-theme="dark"] .price-row {
+  border-color: #21262D;
+}
+[data-theme="dark"] .toast {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
 }
