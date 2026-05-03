@@ -54,17 +54,239 @@ export function renderKisan(container) {
     { id:'s13', name:'Komatsu PC200 Excavator', equipment_type:'excavator', listing_type:'rent', daily_rate:12000, sale_price:null, year_of_manufacture:2020, operator_included:true, status:'available', location_label:'Prakasam, AP', rating:4.6, description:'20-ton excavator, ideal for large pond digging, canal work, land clearing. 1800 hours.' },
   ];
 
+  // ══════════════════════════════════════════════════════════════
+  // VOICE SEARCH & SMART INPUT
+  // ══════════════════════════════════════════════════════════════
+  let voiceListening = false;
+  let smartInput = '';
+
+  function startVoiceSearch() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      showToast('Voice search not supported on this device. Try typing your need.', 'info');
+      return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    voiceListening = true;
+    render();
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      voiceListening = false;
+      smartInput = transcript;
+      render();
+      processSmartInput(transcript);
+    };
+    recognition.onerror = () => { voiceListening = false; render(); showToast('Could not hear clearly. Try again.', 'info'); };
+    recognition.onend = () => { voiceListening = false; render(); };
+    recognition.start();
+  }
+
+  function processSmartInput(input) {
+    const lower = input.toLowerCase();
+    if (lower.includes('tractor') || lower.includes('plowing') || lower.includes('plow')) {
+      showInstantRequestModal('tractor');
+    } else if (lower.includes('jcb') || lower.includes('digging') || lower.includes('pond')) {
+      showInstantRequestModal('jcb');
+    } else if (lower.includes('harvest')) {
+      showInstantRequestModal('harvester');
+    } else if (lower.includes('transport') || lower.includes('trolley') || lower.includes('delivery')) {
+      showInstantRequestModal('trolley');
+    } else if (lower.includes('spray') || lower.includes('pesticide')) {
+      showInstantRequestModal('sprayer');
+    } else if (lower.includes('worker') || lower.includes('labour') || lower.includes('labor')) {
+      mode = 'services'; render();
+    } else {
+      showInstantRequestModal('');
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // DYNAMIC PRICING ENGINE
+  // ══════════════════════════════════════════════════════════════
+  function calculateDynamicPrice(baseRate, opts = {}) {
+    let multiplier = 1.0;
+    // Time-based surge (peak season: Jun-Jul harvest, Oct-Jan)
+    const month = new Date().getMonth();
+    if ([5, 6, 9, 10, 11, 0].includes(month)) multiplier += 0.15;
+    // Urgency factor
+    if (opts.urgency === 'urgent') multiplier += 0.25;
+    // Distance factor (per 10km beyond 5km base)
+    if (opts.distanceKm && opts.distanceKm > 5) multiplier += ((opts.distanceKm - 5) / 10) * 0.05;
+    // Demand factor (high demand in area)
+    if (opts.highDemand) multiplier += 0.10;
+    return Math.round(baseRate * multiplier);
+  }
+
+  function renderPriceEstimate(baseRate, acres, hours, urgency) {
+    const dynamicRate = calculateDynamicPrice(baseRate, { urgency });
+    const byAcre = acres ? dynamicRate * acres : null;
+    const byHour = hours ? dynamicRate * hours : null;
+    const estimated = byAcre || byHour || dynamicRate;
+    return `
+      <div style="background:#E8F5E9;border:1px solid #C8E6C9;border-radius:10px;padding:10px 12px;margin-top:8px">
+        <div style="font-size:11px;font-weight:700;color:#2E7D32;margin-bottom:4px">💰 Transparent Pricing</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div><span style="font-size:10px;color:#757575">Per Hour</span><div style="font-weight:800;font-size:13px;color:#2E7D32">₹${dynamicRate.toLocaleString()}</div></div>
+          ${acres ? `<div><span style="font-size:10px;color:#757575">Per Acre</span><div style="font-weight:800;font-size:13px;color:#2E7D32">₹${Math.round(dynamicRate * 1.5).toLocaleString()}</div></div>` : ''}
+          <div><span style="font-size:10px;color:#757575">Est. Total</span><div style="font-weight:800;font-size:14px;color:#1B5E20">₹${estimated.toLocaleString()}</div></div>
+        </div>
+        ${urgency === 'urgent' ? '<div style="font-size:9px;color:#E65100;margin-top:4px">⚡ Surge pricing active (high demand)</div>' : ''}
+      </div>
+    `;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // LIVE TRACKING (Uber-style)
+  // ══════════════════════════════════════════════════════════════
+  function showLiveTrackingModal(booking) {
+    const op = booking.operator || {};
+    const etaMin = Math.floor(Math.random() * 20) + 5;
+    const distKm = (Math.random() * 8 + 1).toFixed(1);
+
+    showModal(`
+      <div class="modal-handle"></div>
+      <div style="background:linear-gradient(135deg,#1565C0,#0D47A1);color:white;border-radius:12px;padding:16px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:10px;opacity:0.8">LIVE TRACKING</div>
+            <div style="font-size:18px;font-weight:800;margin-top:2px">🚜 En Route</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:24px;font-weight:900">${etaMin} min</div>
+            <div style="font-size:10px;opacity:0.8">ETA · ${distKm} km away</div>
+          </div>
+        </div>
+        <!-- Simulated map area -->
+        <div style="margin-top:12px;background:rgba(255,255,255,0.1);border-radius:10px;padding:20px;text-align:center;position:relative;min-height:80px">
+          <div style="font-size:32px;position:absolute;left:20%;top:30%;animation:pulse 2s infinite">📍</div>
+          <div style="font-size:28px;position:absolute;right:20%;top:25%;animation:pulse 1.5s infinite">🚜</div>
+          <div style="position:absolute;left:30%;right:30%;top:50%;height:2px;background:rgba(255,255,255,0.4);border-top:2px dashed rgba(255,255,255,0.6)"></div>
+          <div style="font-size:9px;opacity:0.7;position:absolute;bottom:4px;left:50%;transform:translateX(-50%)">Live location updates every 30s</div>
+        </div>
+      </div>
+
+      <!-- Operator Info -->
+      <div style="background:white;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:48px;height:48px;border-radius:50%;background:#FBE9E7;display:flex;align-items:center;justify-content:center;font-size:22px;position:relative">
+            🚜
+            <div style="position:absolute;bottom:-2px;right:-2px;background:#4CAF50;width:14px;height:14px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:8px">✓</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px">${op.operator_name || 'Ramesh Yadav'}</div>
+            <div style="font-size:11px;color:#757575">${op.machine_name || 'John Deere 5310'} · ⭐ ${op.rating || '4.8'}</div>
+            <div style="display:flex;gap:4px;margin-top:4px">
+              <span style="background:#E8F5E9;color:#2E7D32;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:600">✅ Verified</span>
+              <span style="background:#E3F2FD;color:#1565C0;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:600">${op.total_jobs || 156} jobs</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <a href="tel:+91${op.phone || '9876543210'}" style="flex:1;background:#E8F5E9;color:#2E7D32;text-align:center;padding:10px;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none">📞 Call</a>
+          <button id="trackChatBtn" style="flex:1;background:#E3F2FD;color:#1565C0;border:none;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer">💬 Chat</button>
+          <button id="trackShareBtn" style="flex:1;background:#F3E5F5;color:#6A1B9A;border:none;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer">📤 Share</button>
+        </div>
+      </div>
+
+      <!-- Booking Status Flow -->
+      <div style="background:#F5F5F5;border-radius:12px;padding:12px">
+        <div style="font-size:11px;font-weight:700;color:#424242;margin-bottom:8px">Booking Progress</div>
+        ${['✅ Selected', '✅ Requested', '✅ Confirmed', '🔵 Tracking', '⬜ Payment'].map((step, i) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:4px 0;opacity:${i <= 3 ? 1 : 0.5}">
+            <span style="font-size:12px">${step.split(' ')[0]}</span>
+            <span style="font-size:11px;font-weight:${i === 3 ? '700' : '400'};color:${i === 3 ? '#1565C0' : '#424242'}">${step.split(' ').slice(1).join(' ')}</span>
+          </div>
+        `).join('')}
+      </div>
+    `);
+
+    document.querySelector('#trackChatBtn')?.addEventListener('click', () => { closeModal(); navigate('chat'); });
+    document.querySelector('#trackShareBtn')?.addEventListener('click', () => {
+      if (navigator.share) navigator.share({ title: 'Live Tracking', text: `Operator arriving in ${etaMin} min` }).catch(() => {});
+      else showToast('Link copied!', 'success');
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // OFFLINE/LITE MODE
+  // ══════════════════════════════════════════════════════════════
+  function getNetworkStatus() {
+    if (!navigator.onLine) return 'offline';
+    if (navigator.connection) {
+      const conn = navigator.connection;
+      if (conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g') return 'slow';
+    }
+    return 'online';
+  }
+
+  function renderOfflineBanner() {
+    const status = getNetworkStatus();
+    if (status === 'online') return '';
+    if (status === 'offline') return `
+      <div style="background:#FFEBEE;border:1px solid #FFCDD2;border-radius:10px;padding:10px 12px;margin:8px 14px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:18px">📴</span>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:#C62828">You're Offline</div>
+          <div style="font-size:10px;color:#757575">SMS/Call booking available</div>
+        </div>
+        <a href="tel:18001234567" style="background:#C62828;color:white;border-radius:8px;padding:6px 12px;font-size:10px;font-weight:700;text-decoration:none">📞 Call to Book</a>
+      </div>`;
+    return `
+      <div style="background:#FFF3E0;border:1px solid #FFE0B2;border-radius:10px;padding:8px 12px;margin:8px 14px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:14px">📶</span>
+        <div style="flex:1;font-size:11px;color:#E65100;font-weight:600">Slow network — Lite mode active</div>
+        <a href="sms:+919876543210?body=BOOK TRACTOR" style="background:#E65100;color:white;border-radius:8px;padding:5px 10px;font-size:9px;font-weight:700;text-decoration:none">SMS Book</a>
+      </div>`;
+  }
+
   function render() {
     container.innerHTML = `
-      <div class="hero-v2" role="banner" style="background:linear-gradient(135deg,#E65100,#BF360C);color:white">
+      <div class="hero-v2" role="banner" style="background:linear-gradient(135deg,#E65100,#BF360C);color:white;padding:20px 16px 24px">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:28px">🚜</span>
           <div style="flex:1">
-            <div style="font-weight:800;font-size:18px">KisanConnect</div>
-            <div style="font-size:11px;opacity:0.85">Farm Equipment Marketplace</div>
+            <div style="font-weight:800;font-size:18px">KisanConnect 2.0</div>
+            <div style="font-size:11px;opacity:0.85">Rural Execution Engine · Book → Track → Pay</div>
           </div>
+          <button id="liteModeTgl" style="background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:4px 8px;font-size:10px;color:white;cursor:pointer" title="Lite Mode">⚡ Lite</button>
+        </div>
+
+        <!-- Smart Search with Voice -->
+        <div style="margin-top:14px;position:relative">
+          <div style="display:flex;align-items:center;background:rgba(255,255,255,0.95);border-radius:12px;padding:4px;box-shadow:0 4px 15px rgba(0,0,0,0.15)">
+            <input id="smartSearchInput" type="text" placeholder="I need tractor now…" value="${smartInput}" style="flex:1;border:none;outline:none;padding:10px 12px;font-size:13px;font-weight:500;background:transparent;color:#424242;border-radius:10px" aria-label="Smart search - describe what you need">
+            <button id="voiceSearchBtn" style="width:38px;height:38px;border-radius:50%;border:none;background:${voiceListening ? '#D32F2F' : '#E65100'};color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;${voiceListening ? 'animation:pulse 1s infinite' : ''}" aria-label="Voice search">🎙️</button>
+          </div>
+          ${voiceListening ? '<div style="text-align:center;font-size:11px;color:rgba(255,255,255,0.9);margin-top:6px;animation:pulse 1.5s infinite">🔴 Listening… speak your need</div>' : ''}
+        </div>
+
+        <!-- Quick Actions -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:14px">
+          <button data-quick="tractor" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:10px;padding:10px 4px;text-align:center;cursor:pointer;color:white">
+            <div style="font-size:20px">🚜</div>
+            <div style="font-size:9px;font-weight:700;margin-top:3px">Book Tractor</div>
+          </button>
+          <button data-quick="trolley" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:10px;padding:10px 4px;text-align:center;cursor:pointer;color:white">
+            <div style="font-size:20px">🚚</div>
+            <div style="font-size:9px;font-weight:700;margin-top:3px">Transport</div>
+          </button>
+          <button data-quick="sell" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:10px;padding:10px 4px;text-align:center;cursor:pointer;color:white">
+            <div style="font-size:20px">🌾</div>
+            <div style="font-size:9px;font-weight:700;margin-top:3px">Sell Crop</div>
+          </button>
+          <button data-quick="worker" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:10px;padding:10px 4px;text-align:center;cursor:pointer;color:white">
+            <div style="font-size:20px">👷</div>
+            <div style="font-size:9px;font-weight:700;margin-top:3px">Find Worker</div>
+          </button>
         </div>
       </div>
+
+      <!-- Offline/Network Banner -->
+      ${renderOfflineBanner()}
 
       <div class="mode-toggle-bar" role="tablist" aria-label="Browse mode" style="display:flex;margin:10px 14px 6px;background:#F5F5F5;border-radius:12px;padding:3px;border:1px solid #E0E0E0">
         <button role="tab" aria-selected="${mode==='connect'}" data-kmode="connect" style="flex:1;padding:9px 4px;border-radius:10px;font-size:11px;font-weight:700;border:none;cursor:pointer;${mode==='connect'?'background:#D32F2F;color:white;box-shadow:0 2px 8px rgba(211,47,47,0.3)':'background:transparent;color:#757575'}">📡 Connect</button>
@@ -305,6 +527,7 @@ export function renderKisan(container) {
               <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
                 <span style="font-size:10px;color:#9E9E9E">${timeAgo}</span>
                 ${req.status === 'open' ? `<button class="respond-req-btn" data-rid="${req.id}" style="background:#D32F2F;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:10px;font-weight:700;cursor:pointer">Respond</button>` : ''}
+                ${req.status === 'accepted' ? `<button class="track-booking-btn" data-rid="${req.id}" style="background:#1565C0;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:10px;font-weight:700;cursor:pointer">📍 Track Live</button>` : ''}
               </div>
             </div>
           </div>
@@ -348,6 +571,12 @@ export function renderKisan(container) {
               <div style="display:flex;gap:6px;margin-top:10px">
                 <a href="tel:+91${op.phone}" style="flex:1;background:#E8F5E9;color:#2E7D32;text-align:center;padding:8px;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none">📞 Call</a>
                 ${op.is_available ? `<button class="hire-op-btn" data-opid="${op.id}" style="flex:2;background:#D32F2F;color:white;border:none;border-radius:8px;padding:8px;font-size:11px;font-weight:700;cursor:pointer">⚡ Hire Now</button>` : `<button disabled style="flex:2;background:#E0E0E0;color:#9E9E9E;border:none;border-radius:8px;padding:8px;font-size:11px;font-weight:700">Currently Busy</button>`}
+              </div>
+              <!-- Trust Layer -->
+              <div style="display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid #F5F5F5">
+                <span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:700">✅ KYC Verified</span>
+                <span style="background:#E3F2FD;color:#1565C0;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:600">🛡️ Insured</span>
+                <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:600">${op.total_jobs}+ completed</span>
               </div>
             </div>
           </div>
@@ -860,12 +1089,35 @@ export function renderKisan(container) {
     container.querySelectorAll('.machine-type-btn').forEach(b=>b.addEventListener('click',()=>showInstantRequestModal(b.dataset.reqtype)));
     container.querySelectorAll('.hire-op-btn').forEach(b=>b.addEventListener('click',()=>{
       const op = (operators.length > 0 ? operators : SAMPLE_OPERATORS).find(o=>o.id===b.dataset.opid);
-      if(op) showInstantRequestModal(op.machine_type);
+      if(op) showHireFlowModal(op);
     }));
     container.querySelectorAll('.respond-req-btn').forEach(b=>b.addEventListener('click',()=>{
       showToast('Opening response form...','info');
       showRespondModal(b.dataset.rid);
     }));
+    // UI 2.0: Voice search
+    container.querySelector('#voiceSearchBtn')?.addEventListener('click', startVoiceSearch);
+    // UI 2.0: Smart search input
+    container.querySelector('#smartSearchInput')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && e.target.value.trim()) {
+        smartInput = e.target.value.trim();
+        processSmartInput(smartInput);
+      }
+    });
+    // UI 2.0: Quick actions
+    container.querySelectorAll('[data-quick]').forEach(b => b.addEventListener('click', () => {
+      const action = b.dataset.quick;
+      if (action === 'sell') { navigate('agriflow'); }
+      else if (action === 'worker') { mode = 'services'; render(); }
+      else { showInstantRequestModal(action); }
+    }));
+    // UI 2.0: Live tracking for accepted requests
+    container.querySelectorAll('.track-booking-btn').forEach(b => b.addEventListener('click', () => {
+      const req = (machineRequests.length > 0 ? machineRequests : SAMPLE_REQUESTS).find(r=>r.id===b.dataset.rid);
+      if (req) showLiveTrackingModal({ operator: SAMPLE_OPERATORS.find(o=>o.machine_type===req.machine_type) || SAMPLE_OPERATORS[0] });
+    }));
+    // Lite mode toggle
+    container.querySelector('#liteModeTgl')?.addEventListener('click', () => showToast('Lite mode: Images hidden, minimal data usage', 'info'));
   }
 
   function showBookService(svid) {
@@ -936,6 +1188,116 @@ export function renderKisan(container) {
         showToast('Response sent successfully!', 'success');
         closeModal();
       }
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // HIRE FLOW MODAL: Select → Request → Confirm → Track → Pay
+  // ══════════════════════════════════════════════════════════════
+  function showHireFlowModal(op) {
+    const mt = MACHINE_TYPES_CONNECT.find(m=>m.id===op.machine_type);
+    const dynamicHourly = calculateDynamicPrice(op.hourly_rate || 400, {});
+    const dynamicDaily = calculateDynamicPrice(op.daily_rate || 2500, {});
+
+    showModal(`
+      <div class="modal-handle"></div>
+      <h3 style="margin:0 0 4px">⚡ Hire Operator</h3>
+      <div style="font-size:11px;color:#757575;margin-bottom:12px">Select → Request → Confirm → Track → Pay</div>
+
+      <!-- Step indicator -->
+      <div style="display:flex;gap:4px;margin-bottom:14px">
+        ${['Select','Request','Confirm','Track','Pay'].map((s,i) => `
+          <div style="flex:1;text-align:center">
+            <div style="width:20px;height:20px;border-radius:50%;background:${i===0?'#D32F2F':'#E0E0E0'};color:${i===0?'white':'#9E9E9E'};font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center">${i+1}</div>
+            <div style="font-size:8px;color:${i===0?'#D32F2F':'#9E9E9E'};margin-top:2px">${s}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Operator Card with Trust Layer -->
+      <div style="background:#F5F5F5;border-radius:12px;padding:12px;margin-bottom:12px">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <div style="position:relative">
+            <div style="width:48px;height:48px;border-radius:50%;background:#FBE9E7;display:flex;align-items:center;justify-content:center;font-size:22px">${mt?.icon||'🚜'}</div>
+            <div style="position:absolute;bottom:-2px;right:-2px;background:#4CAF50;width:14px;height:14px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:7px;color:white">✓</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px">${op.operator_name}</div>
+            <div style="font-size:11px;color:#757575">${op.machine_name || mt?.label} · ${op.experience_years}yr exp</div>
+            <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">
+              <span style="background:#E8F5E9;color:#2E7D32;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:700">✅ KYC Verified</span>
+              <span style="background:#FFF8E1;color:#F9A825;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:600">⭐ ${Number(op.rating).toFixed(1)}</span>
+              <span style="background:#E3F2FD;color:#1565C0;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:600">${op.total_jobs} jobs done</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transparent Pricing -->
+      <div style="background:#E8F5E9;border:1px solid #C8E6C9;border-radius:10px;padding:10px 12px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:#2E7D32;margin-bottom:6px">💰 Transparent Pricing</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div style="text-align:center"><div style="font-size:9px;color:#757575">Per Hour</div><div style="font-weight:800;font-size:14px;color:#2E7D32">₹${dynamicHourly.toLocaleString()}</div></div>
+          <div style="text-align:center"><div style="font-size:9px;color:#757575">Per Day</div><div style="font-weight:800;font-size:14px;color:#2E7D32">₹${dynamicDaily.toLocaleString()}</div></div>
+          <div style="text-align:center"><div style="font-size:9px;color:#757575">Per Acre</div><div style="font-weight:800;font-size:14px;color:#2E7D32">₹${Math.round(dynamicHourly * 1.5).toLocaleString()}</div></div>
+        </div>
+        <div style="font-size:9px;color:#757575;margin-top:4px;text-align:center">* Dynamic pricing · Based on demand & distance</div>
+      </div>
+
+      <!-- Booking Form -->
+      <div class="form-group"><label>Duration</label>
+        <select class="form-input" id="hireDuration">
+          <option value="2">2 hours</option>
+          <option value="4">4 hours (half day)</option>
+          <option value="8" selected>8 hours (full day)</option>
+          <option value="16">2 days</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="form-group"><label>Acres</label><input class="form-input" id="hireAcres" type="number" placeholder="e.g. 5"></div>
+        <div class="form-group"><label>When</label><input class="form-input" id="hireDate" type="date" min="${new Date().toISOString().slice(0,10)}"></div>
+      </div>
+      <div class="form-group"><label>Work Description</label><textarea class="form-input" id="hireDesc" rows="2" placeholder="Plowing, digging, harvesting…"></textarea></div>
+
+      <!-- Estimated Cost -->
+      <div id="hireEstimate" style="background:#F5F5F5;border-radius:8px;padding:10px;margin-bottom:12px;text-align:center">
+        <div style="font-size:10px;color:#757575">Estimated Cost</div>
+        <div style="font-size:22px;font-weight:900;color:#1B5E20">₹${dynamicDaily.toLocaleString()}</div>
+        <div style="font-size:9px;color:#757575">Platform fee (3%): ₹${Math.round(dynamicDaily * 0.03)}</div>
+      </div>
+
+      <button id="hireConfirmBtn" style="width:100%;padding:14px;background:linear-gradient(135deg,#D32F2F,#B71C1C);color:white;border:none;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 4px 15px rgba(211,47,47,0.3)">
+        ⚡ Request & Pay — ₹${dynamicDaily.toLocaleString()}
+      </button>
+      <div style="font-size:10px;color:#9E9E9E;text-align:center;margin-top:6px">🔒 Payment held in escrow until job completes</div>
+    `);
+
+    // Update estimate on duration change
+    document.querySelector('#hireDuration')?.addEventListener('change', (ev) => {
+      const hours = Number(ev.target.value);
+      const cost = hours <= 4 ? dynamicHourly * hours : dynamicDaily * Math.ceil(hours / 8);
+      const est = document.querySelector('#hireEstimate');
+      if (est) est.innerHTML = `<div style="font-size:10px;color:#757575">Estimated Cost</div><div style="font-size:22px;font-weight:900;color:#1B5E20">₹${cost.toLocaleString()}</div><div style="font-size:9px;color:#757575">Platform fee (3%): ₹${Math.round(cost * 0.03)}</div>`;
+      const btn = document.querySelector('#hireConfirmBtn');
+      if (btn) btn.textContent = `⚡ Request & Pay — ₹${cost.toLocaleString()}`;
+    });
+
+    document.querySelector('#hireConfirmBtn')?.addEventListener('click', async () => {
+      const hours = Number(document.querySelector('#hireDuration')?.value) || 8;
+      const cost = hours <= 4 ? dynamicHourly * hours : dynamicDaily * Math.ceil(hours / 8);
+      closeModal();
+      showCheckout({
+        amount: cost,
+        description: `${op.operator_name} — ${op.machine_name || mt?.label} — ${hours}hrs`,
+        order_type: 'kisanconnect',
+        reference_id: op.id,
+        onSuccess: () => {
+          showToast('Booking confirmed! Operator notified.', 'success');
+          // Show live tracking
+          setTimeout(() => showLiveTrackingModal({ operator: op }), 1000);
+        },
+        onFailure: () => showToast('Payment failed. Try again.', 'error'),
+      });
     });
   }
 
