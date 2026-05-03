@@ -128,11 +128,39 @@ class ApiClient {
   getComments(id) { return this.get(`/community/posts/${id}/comments`); }
   addComment(id, d) { return this.post(`/community/posts/${id}/comments`, d); }
 
-  // Orders
+  // Orders (legacy)
   getOrders(params = '') { return this.get(`/orders${params}`); }
   getOrder(id) { return this.get(`/orders/${id}`); }
   createOrder(d) { return this.post('/orders', d); }
   updateOrderStatus(id, d) { return this.patch(`/orders/${id}/status`, d); }
+
+  // ─── Trade Flow (End-to-End: Listing → Bid → Escrow → Delivery → Payment) ──
+  // Listings
+  createTradeListing(d) { return this.post('/trade/listings', d); }
+  getTradeListings(params = '') { return this.get(`/trade/listings${params}`); }
+  // Bids
+  placeBid(d) { return this.post('/trade/bids', d); }
+  getBids(params = '') { return this.get(`/trade/bids${params}`); }
+  acceptBid(bid_id) { return this.post('/trade/accept-bid', { bid_id }); }
+  // Trade Orders
+  getTradeOrders(params = '') { return this.get(`/trade/orders${params}`); }
+  getTradeOrder(id) { return this.get(`/trade/orders/${id}`); }
+  // Trade Order Lifecycle Actions
+  fundEscrow(orderId) { return this.post(`/trade/orders/${orderId}/fund`, {}); }
+  verifyQuality(orderId, d) { return this.post(`/trade/orders/${orderId}/verify-quality`, d); }
+  dispatchOrder(orderId, d) { return this.post(`/trade/orders/${orderId}/dispatch`, d); }
+  updateOrderLocation(orderId, d) { return this.post(`/trade/orders/${orderId}/update-location`, d); }
+  confirmDelivery(orderId, d) { return this.post(`/trade/orders/${orderId}/confirm-delivery`, d); }
+  disputeOrder(orderId, d) { return this.post(`/trade/orders/${orderId}/dispute`, d); }
+  cancelTradeOrder(orderId, d) { return this.post(`/trade/orders/${orderId}/cancel`, d); }
+
+  // ─── Agent Network ─────────────────────────────────────────────
+  registerAgent(d) { return this.post('/agents/register', d); }
+  getAgentProfile() { return this.get('/agents/me'); }
+  getAgentDashboard() { return this.get('/agents/dashboard'); }
+  agentOnboardFarmer(d) { return this.post('/agents/onboard-farmer', d); }
+  agentAssistedListing(d) { return this.post('/agents/assisted-listing', d); }
+  getAgentCommissions() { return this.get('/agents/commissions'); }
 
   // Weather
   getForecast(params = '') { return this.get(`/weather/forecast${params}`); }
@@ -478,6 +506,46 @@ class ApiClient {
   getMyBookingsAll(params = '') { return this.get(`/booking/my${params}`); }
   getBooking(id) { return this.get(`/booking/${id}`); }
   deleteAvailabilitySlot(slotId) { return this.del(`/booking/availability/${slotId}`); }
+  // ─── Logistics ─────────────────────────────────────────────
+  registerLogisticsPartner(d) { return this.post('/logistics/partners', d); }
+  getLogisticsPartners(params = '') { return this.get(`/logistics/partners${params}`); }
+  updateLogisticsPartner(id, d) { return this.patch(`/logistics/partners/${id}`, d); }
+  createDeliveryRequest(d) { return this.post('/logistics/request', d); }
+  getDeliveryRequests(params = '') { return this.get(`/logistics/requests${params}`); }
+  updateDeliveryStatus(id, d) { return this.patch(`/logistics/requests/${id}`, d); }
+  assignDeliveryPartner(d) { return this.post('/logistics/assign', d); }
+  getDeliveryEstimate(params) { return this.get(`/logistics/estimate?${params}`); }
+  createDeliveryBatch(d) { return this.post('/logistics/batch', d); }
+  getDeliveryBatch(id) { return this.get(`/logistics/batch/${id}`); }
+  getPartnerDashboard() { return this.get('/logistics/partner/dashboard'); }
+
+  // ─── Input Marketplace ─────────────────────────────────────
+  getInputCategories() { return this.get('/inputs/categories'); }
+  getInputProducts(params = '') { return this.get(`/inputs/products${params}`); }
+  getInputProduct(id) { return this.get(`/inputs/products/${id}`); }
+  getInputSellers(params = '') { return this.get(`/inputs/sellers${params}`); }
+  placeInputOrder(d) { return this.post('/inputs/orders', d); }
+  getInputOrders(params = '') { return this.get(`/inputs/orders${params}`); }
+  updateInputOrderStatus(id, d) { return this.patch(`/inputs/orders/${id}/status`, d); }
+  getInputRecommendations() { return this.get('/inputs/recommendations'); }
+
+  // ─── Crop Planning AI ──────────────────────────────────────
+  getCropRecommendations(params = '') { return this.get(`/cropplan/recommend${params}`); }
+  createCropPlan(d) { return this.post('/cropplan/plans', d); }
+  getCropPlans(params = '') { return this.get(`/cropplan/plans${params}`); }
+  getCropPlan(id) { return this.get(`/cropplan/plans/${id}`); }
+  updateCropPlan(id, d) { return this.patch(`/cropplan/plans/${id}`, d); }
+  getCropPlanTasks(planId) { return this.get(`/cropplan/tasks/${planId}`); }
+  completeCropTask(id) { return this.patch(`/cropplan/tasks/${id}/complete`, {}); }
+  getSeasonReport(params = '') { return this.get(`/cropplan/season-report${params}`); }
+  getSeasonComparison() { return this.get('/cropplan/comparison'); }
+
+  // ─── Onboarding (Multi-role) ───────────────────────────────
+  registerExporter(d) { return this.post('/onboarding/exporter', d); }
+  registerSupplier(d) { return this.post('/onboarding/supplier', d); }
+  registerBankPartner(d) { return this.post('/onboarding/bank-partner', d); }
+  getOnboardingStatus() { return this.get('/onboarding/status'); }
+  submitVerification(d) { return this.post('/onboarding/verify', d); }
 }
 
 export const api = new ApiClient();

@@ -67,6 +67,26 @@ const cartRouter = require('./routes/cart');
 const sellerRouter = require('./routes/seller');
 const livestockRouter = require('./routes/livestock');
 const bookingRouter = require('./routes/booking');
+const logisticsRouter = require('./routes/logistics');
+const inputsRouter = require('./routes/inputs');
+const cropplanningRouter = require('./routes/cropplanning');
+const onboardingRouter = require('./routes/onboarding');
+// Phase 2-4 routes
+const contractsRouter = require('./routes/contracts');
+const trustscoreRouter = require('./routes/trustscore');
+const satelliteRouter = require('./routes/satellite');
+const financeRouter = require('./routes/finance');
+const agentsRouter = require('./routes/agents');
+const bankportalRouter = require('./routes/bankportal');
+const governmentRouter = require('./routes/government');
+const exporterRouter = require('./routes/exporter');
+const openapiRouter = require('./routes/openapi');
+const executionRouter = require('./routes/execution');
+// Phase 5 — KisanConnect 2.0 Rural Operating System
+const vehiclesRouter = require('./routes/vehicles');
+const deliveryRouter = require('./routes/delivery');
+const gigworkersRouter = require('./routes/gigworkers');
+const transportRouter = require('./routes/transport');
 
 const app = express();
 const server = http.createServer(app);
@@ -203,6 +223,26 @@ app.use('/api/cart', cartRouter);
 app.use('/api/seller', sellerRouter);
 app.use('/api/livestock', livestockRouter);
 app.use('/api/booking', bookingRouter);
+app.use('/api/logistics', logisticsRouter);
+app.use('/api/inputs', inputsRouter);
+app.use('/api/cropplan', cropplanningRouter);
+app.use('/api/onboarding', onboardingRouter);
+// Phase 2-4
+app.use('/api/contracts', contractsRouter);
+app.use('/api/trustscore', trustscoreRouter);
+app.use('/api/satellite', satelliteRouter);
+app.use('/api/finance', financeRouter);
+app.use('/api/agents', agentsRouter);
+app.use('/api/bankportal', bankportalRouter);
+app.use('/api/government', governmentRouter);
+app.use('/api/exporter', exporterRouter);
+app.use('/api/openapi', openapiRouter);
+app.use('/api/execution', executionRouter);
+// Phase 5 — KisanConnect 2.0 ROS
+app.use('/api/vehicles', vehiclesRouter);
+app.use('/api/delivery', deliveryRouter);
+app.use('/api/gigworkers', gigworkersRouter);
+app.use('/api/transport', transportRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -230,6 +270,16 @@ async function start() {
     await migrateV5();
     const { migrateV6 } = require('./db/migrate-v6-farmerson');
     await migrateV6();
+    const { migrateV6AgriOS } = require('./db/migrate-v6-agrios');
+    await migrateV6AgriOS();
+    const { migrateV7 } = require('./db/migrate-v7-intelligence');
+    await migrateV7();
+    const { migrateV8 } = require('./db/migrate-v8-finance');
+    await migrateV8();
+    const { migrateV9 } = require('./db/migrate-v9-ecosystem');
+    await migrateV9();
+    const { migrateV10ROS } = require('./db/migrate-v10-ros');
+    await migrateV10ROS();
     logger.info('Database migrations applied');
 
     // Recover any pending jobs from previous crash

@@ -4,6 +4,9 @@ export default defineConfig({
   root: '.',
   base: process.env.VITE_BASE_PATH || './',
   publicDir: 'public',
+  test: {
+    exclude: ['backend/**', 'node_modules/**'],
+  },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
