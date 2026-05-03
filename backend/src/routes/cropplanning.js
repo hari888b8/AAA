@@ -335,14 +335,20 @@ router.get('/comparison', auth, async (req, res) => {
 
 // Helper: Generate standard crop tasks
 function generateCropTasks(season, cropId) {
-  const baseDate = new Date();
+  const now = Date.now();
+  const DAY = 24 * 60 * 60 * 1000;
+
+  function dueDate(daysFromNow) {
+    return new Date(now + daysFromNow * DAY).toISOString().split('T')[0];
+  }
+
   const tasks = [
     {
       task_type: 'land_prep',
       title: 'Land Preparation',
       title_te: 'భూమి తయారీ',
       description: 'Plowing, leveling, and soil treatment',
-      due_date: new Date(baseDate.setDate(baseDate.getDate() + 7)).toISOString().split('T')[0],
+      due_date: dueDate(7),
       input_needed: [{ category: 'Tools', quantity: 'As needed' }]
     },
     {
@@ -350,7 +356,7 @@ function generateCropTasks(season, cropId) {
       title: 'Buy Seeds & Inputs',
       title_te: 'విత్తనాలు & ఇన్పుట్లు కొనుగోలు',
       description: 'Purchase quality seeds and fertilizers for the season',
-      due_date: new Date(baseDate.setDate(baseDate.getDate() + 7)).toISOString().split('T')[0],
+      due_date: dueDate(14),
       input_needed: [{ category: 'Seeds', quantity: '20kg/acre' }, { category: 'Fertilizers', quantity: '50kg/acre' }]
     },
     {
@@ -358,7 +364,7 @@ function generateCropTasks(season, cropId) {
       title: 'Sowing',
       title_te: 'విత్తడం',
       description: 'Sow seeds according to recommended spacing',
-      due_date: new Date(baseDate.setDate(baseDate.getDate() + 7)).toISOString().split('T')[0],
+      due_date: dueDate(21),
       input_needed: []
     },
     {
@@ -366,7 +372,7 @@ function generateCropTasks(season, cropId) {
       title: 'First Fertilizer Application',
       title_te: 'మొదటి ఎరువు వేయడం',
       description: 'Apply basal dose of fertilizer',
-      due_date: new Date(baseDate.setDate(baseDate.getDate() + 14)).toISOString().split('T')[0],
+      due_date: dueDate(35),
       input_needed: [{ category: 'Fertilizers', quantity: '25kg/acre' }]
     },
     {
@@ -374,7 +380,7 @@ function generateCropTasks(season, cropId) {
       title: 'Irrigation Schedule Start',
       title_te: 'నీటిపారుదల షెడ్యూల్',
       description: 'Begin regular irrigation as per crop requirement',
-      due_date: new Date(baseDate.setDate(baseDate.getDate() + 7)).toISOString().split('T')[0],
+      due_date: dueDate(42),
       input_needed: []
     },
     {
@@ -382,7 +388,7 @@ function generateCropTasks(season, cropId) {
       title: 'Pest Monitoring & Control',
       title_te: 'పురుగుల నియంత్రణ',
       description: 'Monitor for pests, apply pesticide if needed',
-      due_date: new Date(baseDate.setDate(baseDate.getDate() + 14)).toISOString().split('T')[0],
+      due_date: dueDate(56),
       input_needed: [{ category: 'Pesticides', quantity: 'As needed' }]
     },
     {
@@ -390,7 +396,7 @@ function generateCropTasks(season, cropId) {
       title: 'Second Fertilizer Application',
       title_te: 'రెండవ ఎరువు వేయడం',
       description: 'Top dressing with nitrogen-rich fertilizer',
-      due_date: new Date(baseDate.setDate(baseDate.getDate() + 14)).toISOString().split('T')[0],
+      due_date: dueDate(70),
       input_needed: [{ category: 'Fertilizers', quantity: '25kg/acre' }]
     },
     {
@@ -398,7 +404,7 @@ function generateCropTasks(season, cropId) {
       title: 'Harvest',
       title_te: 'పంట కోత',
       description: 'Harvest when crop reaches maturity',
-      due_date: new Date(baseDate.setDate(baseDate.getDate() + 30)).toISOString().split('T')[0],
+      due_date: dueDate(100),
       input_needed: [{ category: 'Tools', quantity: 'Harvester/labor' }]
     }
   ];

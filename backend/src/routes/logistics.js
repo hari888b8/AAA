@@ -144,23 +144,33 @@ router.get('/requests', auth, async (req, res) => {
   try {
     const { status, limit = 20, offset = 0 } = req.query;
     let conditions = [];
-    let params = [parseInt(limit), parseInt(offset)];
+    let params = [];
+    let i = 1;
 
     // Check if user is a logistics partner
     const partner = await pool.query('SELECT id FROM logistics_partners WHERE user_id = $1', [req.user.id]);
     if (partner.rows.length) {
-      conditions.push(`(dr.partner_id = '${partner.rows[0].id}')`);
+      conditions.push(`dr.partner_id = $${i++}`);
+      params.push(partner.rows[0].id);
     }
 
-    if (status) { conditions.push(`dr.status = '${status}'`); }
+    if (status) {
+      const validStatuses = ['pending', 'assigned', 'pickup_enroute', 'picked_up', 'in_transit', 'delivered', 'completed'];
+      if (validStatuses.includes(status)) {
+        conditions.push(`dr.status = $${i++}`);
+        params.push(status);
+      }
+    }
 
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+    params.push(Math.min(parseInt(limit) || 20, 100), parseInt(offset) || 0);
+
     const result = await pool.query(`
       SELECT dr.*, lp.name as partner_name, lp.phone as partner_phone, lp.vehicle_type
       FROM delivery_requests dr
       LEFT JOIN logistics_partners lp ON dr.partner_id = lp.id
       ${where}
-      ORDER BY dr.created_at DESC LIMIT $1 OFFSET $2
+      ORDER BY dr.created_at DESC LIMIT $${i++} OFFSET $${i}
     `, params);
 
     res.json({ deliveries: result.rows });
@@ -282,6 +292,9 @@ router.post('/batch', auth, async (req, res) => {
       return res.status(400).json({ error: 'partner_id and batch_date are required' });
     }
 
+    // Limit batch size to prevent abuse
+    const ids = Array.isArray(delivery_ids) ? delivery_ids.slice(0, 50) : [];
+
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -289,16 +302,14 @@ router.post('/batch', auth, async (req, res) => {
       const batch = await client.query(`
         INSERT INTO delivery_batches (partner_id, route_name, batch_date, total_orders)
         VALUES ($1, $2, $3, $4) RETURNING *
-      `, [partner_id, route_name, batch_date, (delivery_ids || []).length]);
+      `, [partner_id, route_name, batch_date, ids.length]);
 
       // Add items to batch
-      if (delivery_ids && delivery_ids.length) {
-        for (let idx = 0; idx < delivery_ids.length; idx++) {
-          await client.query(`
-            INSERT INTO delivery_batch_items (batch_id, delivery_id, sequence_order, pickup_or_drop)
-            VALUES ($1, $2, $3, 'pickup')
-          `, [batch.rows[0].id, delivery_ids[idx], idx + 1]);
-        }
+      for (let idx = 0; idx < ids.length; idx++) {
+        await client.query(`
+          INSERT INTO delivery_batch_items (batch_id, delivery_id, sequence_order, pickup_or_drop)
+          VALUES ($1, $2, $3, 'pickup')
+        `, [batch.rows[0].id, ids[idx], idx + 1]);
       }
 
       await client.query('COMMIT');
