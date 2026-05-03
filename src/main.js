@@ -114,6 +114,13 @@ export function navigate(route) {
 }
 _registerNavigator(navigate);
 
+// Global navigateBack for screens that use it
+window.navigateBack = () => {
+  const route = ROUTES[currentRoute];
+  if (route?.back) navigate(route.back);
+  else navigate('home');
+};
+
 // ===== RENDER =====
 function renderApp() {
   const state = getState();

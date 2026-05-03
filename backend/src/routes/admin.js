@@ -112,4 +112,71 @@ router.get('/payments', async (req, res) => {
   }
 });
 
+// GET /api/admin/audit-logs — Audit log viewer
+router.get('/audit-logs', async (req, res) => {
+  try {
+    const { type, severity, actor_id, since, limit = 50 } = req.query;
+    const { queryLogs } = require('../services/audit');
+    const logs = await queryLogs({ type, severity, actorId: actor_id, since, limit: parseInt(limit) });
+    res.json({ logs, count: logs.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/cache-stats — Redis/memory cache statistics
+router.get('/cache-stats', async (req, res) => {
+  try {
+    const { getStats } = require('../services/cache');
+    const stats = await getStats();
+    res.json({ cache: stats });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/ws-stats — WebSocket connection stats
+router.get('/ws-stats', async (req, res) => {
+  try {
+    const { getConnectionStats } = require('../services/websocket');
+    res.json({ websocket: getConnectionStats() });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/feature-flags — List all feature flags
+router.get('/feature-flags', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM feature_flags ORDER BY flag_key');
+    res.json({ flags: rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/admin/feature-flags/:key — Update a feature flag
+router.patch('/feature-flags/:key', async (req, res) => {
+  try {
+    const { is_enabled, rollout_pct, target_roles } = req.body;
+    const updates = [];
+    const params = [];
+    let i = 1;
+    if (is_enabled !== undefined) { updates.push(`is_enabled = $${i++}`); params.push(is_enabled); }
+    if (rollout_pct !== undefined) { updates.push(`rollout_pct = $${i++}`); params.push(rollout_pct); }
+    if (target_roles) { updates.push(`target_roles = $${i++}`); params.push(target_roles); }
+    if (!updates.length) return res.status(400).json({ error: 'Nothing to update' });
+    updates.push('updated_at = NOW()');
+    params.push(req.params.key);
+    const { rows } = await pool.query(
+      `UPDATE feature_flags SET ${updates.join(', ')} WHERE flag_key = $${i} RETURNING *`,
+      params
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Flag not found' });
+    res.json({ flag: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

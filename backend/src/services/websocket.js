@@ -1,10 +1,12 @@
 const WebSocket = require('ws');
 const { query } = require('../db/pool');
 const logger = require('../lib/logger');
+const { get: cacheGet, set: cacheSet } = require('../services/cache');
 
 let wss = null;
 const clients = new Map(); // userId -> Set<ws>
 const subscriptions = new Map(); // userId -> Set<channel>
+const rooms = new Map(); // roomName -> Set<ws> (for targeted broadcasting)
 
 function setupWebSocket(server) {
   wss = new WebSocket.Server({ server, path: '/ws' });
@@ -32,14 +34,34 @@ function setupWebSocket(server) {
         if (msg.type === 'subscribe' && msg.channels) {
           if (!subscriptions.has(ws.userId)) subscriptions.set(ws.userId, new Set());
           const subs = subscriptions.get(ws.userId);
-          msg.channels.forEach(ch => subs.add(ch));
+          msg.channels.forEach(ch => {
+            subs.add(ch);
+            // Also add to room-based tracking
+            if (!rooms.has(ch)) rooms.set(ch, new Set());
+            rooms.get(ch).add(ws);
+          });
           ws.send(JSON.stringify({ type: 'subscribed', channels: Array.from(subs) }));
         }
 
         // Unsubscribe from channels
         if (msg.type === 'unsubscribe' && msg.channels) {
           const subs = subscriptions.get(ws.userId);
-          if (subs) msg.channels.forEach(ch => subs.delete(ch));
+          if (subs) msg.channels.forEach(ch => {
+            subs.delete(ch);
+            if (rooms.has(ch)) rooms.get(ch).delete(ws);
+          });
+        }
+
+        // Join a room (for group chat, auction, etc.)
+        if (msg.type === 'join_room' && msg.room) {
+          if (!rooms.has(msg.room)) rooms.set(msg.room, new Set());
+          rooms.get(msg.room).add(ws);
+          ws.send(JSON.stringify({ type: 'room_joined', room: msg.room }));
+        }
+
+        // Leave a room
+        if (msg.type === 'leave_room' && msg.room) {
+          if (rooms.has(msg.room)) rooms.get(msg.room).delete(ws);
         }
       } catch (e) {
         logger.warn('[WS] Parse error:', e.message);
@@ -53,6 +75,11 @@ function setupWebSocket(server) {
           clients.delete(ws.userId);
           subscriptions.delete(ws.userId);
         }
+      }
+      // Clean up room memberships
+      for (const [roomName, members] of rooms.entries()) {
+        members.delete(ws);
+        if (members.size === 0) rooms.delete(roomName);
       }
     });
 
@@ -104,6 +131,16 @@ function sendToUser(userId, data) {
 
 // Broadcast to users subscribed to specific channels
 function broadcastToChannel(channel, data) {
+  // Use room-based approach for efficiency
+  if (rooms.has(channel)) {
+    const msg = JSON.stringify(data);
+    rooms.get(channel).forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) ws.send(msg);
+    });
+    return;
+  }
+
+  // Fallback to subscription-based
   const msg = JSON.stringify(data);
   for (const [userId, subs] of subscriptions.entries()) {
     if (subs.has(channel) && clients.has(userId)) {
@@ -112,6 +149,25 @@ function broadcastToChannel(channel, data) {
       });
     }
   }
+}
+
+// Broadcast to a specific room (e.g., auction room, chat group)
+function broadcastToRoom(room, data, excludeWs = null) {
+  if (!rooms.has(room)) return;
+  const msg = JSON.stringify(data);
+  rooms.get(room).forEach((ws) => {
+    if (ws !== excludeWs && ws.readyState === WebSocket.OPEN) ws.send(msg);
+  });
+}
+
+// Get connection stats for monitoring
+function getConnectionStats() {
+  return {
+    total_connections: wss ? wss.clients.size : 0,
+    authenticated_users: clients.size,
+    active_rooms: rooms.size,
+    active_subscriptions: subscriptions.size,
+  };
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -283,4 +339,4 @@ function startTradeUpdatesBroadcast() {
   }, 5000);
 }
 
-module.exports = { setupWebSocket, broadcast, sendToUser, broadcastToChannel };
+module.exports = { setupWebSocket, broadcast, sendToUser, broadcastToChannel, broadcastToRoom, getConnectionStats };
