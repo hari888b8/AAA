@@ -47,6 +47,11 @@ import { renderFinance } from './screens/FinanceScreen.js';
 import { renderAgentDashboard } from './screens/AgentDashboardScreen.js';
 import { renderExporter } from './screens/ExporterScreen.js';
 import { renderAnalytics } from './screens/AnalyticsScreen.js';
+import { renderExecutionNetwork } from './screens/ExecutionNetworkScreen.js';
+import { renderDemandEngine } from './screens/DemandEngineScreen.js';
+import { renderHyperlocal } from './screens/HyperlocalScreen.js';
+import { renderVoiceAssist } from './screens/VoiceAssistScreen.js';
+import { renderCropLifecycle } from './screens/CropLifecycleScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -102,6 +107,11 @@ const ROUTES = {
   agentdashboard:{ title: 'Agent Hub',     icon: '🤝', render: renderAgentDashboard, back: 'home'  },
   exporter:      { title: 'Exporter',      icon: '🌍', render: renderExporter,     back: 'home'    },
   analytics:     { title: 'Analytics',     icon: '📊', render: renderAnalytics,    back: 'home'    },
+  executionnetwork: { title: 'Execution Network', icon: '🌾', render: renderExecutionNetwork, back: 'home' },
+  demandengine:  { title: 'Demand Engine', icon: '🎯', render: renderDemandEngine, back: 'home'    },
+  hyperlocal:    { title: 'Local Market',  icon: '📍', render: renderHyperlocal,   back: 'home'    },
+  voiceassist:   { title: 'Voice & Assist',icon: '🎙️', render: renderVoiceAssist,  back: 'home'    },
+  croplifecycle: { title: 'Crop Lifecycle',icon: '🔄', render: renderCropLifecycle,back: 'home'    },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────
@@ -205,6 +215,16 @@ function renderApp() {
             {icon:'👁️',label:'Watchlists & Alerts',route:'watchlists'},
             {icon:'🔐',label:'Escrow Payments',route:'escrow'},
             {icon:'🎫',label:'Support Tickets',route:'tickets'},
+          ].map(m=>`<button class="menu-nav-btn" data-route="${m.route}" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:none;background:transparent;cursor:pointer;text-align:left;font-size:13px;color:#424242"><span style="font-size:18px">${m.icon}</span>${m.label}</button>`).join('')}
+          <div style="height:1px;background:#E0E0E0;margin:8px 16px"></div>
+          <div style="padding:4px 16px;font-size:10px;font-weight:700;color:#9E9E9E;text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">Execution Layer</div>
+          ${[
+            {icon:'🌾',label:'Execution Network',route:'executionnetwork'},
+            {icon:'🎯',label:'Demand Engine',route:'demandengine'},
+            {icon:'📍',label:'Local Market',route:'hyperlocal'},
+            {icon:'🎙️',label:'Voice & Assist',route:'voiceassist'},
+            {icon:'🔄',label:'Crop Lifecycle',route:'croplifecycle'},
+            {icon:'🤝',label:'Agent Hub',route:'agentdashboard'},
           ].map(m=>`<button class="menu-nav-btn" data-route="${m.route}" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:none;background:transparent;cursor:pointer;text-align:left;font-size:13px;color:#424242"><span style="font-size:18px">${m.icon}</span>${m.label}</button>`).join('')}
           <div style="height:1px;background:#E0E0E0;margin:8px 16px"></div>
           <button id="logoutMenuBtn" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:none;background:transparent;cursor:pointer;text-align:left;font-size:13px;color:#C62828"><span style="font-size:18px">🚪</span>${t('logout') || 'Logout'}</button>

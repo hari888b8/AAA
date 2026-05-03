@@ -194,6 +194,17 @@ export function renderHome(container) {
       ${platformTile({ icon:'🎓', title:'Training',    sub:'Courses & tips',        meta:'10 courses',          route:'training', color:'#6A1B9A' })}
     </div>
 
+    <!-- EXECUTION & DEMAND LAYER -->
+    ${sectionTitle('Execution & Market', 'Ground-level operations')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px">
+      ${platformTile({ icon:'🌾', title:'Execution Net', sub:'Agents & Verification', meta:'Pickup · Quality', route:'executionnetwork', color:'#1B5E20' })}
+      ${platformTile({ icon:'🎯', title:'Demand Engine', sub:'Guaranteed Buyers',     meta:'Pre-harvest deals', route:'demandengine', color:'#E65100' })}
+      ${platformTile({ icon:'📍', title:'Local Market',  sub:'Hyperlocal Deals',      meta:'Nearby buyers',     route:'hyperlocal', color:'#0D47A1' })}
+      ${platformTile({ icon:'🎙️', title:'Voice & Assist',sub:'Speak to trade',        meta:'WhatsApp · IVR',    route:'voiceassist', color:'#4527A0' })}
+      ${platformTile({ icon:'🔄', title:'Crop Cycle',   sub:'Input→Grow→Sell→Repay', meta:'Closed-loop',        route:'croplifecycle', color:'#2E7D32' })}
+      ${platformTile({ icon:'🤝', title:'Agent Hub',    sub:'Field operations',       meta:'Onboard · Verify',  route:'agentdashboard', color:'#37474F' })}
+    </div>
+
     <!-- LIVE ACTIVITY -->
     ${sectionTitle('Live Activity', 'Across the platform')}
     <div style="padding:0 14px">
