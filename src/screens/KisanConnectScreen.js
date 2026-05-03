@@ -60,9 +60,31 @@ export function renderKisan(container) {
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:28px">🚜</span>
           <div style="flex:1">
-            <div style="font-weight:800;font-size:18px">KisanConnect</div>
-            <div style="font-size:11px;opacity:0.85">Farm Equipment Marketplace</div>
+            <div style="font-weight:800;font-size:18px">KisanConnect 2.0</div>
+            <div style="font-size:11px;opacity:0.85">Rural Operating System — One App for Everything</div>
           </div>
+        </div>
+      </div>
+
+      <!-- ROS Quick Access Hub -->
+      <div style="padding:10px 14px 4px">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+          <button onclick="navigate('vehicles')" style="border:none;background:#E3F2FD;border-radius:12px;padding:12px 4px;cursor:pointer;text-align:center">
+            <div style="font-size:20px">🚗</div>
+            <div style="font-size:9px;font-weight:600;color:#1565C0;margin-top:2px">Vehicles</div>
+          </button>
+          <button onclick="navigate('logistics')" style="border:none;background:#FFF3E0;border-radius:12px;padding:12px 4px;cursor:pointer;text-align:center">
+            <div style="font-size:20px">🚚</div>
+            <div style="font-size:9px;font-weight:600;color:#E65100;margin-top:2px">Transport</div>
+          </button>
+          <button onclick="navigate('delivery')" style="border:none;background:#F3E5F5;border-radius:12px;padding:12px 4px;cursor:pointer;text-align:center">
+            <div style="font-size:20px">📦</div>
+            <div style="font-size:9px;font-weight:600;color:#6A1B9A;margin-top:2px">Delivery</div>
+          </button>
+          <button onclick="navigate('gigworkers')" style="border:none;background:#E8F5E9;border-radius:12px;padding:12px 4px;cursor:pointer;text-align:center">
+            <div style="font-size:20px">👨‍🔧</div>
+            <div style="font-size:9px;font-weight:600;color:#2E7D32;margin-top:2px">Workers</div>
+          </button>
         </div>
       </div>
 

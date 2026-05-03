@@ -77,6 +77,11 @@ const governmentRouter = require('./routes/government');
 const exporterRouter = require('./routes/exporter');
 const openapiRouter = require('./routes/openapi');
 const executionRouter = require('./routes/execution');
+// Phase 5 — KisanConnect 2.0 Rural Operating System
+const vehiclesRouter = require('./routes/vehicles');
+const deliveryRouter = require('./routes/delivery');
+const gigworkersRouter = require('./routes/gigworkers');
+const transportRouter = require('./routes/transport');
 
 const app = express();
 const server = http.createServer(app);
@@ -223,6 +228,11 @@ app.use('/api/government', governmentRouter);
 app.use('/api/exporter', exporterRouter);
 app.use('/api/openapi', openapiRouter);
 app.use('/api/execution', executionRouter);
+// Phase 5 — KisanConnect 2.0 ROS
+app.use('/api/vehicles', vehiclesRouter);
+app.use('/api/delivery', deliveryRouter);
+app.use('/api/gigworkers', gigworkersRouter);
+app.use('/api/transport', transportRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -256,6 +266,8 @@ async function start() {
     await migrateV8();
     const { migrateV9 } = require('./db/migrate-v9-ecosystem');
     await migrateV9();
+    const { migrateV10ROS } = require('./db/migrate-v10-ros');
+    await migrateV10ROS();
     logger.info('Database migrations applied');
 
     // Recover any pending jobs from previous crash
