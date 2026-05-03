@@ -151,12 +151,12 @@ router.post('/assisted-listing', auth, async (req, res) => {
 
     const agentId = agent.rows[0].id;
 
-    // Look up farmer by phone, or use agent's user_id as proxy
-    let farmerId = req.user.id;
+    // Look up farmer by phone — require farmer to exist
     const farmerResult = await pool.query('SELECT id FROM users WHERE phone = $1', [farmer_phone]);
-    if (farmerResult.rows.length) {
-      farmerId = farmerResult.rows[0].id;
+    if (!farmerResult.rows.length) {
+      return res.status(404).json({ error: 'Farmer not found. Please onboard farmer first via /api/agents/onboard-farmer' });
     }
+    const farmerId = farmerResult.rows[0].id;
 
     const listingId = uuidv4();
     const result = await pool.query(`

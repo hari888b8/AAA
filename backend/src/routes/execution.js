@@ -27,7 +27,7 @@ router.post('/verify-pickup', async (req, res) => {
         `UPDATE trade_orders SET status = 'dispatched', dispatched_at = NOW(),
          metadata = jsonb_set(COALESCE(metadata,'{}'), '{pickup_verification}', $1::jsonb),
          updated_at = NOW() WHERE id = $2`,
-        [JSON.stringify({ actual_weight, bag_count, farmer_otp, verified_at: new Date().toISOString() }), order_id]
+        [JSON.stringify({ actual_weight, bag_count, verified_at: new Date().toISOString(), otp_verified: true }), order_id]
       );
     }
 
