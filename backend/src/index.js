@@ -87,6 +87,8 @@ const vehiclesRouter = require('./routes/vehicles');
 const deliveryRouter = require('./routes/delivery');
 const gigworkersRouter = require('./routes/gigworkers');
 const transportRouter = require('./routes/transport');
+// Phase 6 — AquaOS V2 Full Ecosystem
+const aquaosV2Router = require('./routes/aquaos-v2');
 
 const app = express();
 const server = http.createServer(app);
@@ -184,6 +186,7 @@ app.get('/health', async (req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/agriflow', agriflowRouter);
 app.use('/api/aquaos', aquaosRouter);
+app.use('/api/aquaos-v2', aquaosV2Router);
 app.use('/api/farmerconnect', farmerconnectRouter);
 app.use('/api/kisanconnect', kisanconnectRouter);
 app.use('/api/intelligence', intelligenceRouter);
