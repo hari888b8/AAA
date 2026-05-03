@@ -78,9 +78,11 @@ export function renderAquaOS(container) {
           <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         ` : isBuyer ? `
           <button role="tab" aria-selected="${tab==='marketplace'}" class="tab-btn ${tab==='marketplace'?'active':''}" data-tab="marketplace">🛒 ${t('harvest_mkt').split(' ')[0]}</button>
+          <button role="tab" aria-selected="${tab==='rfq'}" class="tab-btn ${tab==='rfq'?'active':''}" data-tab="rfq">📋 RFQ</button>
           <button role="tab" aria-selected="${tab==='saved'}" class="tab-btn ${tab==='saved'?'active':''}" data-tab="saved">🔖 Saved</button>
           <button role="tab" aria-selected="${tab==='prices'}" class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 ${t('prices')}</button>
           <button role="tab" aria-selected="${tab==='supply'}" class="tab-btn ${tab==='supply'?'active':''}" data-tab="supply">📊 ${t('supply')}</button>
+          <button role="tab" aria-selected="${tab==='escrow'}" class="tab-btn ${tab==='escrow'?'active':''}" data-tab="escrow">🔒 Escrow</button>
           <button role="tab" aria-selected="${tab==='myoffers'}" class="tab-btn ${tab==='myoffers'?'active':''}" data-tab="myoffers">📋 ${t('my_offers')}</button>
           <button role="tab" aria-selected="${tab==='chats'}" class="tab-btn ${tab==='chats'?'active':''}" data-tab="chats">💬 ${t('chats')}</button>
           <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
@@ -101,6 +103,9 @@ export function renderAquaOS(container) {
           <button role="tab" aria-selected="${tab==='logistics'}" class="tab-btn ${tab==='logistics'?'active':''}" data-tab="logistics">🚛 Cold Chain</button>
           <button role="tab" aria-selected="${tab==='training'}" class="tab-btn ${tab==='training'?'active':''}" data-tab="training">📚 Training</button>
           <button role="tab" aria-selected="${tab==='schemes'}" class="tab-btn ${tab==='schemes'?'active':''}" data-tab="schemes">🏛️ Schemes</button>
+          <button role="tab" aria-selected="${tab==='rfq'}" class="tab-btn ${tab==='rfq'?'active':''}" data-tab="rfq">📋 RFQ</button>
+          <button role="tab" aria-selected="${tab==='forecast'}" class="tab-btn ${tab==='forecast'?'active':''}" data-tab="forecast">📈 Forecast</button>
+          <button role="tab" aria-selected="${tab==='escrow'}" class="tab-btn ${tab==='escrow'?'active':''}" data-tab="escrow">🔒 Payments</button>
           <button role="tab" aria-selected="${tab==='community'}" class="tab-btn ${tab==='community'?'active':''}" data-tab="community">🌐 ${t('community')}</button>
           <button role="tab" aria-selected="${tab==='analytics'}" class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📈 ${t('analytics')}</button>
           <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
@@ -136,6 +141,9 @@ export function renderAquaOS(container) {
       case 'training': return renderTrainingTab();
       case 'schemes': return renderSchemesTab();
       case 'saved': return renderSavedSearches();
+      case 'rfq': return renderRFQTab();
+      case 'forecast': return renderForecastTab();
+      case 'escrow': return renderEscrowTab();
       case 'settings': return renderSettings();
       default: return renderDashboard();
     }
@@ -1867,6 +1875,164 @@ export function renderAquaOS(container) {
       </div>
       <button class="btn btn-primary" style="width:100%" onclick="document.dispatchEvent(new CustomEvent('aqua-apply-scheme'))">📝 Start PMMSY Application (DPR)</button>
       <button class="btn btn-outline" style="width:100%;margin-top:8px">📊 Track My Applications</button>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // RFQ (Request for Quotation) TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderRFQTab() {
+    const sampleRFQs = [
+      { id:'rfq1', title:'Need 5 tons Vannamei 30ct', species:'Vannamei Shrimp', quantity_kg:5000, size_spec:'30 count', max_price_per_kg:400, delivery_location:'Visakhapatnam', delivery_date:'2026-05-20', buyer_name:'FreshCatch Exports', quote_count:4, status:'open' },
+      { id:'rfq2', title:'Rohu 1kg+ for restaurant chain', species:'Rohu', quantity_kg:2000, size_spec:'1-1.5kg', max_price_per_kg:180, delivery_location:'Hyderabad', delivery_date:'2026-05-15', buyer_name:'SeaFresh Hotels', quote_count:2, status:'open' },
+      { id:'rfq3', title:'Pangasius bulk order for processing', species:'Pangasius', quantity_kg:10000, size_spec:'1.5-2kg', max_price_per_kg:110, delivery_location:'Vijayawada', delivery_date:'2026-05-25', buyer_name:'AP Fish Processing Ltd', quote_count:6, status:'open' },
+    ];
+
+    return `<div class="section">
+      <h3 style="margin:0 0 8px">📋 Request for Quotation (RFQ)</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">${isBuyer ? 'Post your fish/shrimp requirements. Farmers submit competitive quotes directly.' : 'Browse buyer demands. Submit your best quote to win orders.'}</p>
+      ${isBuyer ? `<button class="btn btn-primary" style="width:100%;margin-bottom:14px" onclick="document.dispatchEvent(new CustomEvent('aqua-create-rfq'))">+ Post New RFQ</button>` : ''}
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${sampleRFQs.map(r => `
+          <div style="padding:14px;background:#f9f9f9;border-radius:12px;border-left:4px solid #2f80ed">
+            <div style="display:flex;justify-content:space-between;align-items:start">
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:13px">${r.title}</div>
+                <div style="font-size:11px;color:#666;margin-top:3px">${r.species} · ${r.size_spec} · ${r.quantity_kg.toLocaleString()} kg</div>
+                <div style="font-size:10px;color:#888;margin-top:2px">📍 ${r.delivery_location} · 📅 By ${r.delivery_date}</div>
+                <div style="font-size:10px;color:#888;margin-top:2px">Posted by: ${r.buyer_name}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:10px;color:#666">Max Price</div>
+                <div style="font-size:16px;font-weight:800;color:#2f80ed">₹${r.max_price_per_kg}</div>
+                <div style="font-size:10px;color:#666">/kg</div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+              <span style="font-size:10px;background:#e3f2fd;padding:3px 8px;border-radius:4px">📝 ${r.quote_count} quotes received</span>
+              ${!isBuyer ? `<button class="btn btn-primary" style="font-size:11px;padding:6px 12px">Submit Quote →</button>` : `<button class="btn btn-outline" style="font-size:11px;padding:6px 12px">View Quotes</button>`}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // YIELD FORECAST TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderForecastTab() {
+    const sampleForecast = {
+      pond_code: 'Pond A', species: 'Vannamei Shrimp', doc: 62, current_weight_g: 15.5,
+      confidence_pct: 78,
+      growth_curve: [
+        { doc: 62, predicted_weight_g: 15.5 }, { doc: 69, predicted_weight_g: 17.8 },
+        { doc: 76, predicted_weight_g: 20.2 }, { doc: 83, predicted_weight_g: 22.4 },
+        { doc: 90, predicted_weight_g: 24.5 }, { doc: 97, predicted_weight_g: 26.3 },
+        { doc: 104, predicted_weight_g: 28.0 }, { doc: 111, predicted_weight_g: 29.4 },
+        { doc: 118, predicted_weight_g: 30.6 },
+      ],
+      harvest_scenarios: [
+        { size_label: '50 count', days_from_now: 14, estimated_yield_kg: 2800, market_price: 290, estimated_revenue: 812000, estimated_profit: 620000 },
+        { size_label: '40 count', days_from_now: 32, estimated_yield_kg: 2650, market_price: 340, estimated_revenue: 901000, estimated_profit: 680000 },
+        { size_label: '30 count', days_from_now: 55, estimated_yield_kg: 2500, market_price: 380, estimated_revenue: 950000, estimated_profit: 700000 },
+      ],
+      recommended_harvest: { size_label: '30 count', days_from_now: 55, estimated_revenue: 950000, estimated_profit: 700000 }
+    };
+
+    return `<div class="section">
+      <h3 style="margin:0 0 8px">📈 Yield Forecasting — ${sampleForecast.pond_code}</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">AI-powered growth prediction using Von Bertalanffy model calibrated to your farm data.</p>
+      <div style="background:linear-gradient(135deg,#1a237e,#283593);color:white;padding:14px;border-radius:12px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:11px;opacity:0.8">${sampleForecast.species} · DOC ${sampleForecast.doc}</div>
+            <div style="font-size:22px;font-weight:800;margin-top:4px">${sampleForecast.current_weight_g}g</div>
+            <div style="font-size:10px;opacity:0.7">Current avg weight</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;opacity:0.8">Confidence</div>
+            <div style="font-size:20px;font-weight:800">${sampleForecast.confidence_pct}%</div>
+          </div>
+        </div>
+      </div>
+      <h4 style="margin:0 0 8px;font-size:13px">📊 Growth Projection</h4>
+      <div style="display:flex;gap:4px;margin-bottom:14px;overflow-x:auto;padding:4px 0">
+        ${sampleForecast.growth_curve.map(p => `
+          <div style="display:flex;flex-direction:column;align-items:center;min-width:40px">
+            <div style="width:24px;background:linear-gradient(to top,#2f80ed,#56ccf2);border-radius:4px;height:${Math.round(p.predicted_weight_g*2)}px"></div>
+            <div style="font-size:8px;color:#666;margin-top:2px">${p.predicted_weight_g.toFixed(0)}g</div>
+            <div style="font-size:7px;color:#999">D${p.doc}</div>
+          </div>
+        `).join('')}
+      </div>
+      <h4 style="margin:0 0 8px;font-size:13px">🎯 Harvest Scenarios</h4>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${sampleForecast.harvest_scenarios.map((s, i) => `
+          <div style="padding:10px;background:${i===sampleForecast.harvest_scenarios.length-1?'#e8f5e9':'#f5f5f5'};border-radius:10px;${i===sampleForecast.harvest_scenarios.length-1?'border:2px solid #4caf50':''}">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-weight:700;font-size:12px">${s.size_label} ${i===sampleForecast.harvest_scenarios.length-1?'⭐ Recommended':''}</div>
+                <div style="font-size:10px;color:#666">${s.days_from_now} days · ${s.estimated_yield_kg.toLocaleString()} kg · ₹${s.market_price}/kg</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:14px;font-weight:800;color:#2e7d32">₹${(s.estimated_profit/1000).toFixed(0)}K</div>
+                <div style="font-size:9px;color:#666">est. profit</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="background:#fff3e0;padding:12px;border-radius:10px;margin-top:14px">
+        <div style="font-weight:700;font-size:12px;color:#e65100">💡 Recommendation</div>
+        <div style="font-size:11px;color:#333;margin-top:4px">Wait for 30 count size (${sampleForecast.recommended_harvest.days_from_now} more days) for maximum profit of ₹${(sampleForecast.recommended_harvest.estimated_profit/100000).toFixed(1)} lakh.</div>
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ESCROW PAYMENT TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderEscrowTab() {
+    const sampleEscrows = [
+      { id:'esc1', species:'Vannamei Shrimp', quantity_kg:2500, amount:950000, platform_fee:28500, buyer_name:'FreshCatch Exports', seller_name:'Ramesh Aqua', status:'quality_verified', created_at:'2026-05-01' },
+      { id:'esc2', species:'Rohu', quantity_kg:1500, amount:240000, platform_fee:7200, buyer_name:'SeaFresh Hotels', seller_name:'Godavari Fish', status:'funded', created_at:'2026-04-28' },
+      { id:'esc3', species:'Vannamei Shrimp', quantity_kg:3000, amount:1140000, platform_fee:34200, buyer_name:'AP Exports', seller_name:'Krishna Aqua', status:'released', created_at:'2026-04-20' },
+    ];
+    const statusColors = { initiated:'#9e9e9e', funded:'#2196f3', quality_verified:'#ff9800', dispatched:'#9c27b0', delivered:'#00bcd4', released:'#4caf50', disputed:'#f44336' };
+    const statusLabels = { initiated:'Initiated', funded:'Funded', quality_verified:'Quality OK', dispatched:'Dispatched', delivered:'Delivered', released:'Payment Released', disputed:'Disputed' };
+
+    return `<div class="section">
+      <h3 style="margin:0 0 8px">🔒 Secure Escrow Payments</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Protected transactions with escrow. Funds released only after quality verification & delivery confirmation.</p>
+      <div style="background:#e3f2fd;padding:12px;border-radius:10px;margin-bottom:14px">
+        <div style="font-weight:700;font-size:12px;color:#1565c0">Payment Flow</div>
+        <div style="display:flex;gap:2px;margin-top:8px;font-size:9px;overflow-x:auto">
+          ${['Initiated','Funded','Quality ✓','Dispatched','Delivered','Released'].map((s,i) => `
+            <div style="background:white;padding:4px 6px;border-radius:4px;text-align:center;white-space:nowrap;flex:1">
+              ${s}${i<5?'→':''}
+            </div>
+          `).join('')}
+        </div>
+        <div style="font-size:10px;color:#666;margin-top:6px">Platform fee: 3% · Seller payout after buyer confirms delivery</div>
+      </div>
+      <h4 style="margin:0 0 8px;font-size:13px">📋 My Transactions</h4>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${sampleEscrows.map(e => `
+          <div style="padding:12px;background:#f9f9f9;border-radius:10px;border-left:4px solid ${statusColors[e.status]||'#ccc'}">
+            <div style="display:flex;justify-content:space-between;align-items:start">
+              <div>
+                <div style="font-weight:700;font-size:12px">${e.species} · ${e.quantity_kg.toLocaleString()} kg</div>
+                <div style="font-size:10px;color:#666;margin-top:2px">${isBuyer ? `Seller: ${e.seller_name}` : `Buyer: ${e.buyer_name}`}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-weight:800;font-size:14px">₹${(e.amount/1000).toFixed(0)}K</div>
+                <span style="font-size:9px;background:${statusColors[e.status]};color:white;padding:2px 6px;border-radius:4px">${statusLabels[e.status]}</span>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
     </div>`;
   }
 

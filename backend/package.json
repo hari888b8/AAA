@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "migrate": "node src/db/migrate.js && node src/db/migrate-v2.js && node src/db/migrate-v3-trade.js && node src/db/migrate-v4-infrastructure.js && node src/db/migrate-v5-platform.js && node src/db/migrate-v11-aquaos.js",
+    "migrate": "node src/db/migrate.js && node src/db/migrate-v2.js && node src/db/migrate-v3-trade.js && node src/db/migrate-v4-infrastructure.js && node src/db/migrate-v5-platform.js && node src/db/migrate-v11-aquaos.js && node src/db/migrate-v12-aquaos-rfq.js",
     "migrate:v2": "node src/db/migrate-v2.js",
     "migrate:v3": "node src/db/migrate-v3-trade.js",
     "migrate:v4": "node src/db/migrate-v4-infrastructure.js",
