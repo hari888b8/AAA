@@ -5,6 +5,7 @@
 'use strict';
 
 const { Router } = require('express');
+const { pool } = require('../db/pool');
 
 const router = Router();
 
@@ -15,6 +16,21 @@ router.post('/verify-pickup', async (req, res) => {
     if (!order_id || !farmer_otp) {
       return res.status(400).json({ error: 'Order ID and farmer OTP are required' });
     }
+
+    // Persist pickup verification to trade_orders if it exists
+    const orderResult = await pool.query(
+      `SELECT id, status FROM trade_orders WHERE id = $1`, [order_id]
+    ).catch(() => ({ rows: [] }));
+
+    if (orderResult.rows.length && orderResult.rows[0].status === 'quality_verified') {
+      await pool.query(
+        `UPDATE trade_orders SET status = 'dispatched', dispatched_at = NOW(),
+         metadata = jsonb_set(COALESCE(metadata,'{}'), '{pickup_verification}', $1::jsonb),
+         updated_at = NOW() WHERE id = $2`,
+        [JSON.stringify({ actual_weight, bag_count, farmer_otp, verified_at: new Date().toISOString() }), order_id]
+      );
+    }
+
     res.json({
       success: true,
       message: 'Pickup verified successfully',
@@ -34,10 +50,26 @@ router.post('/verify-pickup', async (req, res) => {
 // ─── QUALITY INSPECTION ────────────────────────────────────────
 router.post('/quality-check', async (req, res) => {
   try {
-    const { lot_id, crop_type, moisture, foreign_matter, grade } = req.body;
+    const { lot_id, crop_type, moisture, foreign_matter, grade, photos, trade_order_id } = req.body;
     if (!lot_id) {
       return res.status(400).json({ error: 'Lot ID is required' });
     }
+
+    // If linked to a trade order, update its quality status
+    if (trade_order_id) {
+      const orderResult = await pool.query(
+        `SELECT id, status FROM trade_orders WHERE id = $1`, [trade_order_id]
+      ).catch(() => ({ rows: [] }));
+
+      if (orderResult.rows.length && orderResult.rows[0].status === 'escrow_funded') {
+        await pool.query(
+          `UPDATE trade_orders SET status = 'quality_verified', quality_verified = TRUE,
+           grade = $1, quality_photos = $2, updated_at = NOW() WHERE id = $3`,
+          [grade || 'ungraded', JSON.stringify(photos || []), trade_order_id]
+        );
+      }
+    }
+
     res.json({
       success: true,
       message: 'Quality report submitted',
@@ -226,6 +258,78 @@ router.post('/crop-lifecycle/start', async (req, res) => {
       success: true,
       message: 'New crop cycle started!',
       cycle: { crop, season, started_at: new Date().toISOString(), current_step: 'input_purchase' }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── DISTRICT METRICS — Real DB aggregation for pilot dashboard ─
+router.get('/district-metrics', async (req, res) => {
+  try {
+    // Trade counts per district
+    const tradeStats = await pool.query(`
+      SELECT d.name AS district_name, d.id AS district_id,
+        COUNT(t.id) AS total_trades,
+        COUNT(t.id) FILTER (WHERE t.status = 'payment_released') AS completed_trades,
+        COUNT(t.id) FILTER (WHERE t.status = 'disputed') AS disputes,
+        COUNT(DISTINCT t.seller_id) AS unique_sellers,
+        COUNT(DISTINCT t.buyer_id) AS unique_buyers,
+        COALESCE(SUM(t.total_amount) FILTER (WHERE t.status = 'payment_released'), 0) AS gmv
+      FROM districts d
+      LEFT JOIN trade_orders t ON t.district_id = d.id
+      GROUP BY d.id, d.name
+      ORDER BY total_trades DESC
+      LIMIT 10
+    `).catch(() => ({ rows: [] }));
+
+    // Agent counts per district
+    const agentStats = await pool.query(`
+      SELECT district_id, COUNT(*) AS agent_count, SUM(total_onboarded) AS farmers_onboarded
+      FROM agents WHERE is_active = true
+      GROUP BY district_id
+    `).catch(() => ({ rows: [] }));
+
+    // Pickup success rate (orders that went from dispatched to delivered vs total dispatched)
+    const pickupStats = await pool.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE status IN ('delivered','payment_released')) AS successful_pickups,
+        COUNT(*) FILTER (WHERE status IN ('dispatched','in_transit','delivered','payment_released')) AS total_dispatched
+      FROM trade_orders
+    `).catch(() => ({ rows: [{ successful_pickups: 0, total_dispatched: 0 }] }));
+
+    // Weekly trade activity (last 7 days)
+    const weeklyActivity = await pool.query(`
+      SELECT DATE(created_at) AS day, COUNT(*) AS trades
+      FROM trade_orders
+      WHERE created_at >= NOW() - INTERVAL '7 days'
+      GROUP BY DATE(created_at)
+      ORDER BY day ASC
+    `).catch(() => ({ rows: [] }));
+
+    const pickup = pickupStats.rows[0] || {};
+    const pickupRate = pickup.total_dispatched > 0
+      ? Math.round((pickup.successful_pickups / pickup.total_dispatched) * 100)
+      : 0;
+
+    // Merge agent stats into district stats
+    const agentMap = {};
+    (agentStats.rows || []).forEach(r => { agentMap[r.district_id] = r; });
+
+    const districts = (tradeStats.rows || []).map(d => ({
+      ...d,
+      agents: agentMap[d.district_id]?.agent_count || 0,
+      farmers_onboarded: agentMap[d.district_id]?.farmers_onboarded || 0,
+    }));
+
+    res.json({
+      districts,
+      summary: {
+        total_trades: districts.reduce((s, d) => s + parseInt(d.total_trades || 0), 0),
+        total_agents: (agentStats.rows || []).reduce((s, r) => s + parseInt(r.agent_count || 0), 0),
+        pickup_rate: pickupRate,
+        weekly_activity: weeklyActivity.rows || [],
+      }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -1,4 +1,5 @@
 import { navigate } from '../main.js';
+import { api } from '../api.js';
 import { t } from '../i18n.js';
 
 // ═══════════════════════════════════════════════════════════════
@@ -8,8 +9,8 @@ import { t } from '../i18n.js';
 // ═══════════════════════════════════════════════════════════════
 
 export function renderDistrictPilot(container) {
-  // --- Mock pilot data (in production: from API) ---
-  const PILOT = {
+  // --- Default pilot data (fallback when API unavailable) ---
+  const DEFAULT_PILOT = {
     state: 'Andhra Pradesh',
     districts: [
       {
@@ -33,15 +34,50 @@ export function renderDistrictPilot(container) {
     ],
   };
 
-  const totals = {
-    farmers: PILOT.districts.reduce((s, d) => s + d.farmers, 0),
-    buyers: PILOT.districts.reduce((s, d) => s + d.buyers, 0),
-    agents: PILOT.districts.reduce((s, d) => s + d.agents, 0),
-    trades: PILOT.districts.reduce((s, d) => s + d.trades, 0),
-    villages: PILOT.districts.reduce((s, d) => s + d.villages, 0),
-  };
+  let PILOT = DEFAULT_PILOT;
 
-  container.innerHTML = `
+  // Attempt to load real metrics from API
+  async function loadMetrics() {
+    try {
+      const res = await api.get('/execution/district-metrics');
+      if (res && res.districts && res.districts.length > 0) {
+        PILOT = {
+          state: 'Andhra Pradesh',
+          districts: res.districts.map(d => ({
+            name: d.district_name || 'Unknown',
+            mandals: d.mandals || 0,
+            villages: d.villages || 0,
+            farmers: parseInt(d.unique_sellers) || 0,
+            buyers: parseInt(d.unique_buyers) || 0,
+            agents: parseInt(d.agents) || 0,
+            trades: parseInt(d.total_trades) || 0,
+            pickupRate: res.summary.pickup_rate || 0,
+            paymentTime: '—',
+            disputes: parseInt(d.disputes) || 0,
+            crops: [],
+            weeklyTrades: (res.summary.weekly_activity || []).map(w => parseInt(w.trades) || 0),
+          })),
+        };
+        renderContent();
+      }
+    } catch (e) {
+      // Use default mock data on failure — already set
+    }
+  }
+
+  loadMetrics();
+  renderContent();
+
+  function renderContent() {
+    const totals = {
+      farmers: PILOT.districts.reduce((s, d) => s + d.farmers, 0),
+      buyers: PILOT.districts.reduce((s, d) => s + d.buyers, 0),
+      agents: PILOT.districts.reduce((s, d) => s + d.agents, 0),
+      trades: PILOT.districts.reduce((s, d) => s + d.trades, 0),
+      villages: PILOT.districts.reduce((s, d) => s + d.villages, 0),
+    };
+
+    container.innerHTML = `
     <div style="background:linear-gradient(135deg,#1B5E20,#2E7D32);color:white;padding:20px 16px 28px;border-radius:0 0 24px 24px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
@@ -182,4 +218,5 @@ export function renderDistrictPilot(container) {
     </div>
     <div style="height:80px"></div>
   `;
-}
+  } // end renderContent
+} // end renderDistrictPilot
