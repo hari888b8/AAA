@@ -62,6 +62,11 @@ const tradeRouter = require('./routes/trade');
 const healthRouter = require('./routes/health');
 const translateRouter = require('./routes/translate');
 const settingsRouter = require('./routes/settings');
+const verificationRouter = require('./routes/verification');
+const cartRouter = require('./routes/cart');
+const sellerRouter = require('./routes/seller');
+const livestockRouter = require('./routes/livestock');
+const bookingRouter = require('./routes/booking');
 
 const app = express();
 const server = http.createServer(app);
@@ -193,6 +198,11 @@ app.use('/api/trade', tradeRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/translate', translateRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/verification', verificationRouter);
+app.use('/api/cart', cartRouter);
+app.use('/api/seller', sellerRouter);
+app.use('/api/livestock', livestockRouter);
+app.use('/api/booking', bookingRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -218,6 +228,8 @@ async function start() {
     await migrateV4();
     const { migrateV5 } = require('./db/migrate-v5-platform');
     await migrateV5();
+    const { migrateV6 } = require('./db/migrate-v6-farmerson');
+    await migrateV6();
     logger.info('Database migrations applied');
 
     // Recover any pending jobs from previous crash

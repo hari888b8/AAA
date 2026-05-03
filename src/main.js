@@ -37,6 +37,8 @@ import { renderTickets } from './screens/TicketsScreen.js';
 import { renderEscrow } from './screens/EscrowScreen.js';
 import { renderWatchlists } from './screens/WatchlistsScreen.js';
 import { renderFPODashboard } from './screens/FPODashboardScreen.js';
+import { renderCart } from './screens/CartScreen.js';
+import { renderLivestock } from './screens/LivestockScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -82,6 +84,8 @@ const ROUTES = {
   escrow:        { title: 'Escrow',        icon: '🔐', render: renderEscrow,       back: 'orders'  },
   watchlists:    { title: 'Watchlists',    icon: '👁️', render: renderWatchlists,   back: 'home'    },
   fpodashboard:  { title: 'FPO Hub',       icon: '🏢', render: renderFPODashboard, back: 'home'    },
+  cart:          { title: 'Cart',          icon: '🛒', render: renderCart,          back: 'home'    },
+  livestock:     { title: 'Livestock',     icon: '🐄', render: renderLivestock,     back: 'agriflow'},
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────
@@ -180,6 +184,8 @@ function renderApp() {
           <div style="height:1px;background:#E0E0E0;margin:8px 16px"></div>
           <div style="padding:4px 16px;font-size:10px;font-weight:700;color:#9E9E9E;text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">Tools & Services</div>
           ${[
+            {icon:'🛒',label:'My Cart',route:'cart'},
+            {icon:'🐄',label:'Livestock Market',route:'livestock'},
             {icon:'⭐',label:'Subscription Plans',route:'subscriptions'},
             {icon:'❤️',label:'My Favorites',route:'favorites'},
             {icon:'👁️',label:'Watchlists & Alerts',route:'watchlists'},

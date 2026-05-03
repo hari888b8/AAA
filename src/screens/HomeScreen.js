@@ -156,6 +156,51 @@ export function renderHome(container) {
       </div>
     ` : ''}
 
+    <!-- SMART ACTION CARDS (AI-powered nudges) -->
+    <div style="margin-top:14px">
+      ${sectionTitle('💡 For You', 'Personalized insights')}
+      <div style="padding:0 14px">
+        ${role === 'farmer' || role === 'fpo' ? `
+          <div class="action-card" data-nav="intelligence" style="cursor:pointer">
+            <div class="ac-icon" style="--ac-bg:#E8F5E9;--ac-color:#2E7D32">📈</div>
+            <div class="ac-text">
+              <div class="ac-title">Tomato prices up 15% this week</div>
+              <div class="ac-sub">Best time to sell — demand high in Guntur APMC</div>
+            </div>
+            <div style="color:#2E7D32;font-weight:700;font-size:11px">View →</div>
+          </div>
+        ` : ''}
+        ${role === 'farmer' ? `
+          <div class="action-card" data-nav="agriflow" style="cursor:pointer">
+            <div class="ac-icon" style="--ac-bg:#E3F2FD;--ac-color:#1565C0">🛒</div>
+            <div class="ac-text">
+              <div class="ac-title">3 buyers near you looking for Paddy</div>
+              <div class="ac-sub">Sell faster — list your harvest now</div>
+            </div>
+            <div style="color:#1565C0;font-weight:700;font-size:11px">Sell →</div>
+          </div>
+        ` : ''}
+        ${role === 'buyer' ? `
+          <div class="action-card" data-nav="cart" style="cursor:pointer">
+            <div class="ac-icon" style="--ac-bg:#FFF3E0;--ac-color:#E65100">🛒</div>
+            <div class="ac-text">
+              <div class="ac-title">Complete your pending order</div>
+              <div class="ac-sub">3 items in cart · ₹27,060 total</div>
+            </div>
+            <div style="color:#E65100;font-weight:700;font-size:11px">Cart →</div>
+          </div>
+        ` : ''}
+        <div class="action-card" data-nav="profile" style="cursor:pointer">
+          <div class="ac-icon" style="--ac-bg:#F3E5F5;--ac-color:#6A1B9A">✅</div>
+          <div class="ac-text">
+            <div class="ac-title">Get verified — build buyer trust</div>
+            <div class="ac-sub">Upload KYC documents for verified badge</div>
+          </div>
+          <div style="color:#6A1B9A;font-weight:700;font-size:11px">Verify →</div>
+        </div>
+      </div>
+    </div>
+
     <!-- PLATFORM APPS -->
     ${sectionTitle('Platform Apps', 'Five apps. One ecosystem.')}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px">
@@ -164,7 +209,7 @@ export function renderHome(container) {
       ${platformTile({ icon:'🌾', title:'Agri',       sub:'Crops & FPOs',  meta:'AgriFlow + more', route:'agri',     color:'#2E7D32' })}
       ${platformTile({ icon:'🚜', title:'KisanConnect',sub:'Equipment',    meta:'Rent · Buy · Sell', route:'kisan',  color:'#E65100' })}
       ${platformTile({ icon:'🏡', title:'BhoomiOS',   sub:'Land Market',   meta:'Buy · Rent farmland', route:'bhoomios', color:'#795548' })}
-      ${platformTile({ icon:'🏗️', title:'Platform',   sub:'Architecture',  meta:'How it works', route:'architecture', color:'#37474F' })}
+      ${platformTile({ icon:'🐄', title:'Livestock',  sub:'Buy & Sell',    meta:'Cattle · Goat · Poultry', route:'livestock', color:'#5D4037' })}
     </div>
 
     <!-- LIVE PRICES -->
