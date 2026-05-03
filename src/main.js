@@ -55,6 +55,9 @@ import { renderCropLifecycle } from './screens/CropLifecycleScreen.js';
 import { renderToolsHub } from './screens/ToolsHubScreen.js';
 import { renderDistrictPilot } from './screens/DistrictPilotScreen.js';
 import { renderTradeOrders } from './screens/TradeOrdersScreen.js';
+import { renderVehicles } from './screens/VehiclesScreen.js';
+import { renderDelivery } from './screens/DeliveryScreen.js';
+import { renderGigWorkers } from './screens/GigWorkersScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -118,6 +121,9 @@ const ROUTES = {
   toolshub:      { title: 'Tools Hub',     icon: '🧰', render: renderToolsHub,     back: 'home'    },
   districtpilot: { title: 'District Pilot',icon: '🏘️', render: renderDistrictPilot,back: 'home'    },
   tradeorders:   { title: 'Trade Orders', icon: '📋', render: renderTradeOrders,  back: 'agriflow' },
+  vehicles:      { title: 'Vehicles',     icon: '🚗', render: renderVehicles,    back: 'kisan'    },
+  delivery:      { title: 'Delivery',     icon: '📦', render: renderDelivery,    back: 'kisan'    },
+  gigworkers:    { title: 'Gig Workers',  icon: '👨‍🔧', render: renderGigWorkers,  back: 'kisan'    },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────
