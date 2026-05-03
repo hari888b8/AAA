@@ -119,7 +119,7 @@ async function loadTab(tab, container) {
 window._acceptContract = async (id) => {
   try {
     await api(`/api/contracts/${id}/accept`, { method: 'PUT' });
-    location.reload();
+    document.querySelector('[data-tab="my-contracts"]')?.click();
   } catch (err) { alert(err.message); }
 };
 
@@ -127,6 +127,6 @@ window._rejectContract = async (id) => {
   const reason = prompt('Reason for rejection:');
   try {
     await api(`/api/contracts/${id}/reject`, { method: 'PUT', body: JSON.stringify({ reason }) });
-    location.reload();
+    document.querySelector('[data-tab="my-contracts"]')?.click();
   } catch (err) { alert(err.message); }
 };
