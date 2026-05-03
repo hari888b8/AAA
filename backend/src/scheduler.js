@@ -204,12 +204,16 @@ async function cleanupStale() {
 function startScheduler() {
   console.log('[Scheduler] Starting background scheduler...');
 
+  // APMC price refresh
+  const { refreshPrices } = require('./services/apmc');
+
   // Stagger initial runs to avoid thundering herd
   setTimeout(expireListings, 5000);
   setTimeout(checkSubscriptions, 10000);
   setTimeout(processWatchlists, 15000);
   setTimeout(sendHarvestReminders, 20000);
   setTimeout(cleanupStale, 25000);
+  setTimeout(() => refreshPrices().catch(() => {}), 30000);
 
   // Set recurring intervals
   setInterval(expireListings, INTERVALS.LISTING_EXPIRY);
@@ -217,6 +221,7 @@ function startScheduler() {
   setInterval(processWatchlists, INTERVALS.WATCHLIST_ALERTS);
   setInterval(sendHarvestReminders, INTERVALS.HARVEST_REMINDERS);
   setInterval(cleanupStale, INTERVALS.STALE_CLEANUP);
+  setInterval(() => refreshPrices().catch(() => {}), 30 * 60 * 1000); // Every 30 min
 }
 
 module.exports = { startScheduler };

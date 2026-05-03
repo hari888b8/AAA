@@ -416,6 +416,26 @@ class ApiClient {
   getTicket(id) { return this.get(`/tickets/${id}`); }
   addTicketMessage(id, d) { return this.post(`/tickets/${id}/messages`, d); }
   closeTicket(id) { return this.patch(`/tickets/${id}`, { status: 'closed' }); }
+
+  // ─── Translation ───────────────────────────────────────────
+  translateText(text, target, source = 'auto') { return this.post('/translate', { text, target, source }); }
+  batchTranslate(texts, target, source = 'auto') { return this.post('/translate/batch', { texts, target, source }); }
+  getTranslateLanguages() { return this.get('/translate/languages'); }
+
+  // ─── Upload (enhanced) ─────────────────────────────────────
+  uploadBase64Image(image, context = 'general') { return this.post('/upload/image', { image, context }); }
+  uploadMultipleImages(images, context = 'general') { return this.post('/upload/multi', { images, context }); }
+  getMyUploads(context) { return this.get(`/upload/my-files${context ? `?context=${context}` : ''}`); }
+  deleteUpload(id) { return this.del(`/upload/${id}`); }
+
+  // ─── Weather (enhanced with GPS) ──────────────────────────
+  getWeatherByLocation(lat, lng) { return this.get(`/weather/forecast?lat=${lat}&lng=${lng}`); }
+  getSprayWindow() { return this.get('/weather/spray-window'); }
+  getIrrigationSchedule(crop, soil, lastIrrigated) {
+    const params = new URLSearchParams({ crop, soil_type: soil || '', last_irrigated: lastIrrigated || '' });
+    return this.get(`/weather/irrigation-schedule?${params.toString()}`);
+  }
+  getExtremeAlerts() { return this.get('/weather/extreme-alerts'); }
 }
 
 export const api = new ApiClient();

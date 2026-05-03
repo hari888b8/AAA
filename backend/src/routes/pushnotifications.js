@@ -83,13 +83,18 @@ router.patch('/mark-all-read', authMiddleware, async (req, res) => {
   }
 });
 
-// Internal helper: create notification (used by other routes)
+// Internal helper: create notification + send push (used by other routes)
+const pushService = require('../services/push');
+
 async function createNotification(userId, type, title, message, data = {}) {
   try {
     await query(
       `INSERT INTO notifications (id, user_id, type, title, message, data) VALUES ($1,$2,$3,$4,$5,$6)`,
       [uuidv4(), userId, type, title, message, JSON.stringify(data)]
     );
+
+    // Send real push notification (non-blocking)
+    pushService.sendToUser(userId, { title, body: message }, { type, ...data }).catch(() => {});
   } catch (err) {
     console.error('[Notifications] Error creating notification:', err.message);
   }

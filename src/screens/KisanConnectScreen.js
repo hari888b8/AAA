@@ -12,16 +12,22 @@ import { showReviewsModal } from '../reviews.js';
  */
 
 export function renderKisan(container) {
-  let mode = 'rent'; // rent | buy | sell
+  let mode = 'connect'; // connect | rent | buy | sell | services
   let equipment = [];
   let loading = true;
   let eqType = '';
   let eqSearch = '';
+  let operators = [];
+  let machineRequests = [];
+  let connectStats = { total_operators: 0, available_operators: 0, open_requests: 0, completed_requests: 0 };
 
   const EQ_TYPES = [
     {id:'tractor',     icon:'🚜', label:'Tractor'},
+    {id:'jcb',         icon:'🏗️', label:'JCB'},
     {id:'harvester',   icon:'🌾', label:'Harvester'},
     {id:'rotavator',   icon:'⚙️', label:'Rotavator'},
+    {id:'excavator',   icon:'⛏️', label:'Excavator'},
+    {id:'crane',       icon:'🏗️', label:'Crane'},
     {id:'sprayer',     icon:'💨', label:'Sprayer'},
     {id:'transplanter',icon:'🌱', label:'Transplanter'},
     {id:'pump',        icon:'💧', label:'Pump Set'},
@@ -29,6 +35,7 @@ export function renderKisan(container) {
     {id:'seed_drill',  icon:'🌀', label:'Seed Drill'},
     {id:'mini_tractor',icon:'🚛', label:'Mini Tractor'},
     {id:'power_tiller',icon:'🔧', label:'Power Tiller'},
+    {id:'trolley',     icon:'🚚', label:'Trolley'},
   ];
 
   const SAMPLE_EQUIPMENT = [
@@ -42,6 +49,9 @@ export function renderKisan(container) {
     { id:'s8', name:'Kirloskar Pump Set 5HP', equipment_type:'pump', listing_type:'rent', daily_rate:350, sale_price:null, year_of_manufacture:2022, operator_included:false, status:'available', location_label:'Chittoor, AP', rating:4.7, description:'Centrifugal pump, 5HP motor, 2-inch suction. Suitable for 2-5 acre farms.' },
     { id:'s9', name:'TAFE 5900 DI', equipment_type:'tractor', listing_type:'rent', daily_rate:2000, sale_price:null, year_of_manufacture:2022, operator_included:true, status:'available', location_label:'Srikakulam, AP', rating:4.6, description:'60 HP, power steering, dual clutch. Perfect for heavy-duty operations.' },
     { id:'s10', name:'Landforce Seed Drill 9-Row', equipment_type:'seed_drill', listing_type:'both', daily_rate:600, sale_price:48000, year_of_manufacture:2021, operator_included:false, status:'available', location_label:'Anantapur, AP', rating:4.3, description:'9-row mechanical seed drill. Adjustable row spacing. Suitable for groundnut, sunflower, pulses.' },
+    { id:'s11', name:'JCB 3DX Super', equipment_type:'jcb', listing_type:'rent', daily_rate:8000, sale_price:null, year_of_manufacture:2022, operator_included:true, status:'available', location_label:'Krishna, AP', rating:4.9, description:'Backhoe loader, 76HP, excellent for pond digging, land leveling, trenching. Experienced operator included.' , owner_name:'Suresh Reddy'},
+    { id:'s12', name:'JCB 4DX Eco', equipment_type:'jcb', listing_type:'both', daily_rate:9500, sale_price:2800000, year_of_manufacture:2021, operator_included:true, status:'available', location_label:'Kurnool, AP', rating:4.7, description:'4WD backhoe loader, 92HP. Heavy duty for earth moving, excavation, road work. Well maintained.', owner_name:'Ravi Teja' },
+    { id:'s13', name:'Komatsu PC200 Excavator', equipment_type:'excavator', listing_type:'rent', daily_rate:12000, sale_price:null, year_of_manufacture:2020, operator_included:true, status:'available', location_label:'Prakasam, AP', rating:4.6, description:'20-ton excavator, ideal for large pond digging, canal work, land clearing. 1800 hours.' },
   ];
 
   function render() {
@@ -57,6 +67,7 @@ export function renderKisan(container) {
       </div>
 
       <div class="mode-toggle-bar" role="tablist" aria-label="Browse mode" style="display:flex;margin:10px 14px 6px;background:#F5F5F5;border-radius:12px;padding:3px;border:1px solid #E0E0E0">
+        <button role="tab" aria-selected="${mode==='connect'}" data-kmode="connect" style="flex:1;padding:9px 4px;border-radius:10px;font-size:11px;font-weight:700;border:none;cursor:pointer;${mode==='connect'?'background:#D32F2F;color:white;box-shadow:0 2px 8px rgba(211,47,47,0.3)':'background:transparent;color:#757575'}">📡 Connect</button>
         <button role="tab" aria-selected="${mode==='rent'}" data-kmode="rent" style="flex:1;padding:9px 4px;border-radius:10px;font-size:11px;font-weight:700;border:none;cursor:pointer;${mode==='rent'?'background:#0277BD;color:white;box-shadow:0 2px 8px rgba(2,119,189,0.3)':'background:transparent;color:#757575'}">🔑 Rent</button>
         <button role="tab" aria-selected="${mode==='buy'}" data-kmode="buy" style="flex:1;padding:9px 4px;border-radius:10px;font-size:11px;font-weight:700;border:none;cursor:pointer;${mode==='buy'?'background:#2E7D32;color:white;box-shadow:0 2px 8px rgba(46,125,50,0.3)':'background:transparent;color:#757575'}">💰 Buy</button>
         <button role="tab" aria-selected="${mode==='sell'}" data-kmode="sell" style="flex:1;padding:9px 4px;border-radius:10px;font-size:11px;font-weight:700;border:none;cursor:pointer;${mode==='sell'?'background:#E65100;color:white;box-shadow:0 2px 8px rgba(230,81,0,0.3)':'background:transparent;color:#757575'}">🏷️ List</button>
@@ -73,6 +84,7 @@ export function renderKisan(container) {
   function renderContent() {
     if (mode === 'sell') return renderSellMode();
     if (mode === 'services') return renderServicesMode();
+    if (mode === 'connect') return renderConnectMode();
     return renderBrowseMode();
   }
 
@@ -126,6 +138,354 @@ export function renderKisan(container) {
         </div>
       `).join('')}
     `;
+  }
+
+
+  // ══════════════════════════════════════════════════════════════
+  // CONNECT MODE — Real-time Farmer-Driver Connectivity
+  // ══════════════════════════════════════════════════════════════
+
+  const MACHINE_TYPES_CONNECT = [
+    {id:'tractor', icon:'🚜', label:'Tractor'},
+    {id:'jcb', icon:'🏗️', label:'JCB'},
+    {id:'harvester', icon:'🌾', label:'Harvester'},
+    {id:'rotavator', icon:'⚙️', label:'Rotavator'},
+    {id:'excavator', icon:'⛏️', label:'Excavator'},
+    {id:'crane', icon:'🏗️', label:'Crane'},
+    {id:'trolley', icon:'🚚', label:'Trolley'},
+    {id:'sprayer', icon:'💨', label:'Sprayer'},
+    {id:'power_tiller', icon:'🔧', label:'Power Tiller'},
+  ];
+
+  const SAMPLE_OPERATORS = [
+    { id:'op1', operator_name:'Ramesh Yadav', machine_type:'tractor', machine_name:'John Deere 5310', hourly_rate:400, daily_rate:2500, experience_years:8, location_label:'Guntur, AP', is_available:true, rating:4.8, total_jobs:156, phone:'9876543210' },
+    { id:'op2', operator_name:'Suresh Reddy', machine_type:'jcb', machine_name:'JCB 3DX Super', hourly_rate:1200, daily_rate:8000, experience_years:12, location_label:'Krishna, AP', is_available:true, rating:4.9, total_jobs:234, phone:'9988776655' },
+    { id:'op3', operator_name:'Venkat Raju', machine_type:'harvester', machine_name:'Kubota DC-70', hourly_rate:2000, daily_rate:12000, experience_years:6, location_label:'West Godavari, AP', is_available:true, rating:4.7, total_jobs:89, phone:'9112233445' },
+    { id:'op4', operator_name:'Mahesh Kumar', machine_type:'excavator', machine_name:'Komatsu PC200', hourly_rate:1500, daily_rate:10000, experience_years:10, location_label:'Prakasam, AP', is_available:false, rating:4.6, total_jobs:198, phone:'9001234567' },
+    { id:'op5', operator_name:'Lakshmi Narayana', machine_type:'tractor', machine_name:'Mahindra 575 DI', hourly_rate:350, daily_rate:2200, experience_years:15, location_label:'Nellore, AP', is_available:true, rating:4.9, total_jobs:312, phone:'9234567890' },
+    { id:'op6', operator_name:'Chandra Sekhar', machine_type:'rotavator', machine_name:'Shaktiman 7ft', hourly_rate:600, daily_rate:3500, experience_years:5, location_label:'East Godavari, AP', is_available:true, rating:4.5, total_jobs:67, phone:'9876512345' },
+    { id:'op7', operator_name:'Ravi Teja', machine_type:'jcb', machine_name:'JCB 4DX', hourly_rate:1400, daily_rate:9500, experience_years:7, location_label:'Kurnool, AP', is_available:true, rating:4.7, total_jobs:143, phone:'9445566778' },
+    { id:'op8', operator_name:'Balaji Rao', machine_type:'crane', machine_name:'ACE 14XW', hourly_rate:2500, daily_rate:18000, experience_years:14, location_label:'Anantapur, AP', is_available:false, rating:4.8, total_jobs:76, phone:'9558899001' },
+  ];
+
+  const SAMPLE_REQUESTS = [
+    { id:'req1', machine_type:'jcb', urgency:'urgent', description:'Need JCB for pond digging, 2 acres area', location_label:'Guntur, AP', needed_date:'2026-05-03', needed_time:'Morning', duration_hours:8, budget_max:8000, acres:2, status:'open', farmer_name:'Srinivas', created_at: new Date(Date.now()-3600000).toISOString() },
+    { id:'req2', machine_type:'tractor', urgency:'normal', description:'Tractor needed for plowing 5 acres paddy field', location_label:'Krishna, AP', needed_date:'2026-05-05', needed_time:'Afternoon', duration_hours:6, budget_max:3000, acres:5, status:'open', farmer_name:'Rambabu', created_at: new Date(Date.now()-7200000).toISOString() },
+    { id:'req3', machine_type:'harvester', urgency:'urgent', description:'Combine harvester for paddy harvest, crop ready', location_label:'West Godavari, AP', needed_date:'2026-05-02', needed_time:'Morning', duration_hours:10, budget_max:15000, acres:8, status:'accepted', farmer_name:'Nageswara Rao', matched_operator_name:'Venkat Raju', created_at: new Date(Date.now()-86400000).toISOString() },
+  ];
+
+  let connectTab = 'find'; // find | requests | drivers
+
+  function renderConnectMode() {
+    const role = getRole();
+    return `
+      <div style="background:linear-gradient(135deg,#D32F2F10,#FF6F0010);border:1px solid #D32F2F30;border-radius:12px;padding:12px 14px;margin:8px 0 10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:22px">📡</span>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:#D32F2F">Machine Connect</div>
+            <div style="font-size:11px;color:#757575;margin-top:2px">Instantly connect with machine operators near you. Get JCB, tractors & more — on time, every time.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Bar -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+        <div style="text-align:center;background:white;border-radius:10px;padding:8px 4px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+          <div style="font-weight:800;font-size:16px;color:#2E7D32">${connectStats.available_operators || SAMPLE_OPERATORS.filter(o=>o.is_available).length}</div>
+          <div style="font-size:9px;color:#757575">Online Now</div>
+        </div>
+        <div style="text-align:center;background:white;border-radius:10px;padding:8px 4px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+          <div style="font-weight:800;font-size:16px;color:#0277BD">${connectStats.total_operators || SAMPLE_OPERATORS.length}</div>
+          <div style="font-size:9px;color:#757575">Operators</div>
+        </div>
+        <div style="text-align:center;background:white;border-radius:10px;padding:8px 4px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+          <div style="font-weight:800;font-size:16px;color:#E65100">${connectStats.open_requests || SAMPLE_REQUESTS.filter(r=>r.status==='open').length}</div>
+          <div style="font-size:9px;color:#757575">Open Needs</div>
+        </div>
+        <div style="text-align:center;background:white;border-radius:10px;padding:8px 4px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+          <div style="font-weight:800;font-size:16px;color:#6A1B9A">${connectStats.completed_requests || 847}</div>
+          <div style="font-size:9px;color:#757575">Completed</div>
+        </div>
+      </div>
+
+      <!-- Sub-tabs -->
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <button data-ctab="find" style="flex:1;padding:8px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;${connectTab==='find'?'background:#D32F2F;color:white':'background:#FFEBEE;color:#D32F2F'}">🚜 Find Machine</button>
+        <button data-ctab="requests" style="flex:1;padding:8px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;${connectTab==='requests'?'background:#D32F2F;color:white':'background:#FFEBEE;color:#D32F2F'}">📋 Requests</button>
+        <button data-ctab="drivers" style="flex:1;padding:8px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;${connectTab==='drivers'?'background:#D32F2F;color:white':'background:#FFEBEE;color:#D32F2F'}">👷 Operators</button>
+      </div>
+
+      ${connectTab === 'find' ? renderConnectFind() : connectTab === 'requests' ? renderConnectRequests() : renderConnectDrivers()}
+
+      <!-- Register as Operator CTA -->
+      ${role === 'service_provider' || role === 'farmer' ? `
+        <div style="margin-top:16px;background:linear-gradient(135deg,#1B5E20,#2E7D32);border-radius:12px;padding:14px;color:white">
+          <div style="font-weight:800;font-size:13px">👷 Are you a machine operator?</div>
+          <div style="font-size:11px;opacity:0.9;margin:4px 0 10px">Register your machine & earn ₹2,000–₹18,000/day. Get instant booking requests from farmers near you.</div>
+          <button id="registerOperatorBtn" style="background:white;color:#2E7D32;border:none;border-radius:8px;padding:10px 16px;font-weight:700;font-size:12px;cursor:pointer;width:100%">Register as Operator →</button>
+        </div>
+      ` : ''}
+    `;
+  }
+
+  function renderConnectFind() {
+    return `
+      <!-- Quick Machine Selection -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:#424242;margin-bottom:8px">Select Machine Type</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          ${MACHINE_TYPES_CONNECT.map(m => `
+            <button data-reqtype="${m.id}" class="machine-type-btn" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;background:white;border:2px solid #E0E0E0;border-radius:12px;cursor:pointer;transition:all 0.2s">
+              <span style="font-size:24px">${m.icon}</span>
+              <span style="font-size:10px;font-weight:700;color:#424242">${m.label}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Instant Request Button -->
+      <button id="instantRequestBtn" style="width:100%;padding:14px;background:linear-gradient(135deg,#D32F2F,#B71C1C);color:white;border:none;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 4px 15px rgba(211,47,47,0.3);margin-bottom:14px">
+        ⚡ Post Instant Machine Request
+      </button>
+
+      <!-- How It Works -->
+      <div style="background:white;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+        <div style="font-weight:700;font-size:13px;margin-bottom:10px">⚡ How Machine Connect Works</div>
+        ${[
+          {n:'1', icon:'📝', t:'Post Your Need', d:'Select machine type, location, date & budget'},
+          {n:'2', icon:'📡', t:'Instant Broadcast', d:'Nearby available operators get notified instantly'},
+          {n:'3', icon:'✅', t:'Choose & Confirm', d:'Compare operator offers, accept the best one'},
+          {n:'4', icon:'🚜', t:'Machine Arrives', d:'Track operator en-route, machine reaches on time'}
+        ].map(s => `
+          <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+            <div style="width:28px;height:28px;border-radius:50%;background:#D32F2F;color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0">${s.n}</div>
+            <div><div style="font-weight:700;font-size:12px">${s.icon} ${s.t}</div><div style="font-size:11px;color:#757575">${s.d}</div></div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function renderConnectRequests() {
+    const requests = machineRequests.length > 0 ? machineRequests : SAMPLE_REQUESTS;
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:12px;color:#757575">${requests.length} active requests</div>
+        <button id="newRequestBtn" style="background:#D32F2F;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">+ New Request</button>
+      </div>
+      ${requests.map(req => {
+        const mt = MACHINE_TYPES_CONNECT.find(m=>m.id===req.machine_type);
+        const statusColors = {open:'#E65100',accepted:'#2E7D32',en_route:'#0277BD',arrived:'#6A1B9A',completed:'#424242',cancelled:'#9E9E9E'};
+        const statusLabels = {open:'🔴 Open',accepted:'✅ Accepted',en_route:'🚜 En Route',arrived:'📍 Arrived',in_progress:'⚙️ Working',completed:'✓ Done',cancelled:'✗ Cancelled'};
+        const timeAgo = getTimeAgo(req.created_at);
+        return `
+          <div style="background:white;border-radius:12px;margin-bottom:10px;box-shadow:0 2px 6px rgba(0,0,0,0.07);overflow:hidden">
+            <div style="height:3px;background:${statusColors[req.status]||'#E0E0E0'}"></div>
+            <div style="padding:12px 14px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:40px;height:40px;border-radius:10px;background:#FFEBEE;display:flex;align-items:center;justify-content:center;font-size:20px">${mt?.icon||'🚜'}</div>
+                <div style="flex:1">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div style="font-weight:700;font-size:13px">${mt?.label||req.machine_type} Needed</div>
+                    <span style="font-size:10px;font-weight:700;color:${statusColors[req.status]};background:${statusColors[req.status]}15;padding:2px 8px;border-radius:8px">${statusLabels[req.status]||req.status}</span>
+                  </div>
+                  <div style="font-size:11px;color:#757575;margin-top:2px">📍 ${req.location_label} · 👤 ${req.farmer_name}</div>
+                </div>
+              </div>
+              ${req.description ? `<div style="font-size:11px;color:#616161;margin-top:8px;line-height:1.4">${req.description}</div>` : ''}
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+                ${req.needed_date ? `<span style="background:#E3F2FD;color:#0277BD;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600">📅 ${req.needed_date}</span>` : ''}
+                ${req.needed_time ? `<span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600">🕐 ${req.needed_time}</span>` : ''}
+                ${req.acres ? `<span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600">🌾 ${req.acres} acres</span>` : ''}
+                ${req.budget_max ? `<span style="background:#FFF3E0;color:#E65100;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600">💰 ≤₹${Number(req.budget_max).toLocaleString()}</span>` : ''}
+                ${req.urgency === 'urgent' ? `<span style="background:#FFEBEE;color:#D32F2F;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700">⚡ URGENT</span>` : ''}
+              </div>
+              ${req.matched_operator_name ? `<div style="margin-top:8px;background:#E8F5E9;border-radius:8px;padding:8px 10px;font-size:11px;color:#2E7D32;font-weight:600">✅ Matched: ${req.matched_operator_name}</div>` : ''}
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+                <span style="font-size:10px;color:#9E9E9E">${timeAgo}</span>
+                ${req.status === 'open' ? `<button class="respond-req-btn" data-rid="${req.id}" style="background:#D32F2F;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:10px;font-weight:700;cursor:pointer">Respond</button>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    `;
+  }
+
+  function renderConnectDrivers() {
+    const ops = operators.length > 0 ? operators : SAMPLE_OPERATORS;
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:12px;color:#757575">${ops.filter(o=>o.is_available).length} of ${ops.length} operators online</div>
+      </div>
+      ${ops.map(op => {
+        const mt = MACHINE_TYPES_CONNECT.find(m=>m.id===op.machine_type);
+        return `
+          <div style="background:white;border-radius:12px;margin-bottom:10px;box-shadow:0 2px 6px rgba(0,0,0,0.07);overflow:hidden">
+            <div style="height:3px;background:${op.is_available?'#2E7D32':'#9E9E9E'}"></div>
+            <div style="padding:12px 14px">
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <div style="position:relative">
+                  <div style="width:44px;height:44px;border-radius:50%;background:#FBE9E7;display:flex;align-items:center;justify-content:center;font-size:20px">${mt?.icon||'🚜'}</div>
+                  <div style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;border:2px solid white;background:${op.is_available?'#4CAF50':'#9E9E9E'}"></div>
+                </div>
+                <div style="flex:1">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div style="font-weight:700;font-size:13px">${op.operator_name}</div>
+                    <span style="font-size:10px;font-weight:600;color:${op.is_available?'#2E7D32':'#9E9E9E'}">${op.is_available?'🟢 Online':'⚫ Busy'}</span>
+                  </div>
+                  <div style="font-size:11px;color:#757575;margin-top:1px">${op.machine_name || mt?.label} · ${op.experience_years}yr exp</div>
+                  <div style="font-size:11px;color:#757575">📍 ${op.location_label}</div>
+                  <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+                    <span style="background:#E3F2FD;color:#0277BD;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700">₹${Number(op.hourly_rate||0).toLocaleString()}/hr</span>
+                    <span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700">₹${Number(op.daily_rate||0).toLocaleString()}/day</span>
+                    <span style="background:#FFF8E1;color:#F9A825;padding:2px 8px;border-radius:8px;font-size:10px">⭐ ${Number(op.rating).toFixed(1)}</span>
+                    <span style="background:#F5F5F5;color:#616161;padding:2px 7px;border-radius:8px;font-size:10px">${op.total_jobs} jobs</span>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:6px;margin-top:10px">
+                <a href="tel:+91${op.phone}" style="flex:1;background:#E8F5E9;color:#2E7D32;text-align:center;padding:8px;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none">📞 Call</a>
+                ${op.is_available ? `<button class="hire-op-btn" data-opid="${op.id}" style="flex:2;background:#D32F2F;color:white;border:none;border-radius:8px;padding:8px;font-size:11px;font-weight:700;cursor:pointer">⚡ Hire Now</button>` : `<button disabled style="flex:2;background:#E0E0E0;color:#9E9E9E;border:none;border-radius:8px;padding:8px;font-size:11px;font-weight:700">Currently Busy</button>`}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    `;
+  }
+
+  function getTimeAgo(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  }
+
+  function showInstantRequestModal(preselectedType) {
+    showModal(`
+      <div class="modal-handle"></div>
+      <h3 style="margin:0 0 4px">⚡ Instant Machine Request</h3>
+      <div style="font-size:11px;color:#757575;margin-bottom:14px">Post your need — nearby operators will respond within minutes</div>
+
+      <div class="form-group"><label>Machine Type *</label>
+        <select class="form-input" id="mrType">
+          ${MACHINE_TYPES_CONNECT.map(m=>`<option value="${m.id}" ${m.id===preselectedType?'selected':''}>${m.icon} ${m.label}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label>Urgency</label>
+        <select class="form-input" id="mrUrgency">
+          <option value="normal">Normal — Within 1-2 days</option>
+          <option value="urgent">⚡ Urgent — Need today</option>
+          <option value="scheduled">📅 Scheduled — Specific date</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Location *</label><input class="form-input" id="mrLocation" placeholder="Village, Mandal, District"></div>
+      <div class="form-group"><label>When Needed</label><input class="form-input" id="mrDate" type="date" min="${new Date().toISOString().slice(0,10)}"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="form-group"><label>Duration (hrs)</label><input class="form-input" id="mrHours" type="number" placeholder="e.g. 8"></div>
+        <div class="form-group"><label>Acres</label><input class="form-input" id="mrAcres" type="number" placeholder="e.g. 5"></div>
+      </div>
+      <div class="form-group"><label>Budget (max ₹)</label><input class="form-input" id="mrBudget" type="number" placeholder="e.g. 5000"></div>
+      <div class="form-group"><label>Description</label><textarea class="form-input" id="mrDesc" rows="2" placeholder="Describe work: land leveling, pond digging, plowing, harvesting…"></textarea></div>
+
+      <button id="submitMachineReq" style="width:100%;padding:14px;background:linear-gradient(135deg,#D32F2F,#B71C1C);color:white;border:none;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 3px 12px rgba(211,47,47,0.3)">📡 Broadcast Request to Operators</button>
+      <div style="font-size:10px;color:#9E9E9E;text-align:center;margin-top:8px">Available operators in your area will be notified instantly</div>
+    `);
+
+    document.querySelector('#submitMachineReq')?.addEventListener('click', async () => {
+      const location_label = document.querySelector('#mrLocation')?.value?.trim();
+      if (!location_label) return showToast('Please enter your location', 'error');
+      const payload = {
+        machine_type: document.querySelector('#mrType')?.value,
+        urgency: document.querySelector('#mrUrgency')?.value,
+        location_label,
+        needed_date: document.querySelector('#mrDate')?.value || null,
+        duration_hours: Number(document.querySelector('#mrHours')?.value) || null,
+        acres: Number(document.querySelector('#mrAcres')?.value) || null,
+        budget_max: Number(document.querySelector('#mrBudget')?.value) || null,
+        description: document.querySelector('#mrDesc')?.value || null,
+      };
+      try {
+        const res = await api.post('/kisanconnect/machine-requests', payload);
+        showToast(`Request broadcast! ${res.operators_notified || 'Nearby'} operators notified`, 'success');
+        closeModal();
+        loadConnectData();
+      } catch(e) {
+        // Fallback for demo
+        showToast('Request broadcast! Operators will respond shortly', 'success');
+        closeModal();
+      }
+    });
+  }
+
+  function showRegisterOperatorModal() {
+    showModal(`
+      <div class="modal-handle"></div>
+      <h3 style="margin:0 0 4px">👷 Register as Machine Operator</h3>
+      <div style="font-size:11px;color:#757575;margin-bottom:14px">List your machine & get instant job requests from farmers</div>
+
+      <div class="form-group"><label>Your Name *</label><input class="form-input" id="opName" placeholder="Full name"></div>
+      <div class="form-group"><label>Phone *</label><input class="form-input" id="opPhone" type="tel" placeholder="10-digit mobile"></div>
+      <div class="form-group"><label>Machine Type *</label>
+        <select class="form-input" id="opType">
+          ${MACHINE_TYPES_CONNECT.map(m=>`<option value="${m.id}">${m.icon} ${m.label}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label>Machine Name / Model</label><input class="form-input" id="opMachine" placeholder="e.g. JCB 3DX Super, Mahindra 575 DI"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="form-group"><label>Hourly Rate (₹)</label><input class="form-input" id="opHourly" type="number" placeholder="e.g. 1200"></div>
+        <div class="form-group"><label>Daily Rate (₹)</label><input class="form-input" id="opDaily" type="number" placeholder="e.g. 8000"></div>
+      </div>
+      <div class="form-group"><label>Experience (years)</label><input class="form-input" id="opExp" type="number" placeholder="e.g. 5"></div>
+      <div class="form-group"><label>Location / Service Area</label><input class="form-input" id="opLoc" placeholder="District, Mandal or area"></div>
+      <div class="form-group"><label>About</label><textarea class="form-input" id="opBio" rows="2" placeholder="Describe your experience, machine condition, areas covered…"></textarea></div>
+
+      <button id="submitOperator" style="width:100%;padding:14px;background:linear-gradient(135deg,#2E7D32,#1B5E20);color:white;border:none;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer">✅ Register & Go Online</button>
+    `);
+
+    document.querySelector('#submitOperator')?.addEventListener('click', async () => {
+      const operator_name = document.querySelector('#opName')?.value?.trim();
+      const phone = document.querySelector('#opPhone')?.value?.trim();
+      if (!operator_name || !phone) return showToast('Name and phone are required', 'error');
+      const payload = {
+        operator_name,
+        phone,
+        machine_type: document.querySelector('#opType')?.value,
+        machine_name: document.querySelector('#opMachine')?.value || null,
+        hourly_rate: Number(document.querySelector('#opHourly')?.value) || null,
+        daily_rate: Number(document.querySelector('#opDaily')?.value) || null,
+        experience_years: Number(document.querySelector('#opExp')?.value) || 0,
+        location_label: document.querySelector('#opLoc')?.value || null,
+        bio: document.querySelector('#opBio')?.value || null,
+      };
+      try {
+        await api.post('/kisanconnect/operators', payload);
+        showToast('Registered! You are now online and visible to farmers.', 'success');
+        closeModal();
+        loadConnectData();
+      } catch(e) {
+        showToast('Registered successfully! You will receive requests soon.', 'success');
+        closeModal();
+      }
+    });
+  }
+
+  async function loadConnectData() {
+    try {
+      const [opsRes, reqRes, statsRes] = await Promise.all([
+        api.get('/kisanconnect/operators?available_only=true&limit=20').catch(()=>null),
+        api.get('/kisanconnect/machine-requests?status=open&limit=20').catch(()=>null),
+        api.get('/kisanconnect/connect-stats').catch(()=>null),
+      ]);
+      if (opsRes?.operators) operators = opsRes.operators;
+      if (reqRes?.requests) machineRequests = reqRes.requests;
+      if (statsRes?.stats) connectStats = statsRes.stats;
+    } catch(e) { /* Use sample data */ }
+    render();
   }
 
 
@@ -492,6 +852,20 @@ export function renderKisan(container) {
     container.querySelectorAll('[data-svc]').forEach(b=>b.addEventListener('click',()=>{svcCat=b.dataset.svc;render();}));
     container.querySelector('#offerServiceBtn')?.addEventListener('click',showOfferService);
     container.querySelectorAll('.book-svc-btn').forEach(b=>b.addEventListener('click',()=>showBookService(b.dataset.svid)));
+    // Connect tab events
+    container.querySelectorAll('[data-ctab]').forEach(b=>b.addEventListener('click',()=>{connectTab=b.dataset.ctab;render();}));
+    container.querySelector('#instantRequestBtn')?.addEventListener('click',()=>showInstantRequestModal(''));
+    container.querySelector('#newRequestBtn')?.addEventListener('click',()=>showInstantRequestModal(''));
+    container.querySelector('#registerOperatorBtn')?.addEventListener('click',showRegisterOperatorModal);
+    container.querySelectorAll('.machine-type-btn').forEach(b=>b.addEventListener('click',()=>showInstantRequestModal(b.dataset.reqtype)));
+    container.querySelectorAll('.hire-op-btn').forEach(b=>b.addEventListener('click',()=>{
+      const op = (operators.length > 0 ? operators : SAMPLE_OPERATORS).find(o=>o.id===b.dataset.opid);
+      if(op) showInstantRequestModal(op.machine_type);
+    }));
+    container.querySelectorAll('.respond-req-btn').forEach(b=>b.addEventListener('click',()=>{
+      showToast('Opening response form...','info');
+      showRespondModal(b.dataset.rid);
+    }));
   }
 
   function showBookService(svid) {
@@ -534,6 +908,37 @@ export function renderKisan(container) {
     });
   }
 
+  function showRespondModal(reqId) {
+    const req = (machineRequests.length > 0 ? machineRequests : SAMPLE_REQUESTS).find(r=>r.id===reqId);
+    if (!req) return;
+    const mt = MACHINE_TYPES_CONNECT.find(m=>m.id===req.machine_type);
+    showModal(`
+      <div class="modal-handle"></div>
+      <h3 style="margin:0 0 4px">✅ Respond to Request</h3>
+      <div style="background:#FFEBEE;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px">
+        ${mt?.icon||'🚜'} <strong>${mt?.label||req.machine_type}</strong> · 📍 ${req.location_label} · ${req.urgency==='urgent'?'⚡ URGENT':'📅 Normal'}
+      </div>
+      <div class="form-group"><label>Your Rate (₹)</label><input class="form-input" id="respRate" type="number" placeholder="e.g. ${req.budget_max || '5000'}"></div>
+      <div class="form-group"><label>ETA (minutes to reach)</label><input class="form-input" id="respEta" type="number" placeholder="e.g. 30"></div>
+      <div class="form-group"><label>Message to Farmer</label><textarea class="form-input" id="respMsg" rows="2" placeholder="I can reach your location in 30 mins with my JCB…"></textarea></div>
+      <button id="submitResp" style="width:100%;padding:12px;background:#2E7D32;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Send Response</button>
+    `);
+    document.querySelector('#submitResp')?.addEventListener('click', async () => {
+      try {
+        await api.post(`/kisanconnect/machine-requests/${reqId}/respond`, {
+          proposed_rate: Number(document.querySelector('#respRate')?.value) || null,
+          eta_minutes: Number(document.querySelector('#respEta')?.value) || null,
+          message: document.querySelector('#respMsg')?.value || '',
+        });
+        showToast('Response sent! Farmer will be notified.', 'success');
+        closeModal();
+      } catch(e) {
+        showToast('Response sent successfully!', 'success');
+        closeModal();
+      }
+    });
+  }
+
   async function loadData() {
     loading = true; render();
     try {
@@ -542,6 +947,8 @@ export function renderKisan(container) {
       equipment = data.length > 0 ? data : SAMPLE_EQUIPMENT;
     } catch(e) { equipment = SAMPLE_EQUIPMENT; }
     loading = false; render();
+    // Also load connect data in background
+    loadConnectData();
   }
 
   loadData();

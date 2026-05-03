@@ -2,6 +2,7 @@ import { api } from '../api.js';
 import { getState, logout as logoutStore, getRole } from '../store.js';
 import { navigate, showToast, showModal, closeModal } from '../app-shell.js';
 import { t, getLang, setLang, LANGUAGES } from '../i18n.js';
+import { getMyLocation } from '../integrations/maps.js';
 
 export function renderProfile(container) {
   const user = getState().user || {};
@@ -30,6 +31,13 @@ export function renderProfile(container) {
         <div class="hero-stat-card" role="listitem"><div class="v">${role==='buyer'?'156':'8'}</div><div class="l">${role==='buyer'?'Sourced':'Orders'}</div></div>
         <div class="hero-stat-card" role="listitem"><div class="v">80%</div><div class="l">Profile</div></div>
       </div>
+    </div>
+
+    <!-- ONBOARDING CTA -->
+    <div id="onboardingCta" style="display:none;padding:12px 16px">
+      <button id="startOnboardingBtn" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF6F00,#FF9800);color:white;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(255,111,0,0.3)">
+        🌾 Complete Your Profile — Get Better Prices & Advisories
+      </button>
     </div>
 
     <!-- ROLE-SPECIFIC PROFILE SETTINGS -->
@@ -113,6 +121,13 @@ export function renderProfile(container) {
   `;
 
   container.querySelectorAll('[data-nav]').forEach(el => el.addEventListener('click', () => navigate(el.dataset.nav)));
+
+  // ─── Onboarding Wizard CTA ─────────────────────────────────────
+  const onboardingDone = localStorage.getItem('agrihub_onboarding_done');
+  if (!onboardingDone && (role === 'farmer' || role === 'fpo')) {
+    container.querySelector('#onboardingCta').style.display = 'block';
+  }
+  container.querySelector('#startOnboardingBtn')?.addEventListener('click', showOnboardingWizard);
 
   container.querySelector('#editNameBtn')?.addEventListener('click', () => {
     showModal(`<div class="modal-handle"></div><h3>✏️ Edit Name</h3>
@@ -403,5 +418,128 @@ export function renderProfile(container) {
         showToast('Buyer profile saved', 'success'); closeModal(); loadRoleProfile();
       } catch(e) { showToast(e.message,'error'); }
     });
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ONBOARDING WIZARD — 4-step farmer profile setup
+  // ═══════════════════════════════════════════════════════════════
+  function showOnboardingWizard() {
+    let step = 1;
+    const data = { lat: null, lng: null, district: '', village: '', mandal: '',
+      total_land_acres: '', irrigation: 'rainfed', soil_type: 'black', farming_method: 'conventional',
+      crops: [] };
+    let cropsList = [];
+
+    function renderStep() {
+      let html = `<div class="modal-handle"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          ${[1,2,3,4].map(s => `<div style="flex:1;height:4px;border-radius:2px;background:${s<=step?'#4CAF50':'#E0E0E0'}"></div>`).join('')}
+        </div>
+        <div style="font-size:11px;color:#757575;margin-bottom:8px">Step ${step} of 4</div>`;
+
+      if (step === 1) {
+        html += `<h3>📍 Location</h3>
+          <button id="obGpsBtn" style="width:100%;padding:10px;background:#E8F5E9;border:1px solid #4CAF50;border-radius:8px;cursor:pointer;font-weight:600;margin-bottom:12px">
+            ${data.lat ? `✅ GPS: ${data.lat.toFixed(4)}, ${data.lng.toFixed(4)}` : '📡 Capture GPS Location'}
+          </button>
+          <div class="form-group"><label>District</label><select class="form-input" id="obDistrict">
+            <option value="">Select district</option>
+            <option ${data.district==='Guntur'?'selected':''}>Guntur</option><option ${data.district==='Krishna'?'selected':''}>Krishna</option>
+            <option ${data.district==='Prakasam'?'selected':''}>Prakasam</option><option ${data.district==='Nellore'?'selected':''}>Nellore</option>
+            <option ${data.district==='Kurnool'?'selected':''}>Kurnool</option><option ${data.district==='Anantapur'?'selected':''}>Anantapur</option>
+            <option ${data.district==='Kadapa'?'selected':''}>Kadapa</option><option ${data.district==='Chittoor'?'selected':''}>Chittoor</option>
+            <option ${data.district==='Warangal'?'selected':''}>Warangal</option><option ${data.district==='Karimnagar'?'selected':''}>Karimnagar</option>
+          </select></div>
+          <div class="form-group"><label>Village</label><input class="form-input" id="obVillage" value="${data.village}" placeholder="Enter village name"></div>
+          <div class="form-group"><label>Mandal</label><input class="form-input" id="obMandal" value="${data.mandal}" placeholder="Enter mandal name"></div>`;
+      } else if (step === 2) {
+        html += `<h3>🌾 Land Details</h3>
+          <div class="form-group"><label>Total Land (acres)</label><input class="form-input" type="number" id="obLand" value="${data.total_land_acres}" placeholder="5"></div>
+          <div class="form-group"><label>Irrigation Type</label><select class="form-input" id="obIrrigation">
+            ${['rainfed','borewell','canal','drip','sprinkler'].map(v=>`<option value="${v}" ${data.irrigation===v?'selected':''}>${v.charAt(0).toUpperCase()+v.slice(1)}</option>`).join('')}
+          </select></div>
+          <div class="form-group"><label>Soil Type</label><select class="form-input" id="obSoil">
+            ${['black','red','alluvial','laterite','sandy'].map(v=>`<option value="${v}" ${data.soil_type===v?'selected':''}>${v.charAt(0).toUpperCase()+v.slice(1)}</option>`).join('')}
+          </select></div>
+          <div class="form-group"><label>Farming Method</label><select class="form-input" id="obMethod">
+            ${['conventional','organic','mixed'].map(v=>`<option value="${v}" ${data.farming_method===v?'selected':''}>${v.charAt(0).toUpperCase()+v.slice(1)}</option>`).join('')}
+          </select></div>`;
+      } else if (step === 3) {
+        html += `<h3>🌱 Select Crops</h3>
+          <div style="max-height:250px;overflow-y:auto;padding:4px 0">
+            ${cropsList.map(c => `<label style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f0f0f0;cursor:pointer">
+              <input type="checkbox" class="obCropCheck" value="${c.id}" ${data.crops.includes(c.id)?'checked':''}>
+              <span>${c.icon_emoji||'🌿'} ${c.name}</span>
+            </label>`).join('')}
+            ${cropsList.length === 0 ? '<div style="text-align:center;color:#757575;padding:20px">Loading crops…</div>' : ''}
+          </div>`;
+      } else {
+        html += `<h3>✅ Confirm Details</h3>
+          <div style="background:#F5F5F5;border-radius:10px;padding:12px;font-size:13px;line-height:1.8">
+            <div><strong>📍 Location:</strong> ${data.village || '—'}, ${data.mandal || '—'}, ${data.district || '—'}</div>
+            <div><strong>🗺️ GPS:</strong> ${data.lat ? `${data.lat.toFixed(4)}, ${data.lng.toFixed(4)}` : 'Not captured'}</div>
+            <div><strong>🌾 Land:</strong> ${data.total_land_acres || '—'} acres</div>
+            <div><strong>💧 Irrigation:</strong> ${data.irrigation}</div>
+            <div><strong>🪨 Soil:</strong> ${data.soil_type}</div>
+            <div><strong>🧑‍🌾 Method:</strong> ${data.farming_method}</div>
+            <div><strong>🌱 Crops:</strong> ${data.crops.length} selected</div>
+          </div>`;
+      }
+
+      html += `<div style="display:flex;gap:8px;margin-top:16px">
+        ${step > 1 ? '<button id="obBack" class="btn btn-secondary" style="flex:1">← Back</button>' : ''}
+        <button id="obNext" class="btn btn-primary" style="flex:1">${step === 4 ? '🚀 Submit' : 'Next →'}</button>
+      </div>`;
+
+      showModal(html);
+      bindStepEvents();
+    }
+
+    function bindStepEvents() {
+      document.querySelector('#obGpsBtn')?.addEventListener('click', async () => {
+        try {
+          const loc = await getMyLocation();
+          data.lat = loc.lat; data.lng = loc.lng;
+          document.querySelector('#obGpsBtn').innerHTML = `✅ GPS: ${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`;
+        } catch(e) { showToast('GPS unavailable: ' + e.message, 'error'); }
+      });
+
+      document.querySelector('#obBack')?.addEventListener('click', () => { saveCurrentStep(); step--; renderStep(); });
+      document.querySelector('#obNext')?.addEventListener('click', async () => {
+        saveCurrentStep();
+        if (step === 4) {
+          try {
+            await api.post('/farmer/profile', data);
+            localStorage.setItem('agrihub_onboarding_done', '1');
+            showToast('Profile completed! 🎉', 'success');
+            closeModal();
+            container.querySelector('#onboardingCta').style.display = 'none';
+          } catch(e) { showToast(e.message, 'error'); }
+        } else {
+          step++;
+          if (step === 3 && cropsList.length === 0) {
+            try { const res = await api.getCrops(); cropsList = res.crops || []; } catch(e) { cropsList = []; }
+          }
+          renderStep();
+        }
+      });
+    }
+
+    function saveCurrentStep() {
+      if (step === 1) {
+        data.district = document.querySelector('#obDistrict')?.value || data.district;
+        data.village = document.querySelector('#obVillage')?.value || data.village;
+        data.mandal = document.querySelector('#obMandal')?.value || data.mandal;
+      } else if (step === 2) {
+        data.total_land_acres = document.querySelector('#obLand')?.value || data.total_land_acres;
+        data.irrigation = document.querySelector('#obIrrigation')?.value || data.irrigation;
+        data.soil_type = document.querySelector('#obSoil')?.value || data.soil_type;
+        data.farming_method = document.querySelector('#obMethod')?.value || data.farming_method;
+      } else if (step === 3) {
+        data.crops = Array.from(document.querySelectorAll('.obCropCheck:checked')).map(el => el.value);
+      }
+    }
+
+    renderStep();
   }
 }

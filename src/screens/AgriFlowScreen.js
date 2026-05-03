@@ -668,6 +668,7 @@ export function renderAgriFlow(container) {
   }
 
   function showCreateListing() {
+    let uploadedPhotos = [];
     showModal(`<div class="modal-handle"></div><h3>📋 List Crop for Sale</h3>
       <div style="font-size:12px;color:#757575;margin-bottom:12px">Once listed, buyers across India can discover and send inquiries to you.</div>
       <div class="form-group"><label>Crop</label><select class="form-input" id="clCrop">${crops.map(c=>`<option value="${c.id}">${c.icon_emoji||''} ${c.name}</option>`).join('')}</select></div>
@@ -676,10 +677,32 @@ export function renderAgriFlow(container) {
       <div class="form-group"><label>Grade</label><select class="form-input" id="clGrade"><option>A</option><option>B</option><option>C</option></select></div>
       <div class="form-group"><label>Organic?</label><select class="form-input" id="clOrganic"><option value="false">No</option><option value="true">Yes — certified organic</option></select></div>
       <div class="form-group"><label>Location label (optional)</label><input class="form-input" id="clLoc" placeholder="Near Guntur Mandi"></div>
+      <div class="form-group"><label>📷 Photos (optional)</label>
+        <input type="file" id="clPhotoInput" accept="image/*" multiple style="font-size:12px">
+        <div id="clPhotoPreview" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
+      </div>
       <button id="submitListing" style="width:100%;padding:12px;background:#0277BD;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">List for Sale</button>`);
+
+    document.querySelector('#clPhotoInput')?.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      const preview = document.querySelector('#clPhotoPreview');
+      for (const file of files) {
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          try {
+            const res = await api.uploadBase64Image(ev.target.result, 'listing');
+            const url = res.url || res.file_url || ev.target.result.slice(0, 50);
+            uploadedPhotos.push(url);
+            preview.innerHTML += `<div style="width:48px;height:48px;border-radius:6px;background:#E8F5E9;display:flex;align-items:center;justify-content:center;font-size:10px">📷</div>`;
+          } catch(err) { showToast('Upload failed: ' + err.message, 'error'); }
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
     document.querySelector('#submitListing')?.addEventListener('click', async () => {
       try {
-        await api.createListing({crop_id:Number(document.querySelector('#clCrop').value),quantity_kg:Number(document.querySelector('#clQty').value),price_per_kg:Number(document.querySelector('#clPrice').value),grade:document.querySelector('#clGrade').value,is_organic:document.querySelector('#clOrganic').value==='true',location_label:document.querySelector('#clLoc').value||undefined});
+        await api.createListing({crop_id:Number(document.querySelector('#clCrop').value),quantity_kg:Number(document.querySelector('#clQty').value),price_per_kg:Number(document.querySelector('#clPrice').value),grade:document.querySelector('#clGrade').value,is_organic:document.querySelector('#clOrganic').value==='true',location_label:document.querySelector('#clLoc').value||undefined,photos:uploadedPhotos.length?uploadedPhotos:undefined});
         showToast('Listing created! Buyers can now discover it.','success'); closeModal(); loadData();
       } catch(e){showToast(e.message,'error');}
     });

@@ -6,10 +6,14 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "migrate": "node src/db/migrate.js",
+    "migrate": "node src/db/migrate.js && node src/db/migrate-v2.js && node src/db/migrate-v3-trade.js && node src/db/migrate-v4-infrastructure.js",
+    "migrate:v2": "node src/db/migrate-v2.js",
+    "migrate:v3": "node src/db/migrate-v3-trade.js",
+    "migrate:v4": "node src/db/migrate-v4-infrastructure.js",
     "seed": "node src/db/seed.js",
     "setup-db": "node setup-db.js",
-    "test": "node --test src/**/*.test.js",
+    "test": "node --test tests/**/*.test.js",
+    "test:trade": "node --test tests/trade-flow.test.js",
     "lint": "echo 'No linter configured'"
   },
   "keywords": [
