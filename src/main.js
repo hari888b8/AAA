@@ -52,6 +52,8 @@ import { renderDemandEngine } from './screens/DemandEngineScreen.js';
 import { renderHyperlocal } from './screens/HyperlocalScreen.js';
 import { renderVoiceAssist } from './screens/VoiceAssistScreen.js';
 import { renderCropLifecycle } from './screens/CropLifecycleScreen.js';
+import { renderToolsHub } from './screens/ToolsHubScreen.js';
+import { renderDistrictPilot } from './screens/DistrictPilotScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -112,6 +114,8 @@ const ROUTES = {
   hyperlocal:    { title: 'Local Market',  icon: '📍', render: renderHyperlocal,   back: 'home'    },
   voiceassist:   { title: 'Voice & Assist',icon: '🎙️', render: renderVoiceAssist,  back: 'home'    },
   croplifecycle: { title: 'Crop Lifecycle',icon: '🔄', render: renderCropLifecycle,back: 'home'    },
+  toolshub:      { title: 'Tools Hub',     icon: '🧰', render: renderToolsHub,     back: 'home'    },
+  districtpilot: { title: 'District Pilot',icon: '🏘️', render: renderDistrictPilot,back: 'home'    },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────
@@ -208,23 +212,39 @@ function renderApp() {
             {icon:'💬',label:t('community')||'Community',route:'community'},
           ].map(m=>`<button class="menu-nav-btn" data-route="${m.route}" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:none;background:transparent;cursor:pointer;text-align:left;font-size:13px;color:#424242"><span style="font-size:18px">${m.icon}</span>${m.label}</button>`).join('')}
           <div style="height:1px;background:#E0E0E0;margin:8px 16px"></div>
-          <div style="padding:4px 16px;font-size:10px;font-weight:700;color:#9E9E9E;text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">Tools & Services</div>
+          <div style="padding:4px 16px;font-size:10px;font-weight:700;color:#C62828;text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">⚡ Core Engine</div>
           ${[
-            {icon:'⭐',label:'Subscription Plans',route:'subscriptions'},
-            {icon:'❤️',label:'My Favorites',route:'favorites'},
-            {icon:'👁️',label:'Watchlists & Alerts',route:'watchlists'},
-            {icon:'🔐',label:'Escrow Payments',route:'escrow'},
-            {icon:'🎫',label:'Support Tickets',route:'tickets'},
+            {icon:'🌾',label:'Trade (AgriFlow)',route:'agriflow'},
+            {icon:'🎯',label:'Demand Engine',route:'demandengine'},
+            {icon:'📝',label:'Contracts',route:'contracts'},
+            {icon:'🚚',label:'Logistics',route:'logistics'},
+            {icon:'🌾',label:'Execution Network',route:'executionnetwork'},
+            {icon:'📍',label:'Hyperlocal Market',route:'hyperlocal'},
+            {icon:'💰',label:'Finance & Escrow',route:'finance'},
+            {icon:'🤝',label:'Agent Hub',route:'agentdashboard'},
+            {icon:'🏘️',label:'District Pilot',route:'districtpilot'},
           ].map(m=>`<button class="menu-nav-btn" data-route="${m.route}" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:none;background:transparent;cursor:pointer;text-align:left;font-size:13px;color:#424242"><span style="font-size:18px">${m.icon}</span>${m.label}</button>`).join('')}
           <div style="height:1px;background:#E0E0E0;margin:8px 16px"></div>
-          <div style="padding:4px 16px;font-size:10px;font-weight:700;color:#9E9E9E;text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">Execution Layer</div>
+          <div style="padding:4px 16px;font-size:10px;font-weight:700;color:#2E7D32;text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">🌱 Farm OS</div>
           ${[
-            {icon:'🌾',label:'Execution Network',route:'executionnetwork'},
-            {icon:'🎯',label:'Demand Engine',route:'demandengine'},
-            {icon:'📍',label:'Local Market',route:'hyperlocal'},
-            {icon:'🎙️',label:'Voice & Assist',route:'voiceassist'},
+            {icon:'🏡',label:'BhoomiOS (Land)',route:'bhoomios'},
+            {icon:'🐟',label:'AquaOS (Aqua)',route:'aquaos'},
+            {icon:'📓',label:'Farm Diary',route:'farmdiary'},
+            {icon:'🩺',label:'Crop Doctor',route:'cropdoctor'},
+            {icon:'🌤️',label:'Weather & Advisory',route:'weather'},
+            {icon:'🛰️',label:'Satellite',route:'satellite'},
             {icon:'🔄',label:'Crop Lifecycle',route:'croplifecycle'},
-            {icon:'🤝',label:'Agent Hub',route:'agentdashboard'},
+            {icon:'🎙️',label:'Voice & Assist',route:'voiceassist'},
+          ].map(m=>`<button class="menu-nav-btn" data-route="${m.route}" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:none;background:transparent;cursor:pointer;text-align:left;font-size:13px;color:#424242"><span style="font-size:18px">${m.icon}</span>${m.label}</button>`).join('')}
+          <div style="height:1px;background:#E0E0E0;margin:8px 16px"></div>
+          <div style="padding:4px 16px;font-size:10px;font-weight:700;color:#1565C0;text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">🧰 Tools & Utilities</div>
+          ${[
+            {icon:'🧰',label:'Agri Tools Hub',route:'toolshub'},
+            {icon:'🏛️',label:'Govt Schemes',route:'schemes'},
+            {icon:'🎓',label:'Training',route:'training'},
+            {icon:'👷',label:'Agri Jobs',route:'jobs'},
+            {icon:'⭐',label:'Subscriptions',route:'subscriptions'},
+            {icon:'🎫',label:'Support',route:'tickets'},
           ].map(m=>`<button class="menu-nav-btn" data-route="${m.route}" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:none;background:transparent;cursor:pointer;text-align:left;font-size:13px;color:#424242"><span style="font-size:18px">${m.icon}</span>${m.label}</button>`).join('')}
           <div style="height:1px;background:#E0E0E0;margin:8px 16px"></div>
           <button id="logoutMenuBtn" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:none;background:transparent;cursor:pointer;text-align:left;font-size:13px;color:#C62828"><span style="font-size:18px">🚪</span>${t('logout') || 'Logout'}</button>
