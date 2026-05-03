@@ -66,6 +66,16 @@ const logisticsRouter = require('./routes/logistics');
 const inputsRouter = require('./routes/inputs');
 const cropplanningRouter = require('./routes/cropplanning');
 const onboardingRouter = require('./routes/onboarding');
+// Phase 2-4 routes
+const contractsRouter = require('./routes/contracts');
+const trustscoreRouter = require('./routes/trustscore');
+const satelliteRouter = require('./routes/satellite');
+const financeRouter = require('./routes/finance');
+const agentsRouter = require('./routes/agents');
+const bankportalRouter = require('./routes/bankportal');
+const governmentRouter = require('./routes/government');
+const exporterRouter = require('./routes/exporter');
+const openapiRouter = require('./routes/openapi');
 
 const app = express();
 const server = http.createServer(app);
@@ -201,6 +211,16 @@ app.use('/api/logistics', logisticsRouter);
 app.use('/api/inputs', inputsRouter);
 app.use('/api/cropplan', cropplanningRouter);
 app.use('/api/onboarding', onboardingRouter);
+// Phase 2-4
+app.use('/api/contracts', contractsRouter);
+app.use('/api/trustscore', trustscoreRouter);
+app.use('/api/satellite', satelliteRouter);
+app.use('/api/finance', financeRouter);
+app.use('/api/agents', agentsRouter);
+app.use('/api/bankportal', bankportalRouter);
+app.use('/api/government', governmentRouter);
+app.use('/api/exporter', exporterRouter);
+app.use('/api/openapi', openapiRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -228,6 +248,12 @@ async function start() {
     await migrateV5();
     const { migrateV6AgriOS } = require('./db/migrate-v6-agrios');
     await migrateV6AgriOS();
+    const { migrateV7 } = require('./db/migrate-v7-intelligence');
+    await migrateV7();
+    const { migrateV8 } = require('./db/migrate-v8-finance');
+    await migrateV8();
+    const { migrateV9 } = require('./db/migrate-v9-ecosystem');
+    await migrateV9();
     logger.info('Database migrations applied');
 
     // Recover any pending jobs from previous crash

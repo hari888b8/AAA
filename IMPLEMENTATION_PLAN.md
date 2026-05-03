@@ -1134,122 +1134,122 @@ const VOICE_COMMANDS = {
 
 ### Phase 1 (Weeks 1-6) — CORE OS FOUNDATION
 
-- [ ] **Logistics System**
-  - [ ] DB migration (logistics_partners, delivery_requests, delivery_batches)
-  - [ ] Backend routes (partner CRUD, request lifecycle, batch optimization)
-  - [ ] Frontend: LogisticsScreen (track, schedule, partner dashboard)
-  - [ ] Integration: Auto-create delivery on trade order dispatch
-  - [ ] Push notifications for partner assignment
+- [x] **Logistics System**
+  - [x] DB migration (logistics_partners, delivery_requests, delivery_batches)
+  - [x] Backend routes (partner CRUD, request lifecycle, batch optimization)
+  - [x] Frontend: LogisticsScreen (track, schedule, partner dashboard)
+  - [x] Integration: Auto-create delivery on trade order dispatch
+  - [x] Push notifications for partner assignment
 
-- [ ] **Input Marketplace**
-  - [ ] DB migration (input_categories, input_products, input_sellers, input_orders)
-  - [ ] Backend routes (browse, order, recommendations)
-  - [ ] Frontend: InputsScreen (categories, products, cart, orders)
-  - [ ] Seed initial product catalog (20+ common inputs)
-  - [ ] Integration: Link to logistics for delivery
+- [x] **Input Marketplace**
+  - [x] DB migration (input_categories, input_products, input_sellers, input_orders)
+  - [x] Backend routes (browse, order, recommendations)
+  - [x] Frontend: InputsScreen (categories, products, cart, orders)
+  - [x] Seed initial product catalog (20+ common inputs)
+  - [x] Integration: Link to logistics for delivery
 
-- [ ] **Crop Planning AI**
-  - [ ] DB migration (crop_plans, crop_plan_tasks, season_reports)
-  - [ ] Backend routes (recommend, create plan, task management)
-  - [ ] Frontend: Enhance FarmDiary with "Plan Next Season" tab
-  - [ ] Recommendation algorithm (heuristic v1)
-  - [ ] Season P&L report generation
+- [x] **Crop Planning AI**
+  - [x] DB migration (crop_plans, crop_plan_tasks, season_reports)
+  - [x] Backend routes (recommend, create plan, task management)
+  - [x] Frontend: Enhance FarmDiary with "Plan Next Season" tab
+  - [x] Recommendation algorithm (heuristic v1)
+  - [x] Season P&L report generation
 
-- [ ] **Multi-Stakeholder Onboarding**
-  - [ ] DB migration (exporter_profiles, supplier_profiles, bank_partners)
-  - [ ] Backend routes (role-specific registration)
-  - [ ] Frontend: Role selection on signup → tailored onboarding
-  - [ ] Role-based home screen routing
-  - [ ] Verification document upload for each role
+- [x] **Multi-Stakeholder Onboarding**
+  - [x] DB migration (exporter_profiles, supplier_profiles, bank_partners)
+  - [x] Backend routes (role-specific registration)
+  - [x] Frontend: Role selection on signup → tailored onboarding
+  - [x] Role-based home screen routing
+  - [x] Verification document upload for each role
 
 ### Phase 2 (Weeks 7-12) — INTELLIGENCE + TRUST
 
-- [ ] **Demand Intelligence ML**
-  - [ ] DB migration (price_predictions, demand_signals)
-  - [ ] Price prediction service (moving averages + seasonal)
-  - [ ] Demand signal computation (cron job)
-  - [ ] Frontend: Enhanced Intelligence with prediction charts
-  - [ ] Push: Daily personalized market advisory
+- [x] **Demand Intelligence ML**
+  - [x] DB migration (price_predictions, demand_signals)
+  - [x] Price prediction service (moving averages + seasonal)
+  - [x] Demand signal computation (cron job)
+  - [x] Frontend: Enhanced Intelligence with prediction charts
+  - [x] Push: Daily personalized market advisory
 
-- [ ] **Contract Farming**
-  - [ ] DB migration (farming_contracts, contract_milestones)
-  - [ ] Backend routes (propose, negotiate, sign, track)
-  - [ ] Frontend: ContractScreen (create, manage, milestones)
-  - [ ] Integration with escrow for advance payments
+- [x] **Contract Farming**
+  - [x] DB migration (farming_contracts, contract_milestones)
+  - [x] Backend routes (propose, negotiate, sign, track)
+  - [x] Frontend: ContractScreen (create, manage, milestones)
+  - [x] Integration with escrow for advance payments
 
-- [ ] **Trust Score System**
-  - [ ] DB migration (trust_scores)
-  - [ ] Score computation function (daily cron)
-  - [ ] Backend routes (view score, leaderboard)
-  - [ ] Frontend: Trust badge display on all profiles
-  - [ ] Verification document upload flow
+- [x] **Trust Score System**
+  - [x] DB migration (trust_scores)
+  - [x] Score computation function (daily cron)
+  - [x] Backend routes (view score, leaderboard)
+  - [x] Frontend: Trust badge display on all profiles
+  - [x] Verification document upload flow
 
-- [ ] **Satellite Crop Monitoring**
-  - [ ] DB migration (crop_monitoring, soil_health_records)
-  - [ ] Sentinel-2 NDVI data pipeline (scheduled fetch)
-  - [ ] Alert generation from NDVI + weather correlation
-  - [ ] Frontend: Field health view with map + NDVI timeline
-  - [ ] Soil health card data entry/import
+- [x] **Satellite Crop Monitoring**
+  - [x] DB migration (crop_monitoring, soil_health_records)
+  - [x] Sentinel-2 NDVI data pipeline (scheduled fetch)
+  - [x] Alert generation from NDVI + weather correlation
+  - [x] Frontend: Field health view with map + NDVI timeline
+  - [x] Soil health card data entry/import
 
 ### Phase 3 (Weeks 13-18) — FINANCIAL + SCALE
 
-- [ ] **Financial Ecosystem**
-  - [ ] DB migration (credit_scores, micro_loans, crop_insurance)
-  - [ ] Credit scoring algorithm (from farm data + transactions)
-  - [ ] Loan application workflow
-  - [ ] Insurance plans and claim flow
-  - [ ] Frontend: FinanceScreen
+- [x] **Financial Ecosystem**
+  - [x] DB migration (credit_scores, micro_loans, crop_insurance)
+  - [x] Credit scoring algorithm (from farm data + transactions)
+  - [x] Loan application workflow
+  - [x] Insurance plans and claim flow
+  - [x] Frontend: FinanceScreen
 
-- [ ] **Agent Network**
-  - [ ] DB migration (agents, agent_activities, agent_commissions)
-  - [ ] Agent registration + training module
-  - [ ] Assisted onboarding flow (agent fills on behalf)
-  - [ ] Commission calculation system
-  - [ ] Frontend: AgentDashboardScreen
+- [x] **Agent Network**
+  - [x] DB migration (agents, agent_activities, agent_commissions)
+  - [x] Agent registration + training module
+  - [x] Assisted onboarding flow (agent fills on behalf)
+  - [x] Commission calculation system
+  - [x] Frontend: AgentDashboardScreen
 
-- [ ] **Voice-First UX**
-  - [ ] Voice command listener (global)
-  - [ ] Speech-to-text on all input fields
-  - [ ] Telugu/Hindi voice command mapping
-  - [ ] Simplified "chat-like" order flow
-  - [ ] Large-text / elder-friendly mode
+- [x] **Voice-First UX**
+  - [x] Voice command listener (global)
+  - [x] Speech-to-text on all input fields
+  - [x] Telugu/Hindi voice command mapping
+  - [x] Simplified "chat-like" order flow
+  - [x] Large-text / elder-friendly mode
 
 ### Phase 4 (Weeks 19-24) — ECOSYSTEM EXPANSION
 
-- [ ] **Bank/NBFC Partner Portal**
-  - [ ] Partner login with API key
-  - [ ] Loan application forwarding API
-  - [ ] Disbursement webhook + status tracking
-  - [ ] Portfolio analytics dashboard
-  - [ ] Automated credit data sharing (with farmer consent)
+- [x] **Bank/NBFC Partner Portal**
+  - [x] Partner login with API key
+  - [x] Loan application forwarding API
+  - [x] Disbursement webhook + status tracking
+  - [x] Portfolio analytics dashboard
+  - [x] Automated credit data sharing (with farmer consent)
 
-- [ ] **Government Integration Layer**
-  - [ ] PM-KISAN beneficiary data integration
-  - [ ] eNAM (National Agriculture Market) listing sync
-  - [ ] Soil Health Card portal data fetch
-  - [ ] PMFBY crop insurance claim integration
-  - [ ] NABARD/SFAC FPO registration data sync
+- [x] **Government Integration Layer**
+  - [x] PM-KISAN beneficiary data integration
+  - [x] eNAM (National Agriculture Market) listing sync
+  - [x] Soil Health Card portal data fetch
+  - [x] PMFBY crop insurance claim integration
+  - [x] NABARD/SFAC FPO registration data sync
 
-- [ ] **Exporter Dashboard**
-  - [ ] Bulk procurement order creation
-  - [ ] Quality certificate management (lab reports, phytosanitary)
-  - [ ] Container/shipment tracking integration
-  - [ ] Multi-FPO sourcing from single crop/district
-  - [ ] Export documentation auto-generation
+- [x] **Exporter Dashboard**
+  - [x] Bulk procurement order creation
+  - [x] Quality certificate management (lab reports, phytosanitary)
+  - [x] Container/shipment tracking integration
+  - [x] Multi-FPO sourcing from single crop/district
+  - [x] Export documentation auto-generation
 
-- [ ] **Open API & Integration Layer**
-  - [ ] REST API documentation (Swagger/OpenAPI)
-  - [ ] API key management for partners
-  - [ ] Webhook system for real-time events
-  - [ ] Rate limiting + usage analytics
-  - [ ] SDK/client libraries (Node.js, Python)
+- [x] **Open API & Integration Layer**
+  - [x] REST API documentation (Swagger/OpenAPI)
+  - [x] API key management for partners
+  - [x] Webhook system for real-time events
+  - [x] Rate limiting + usage analytics
+  - [x] SDK/client libraries (Node.js, Python)
 
-- [ ] **District-Level Analytics Dashboard**
-  - [ ] Crop-wise area, production, yield analytics
-  - [ ] Price trends and market flow visualization
-  - [ ] Farmer income heatmap
-  - [ ] FPO performance scorecards
-  - [ ] Agent network coverage maps
+- [x] **District-Level Analytics Dashboard**
+  - [x] Crop-wise area, production, yield analytics
+  - [x] Price trends and market flow visualization
+  - [x] Farmer income heatmap
+  - [x] FPO performance scorecards
+  - [x] Agent network coverage maps
 
 ---
 
