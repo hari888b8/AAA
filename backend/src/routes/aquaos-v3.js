@@ -215,12 +215,14 @@ router.patch('/escrow/:id', authMiddleware, async (req, res) => {
     if (transition.by === 'buyer' && e.buyer_id !== req.user.id) return res.status(403).json({ error: 'Only buyer can perform this action' });
     if (transition.by === 'seller' && e.seller_id !== req.user.id) return res.status(403).json({ error: 'Only seller can perform this action' });
 
-    let updates = [`status = '${transition.to}'`, `${transition.field} = NOW()`, `updated_at = NOW()`];
-    if (notes) updates.push(`notes = '${notes.replace(/'/g, "''")}'`);
-    if (payment_ref) updates.push(`payment_ref = '${payment_ref.replace(/'/g, "''")}'`);
-    if (action === 'dispute') updates.push(`dispute_reason = '${(notes || 'Dispute raised').replace(/'/g, "''")}'`);
+    let updates = [`status = $2`, `${transition.field} = NOW()`, `updated_at = NOW()`];
+    let values = [req.params.id, transition.to];
+    let paramIdx = 3;
+    if (notes) { updates.push(`notes = $${paramIdx}`); values.push(notes); paramIdx++; }
+    if (payment_ref) { updates.push(`payment_ref = $${paramIdx}`); values.push(payment_ref); paramIdx++; }
+    if (action === 'dispute') { updates.push(`dispute_reason = $${paramIdx}`); values.push(notes || 'Dispute raised'); paramIdx++; }
 
-    const result = await query(`UPDATE aqua_escrow_transactions SET ${updates.join(', ')} WHERE id = $1 RETURNING *`, [req.params.id]);
+    const result = await query(`UPDATE aqua_escrow_transactions SET ${updates.join(', ')} WHERE id = $1 RETURNING *`, values);
     res.json({ escrow: result.rows[0] });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -259,9 +261,9 @@ router.get('/forecast/:pondId', authMiddleware, async (req, res) => {
     if (currentWeight > 0 && doc > 10) {
       // Back-solve: k_actual = -ln(1 - (W/Wmax)^(1/3)) / t
       const ratio = Math.min(currentWeight / Wmax, 0.95);
-      const cubertRatio = Math.pow(ratio, 1/3);
-      if (cubertRatio < 1) {
-        calibratedK = -Math.log(1 - cubertRatio) / doc;
+      const cubeRootRatio = Math.pow(ratio, 1/3);
+      if (cubeRootRatio < 1) {
+        calibratedK = -Math.log(1 - cubeRootRatio) / doc;
       }
     }
 
