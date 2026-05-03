@@ -199,15 +199,12 @@ router.delete('/price-alerts/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Simple hash function for deterministic feature flag evaluation
+// Deterministic hash function for feature flag rollout evaluation
 function simpleHash(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash);
+  const crypto = require('crypto');
+  const hash = crypto.createHash('sha256').update(str).digest();
+  // Use first 4 bytes as a 32-bit unsigned integer
+  return hash.readUInt32BE(0);
 }
 
 module.exports = router;

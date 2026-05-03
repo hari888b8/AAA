@@ -287,7 +287,7 @@ self.addEventListener('notificationclick', event => {
     self.clients.matchAll({ type: 'window' }).then(windowClients => {
       // Focus existing window if available
       for (const client of windowClients) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
           client.navigate(url);
           return client.focus();
         }
