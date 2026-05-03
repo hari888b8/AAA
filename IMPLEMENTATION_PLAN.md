@@ -1,8 +1,78 @@
-# 🚀 AgriHub — Critical Components Implementation Plan
+# 🚀 AgriHub — Agriculture Operating System (India)
+
+## End-to-End Implementation Plan
 
 **Date:** May 2026  
-**Scope:** Platform enhancement from "Selling Platform" → "Farmer Intelligence + Execution Platform"  
+**Vision:** India's first unified Agriculture Operating System — connecting 145M+ farmers, 10,000+ FPOs, traders, exporters, input suppliers, banks, and logistics providers on one digital platform  
+**Scope:** Platform evolution from "Selling Platform" → "Farmer Intelligence + Execution Platform" → "Complete Agriculture Operating System"  
 **Approach:** Phased implementation leveraging existing infrastructure
+
+---
+
+## 🌍 The Opportunity
+
+### India's Agriculture Ecosystem (Fragmented Today)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    CURRENT STATE: FRAGMENTED                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  145M+ Farmers → use 5-6 disconnected apps                             │
+│  10,000+ FPOs → manage on spreadsheets/paper                           │
+│  Traders/Exporters → rely on broker network                            │
+│  Input Suppliers → offline dealer networks only                        │
+│  Banks/NBFCs → no farm-level credit data                               │
+│  Logistics → unorganized local transport                               │
+│                                                                         │
+│  Apps exist for: Mandi prices | Weather | Fertilizer | Crop advisory   │
+│  But NONE connect these stakeholders end-to-end                        │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### What We're Building: The Unified Agriculture OS
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│               AGRIHUB: AGRICULTURE OPERATING SYSTEM                     │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  🧑‍🌾 FARMERS ←→ 🏢 FPOs ←→ 🏪 TRADERS ←→ 🚢 EXPORTERS               │
+│       ↕              ↕           ↕              ↕                      │
+│  🌱 INPUT SUPPLIERS ←→ 🚚 LOGISTICS ←→ 🏦 BANKS/FINANCE               │
+│       ↕              ↕           ↕              ↕                      │
+│  📊 INTELLIGENCE ENGINE (Prices, Demand, Weather, Crop Health)         │
+│                                                                         │
+│  All connected through ONE platform, ONE login, ONE data layer         │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Platform Users & Their Needs
+
+| User Type | Count (India) | Primary Need | AgriHub Module |
+|-----------|---------------|--------------|----------------|
+| **Farmers** | 145M+ | Grow profitably, sell at best price | Farmer OS, Marketplace, Intelligence |
+| **FPOs** | 10,000+ | Aggregate, procure, sell collectively | FPO Hub, Procurement, Contracts |
+| **Traders** | 500K+ | Discover supply, buy at competitive rates | Buyer Discovery, Trade Engine |
+| **Exporters** | 50K+ | Quality assurance, bulk procurement | Contract Farming, Quality Tracking |
+| **Input Suppliers** | 200K+ | Reach farmers directly, digital sales | Input Marketplace, Credit |
+| **Banks/NBFCs** | 1000+ | Farm-level credit data, loan management | Finance Module, Credit Scoring |
+| **Logistics Providers** | 100K+ | Get bookings, optimize routes | Logistics Module, Batch Planning |
+| **Government/NABARD/SFAC** | — | Scheme disbursement, farmer data | Scheme Discovery, Analytics |
+
+### 7 Core Modules of the Agriculture OS
+
+```
+MODULE 1: 🧑‍🌾 Farmer Profile & Identity System
+MODULE 2: 📋 Crop Planning & Farm Management (Farmer OS)
+MODULE 3: 🛒 Multi-Sided Marketplace (Produce + Inputs + Equipment)
+MODULE 4: 📊 Market Intelligence & Demand Engine
+MODULE 5: 🚚 Logistics & Supply Chain
+MODULE 6: 💰 Financial Ecosystem (Credit + Insurance + Payments)
+MODULE 7: 🌐 Community, Advisory & Agent Network
+```
 
 ---
 
@@ -30,47 +100,100 @@
 | **Chat** | ✅ Built | Real-time messaging |
 | **Reviews & Ratings** | ✅ Built | User reviews system |
 
-### 🔴 What's Actually Missing (Gap Analysis vs Problem Statement)
+### 🔴 Gaps to Fill for Full Agriculture OS
 
-| # | Problem Statement Item | Reality Check | Actual Gap |
-|---|------------------------|---------------|------------|
-| 1 | Farmer OS (crop planning, yield, expenses) | **FarmDiary already covers 80%** — has crop lifecycle, expenses, yield tracking | Missing: Automated crop planning recommendations, season-over-season comparison |
-| 2 | Demand Intelligence Engine | **Partially built** — supply-demand, prices, heatmap exist | Missing: Price prediction ML, crop demand forecasting, personalized recommendations |
-| 3 | Logistics System | **Basic tracking exists** — order_tracking table + trade dispatching | Missing: Pickup scheduling, delivery partner network, route optimization, batching |
-| 4 | Input Marketplace | **Equipment exists (KisanConnect)** | Missing: Seeds, fertilizers, pesticides, labor hiring marketplace |
-| 5 | Financial Ecosystem | **Wallet + schemes exist** | Missing: Credit scoring, micro-loans, crop insurance, settlement automation |
-| 6 | Farmer Trust & Identity | **Reviews + farmer profile + KYC exist** | Missing: Reliability score algorithm, transaction history scoring, verified badges |
-| 7 | Subscription/Recurring Orders | **Subscriptions exist** | Missing: Contract farming, recurring purchase agreements, forward contracts |
-| 8 | Community + Advisory | **Community fully built** — Q&A, experts, polls | Missing: Voice-based support, farmer groups (WhatsApp-style) |
-| 9 | Offline + Agent Network | **Offline mode planned** (user_preferences.offline_mode) | Missing: Agent dashboard, assisted onboarding flow, agent commission system |
-| 10 | Farmer-Friendly UX | **Telugu/Hindi i18n built**, voice notes in trade | Missing: Voice commands navigation, WhatsApp-like simplified flows |
-
----
-
-## 🎯 Implementation Priority Stack
-
-Based on gap analysis, here's what **actually needs building** (not rebuilding):
-
-```
-PRIORITY 1 (Phase 1 — 4-6 weeks): MUST-HAVE
-├── 1A. Logistics System (biggest real gap)
-├── 1B. Input Marketplace (seeds, fertilizers, pesticides)
-└── 1C. Farmer OS Enhancement (crop planning AI)
-
-PRIORITY 2 (Phase 2 — 4-6 weeks): HIGH IMPACT
-├── 2A. Demand Intelligence ML Layer
-├── 2B. Contract Farming / Forward Contracts
-└── 2C. Trust Score System
-
-PRIORITY 3 (Phase 3 — 4-6 weeks): SCALE LAYERS
-├── 3A. Financial Ecosystem (credit + insurance)
-├── 3B. Agent Network System
-└── 3C. Voice-first UX Enhancement
-```
+| # | OS Module | Current State | Gap to Fill |
+|---|-----------|---------------|-------------|
+| 1 | Farmer OS (crop planning, yield, expenses) | **FarmDiary covers 80%** — has crop lifecycle, expenses, yield tracking | Automated crop planning recommendations, season-over-season comparison, satellite monitoring |
+| 2 | Demand Intelligence Engine | **Partially built** — supply-demand, prices, heatmap exist | Price prediction ML, crop demand forecasting, personalized recommendations, APMC live data |
+| 3 | Logistics System | **Basic tracking exists** — order_tracking table + trade dispatching | Pickup scheduling, delivery partner network, route optimization, order batching |
+| 4 | Input + Services Marketplace | **Equipment exists (KisanConnect)** | Seeds, fertilizers, pesticides, labor hiring marketplace with seller network |
+| 5 | Financial Ecosystem | **Wallet + schemes exist** | Credit scoring from farm data, micro-loans, crop insurance, bank API integration |
+| 6 | Farmer Trust & Identity | **Reviews + farmer profile + KYC exist** | Reliability score algorithm, transaction history scoring, verified badges, Aadhaar-linked |
+| 7 | Contract Farming / Subscriptions | **Subscriptions exist** | Contract farming agreements, recurring purchase orders, forward contracts |
+| 8 | Community + Advisory | **Community fully built** — Q&A, experts, polls | Voice-based support, farmer groups (WhatsApp-style), expert video calls |
+| 9 | Agent Network | **Offline mode planned** (user_preferences.offline_mode) | Agent dashboard, assisted onboarding, order facilitation, commission system |
+| 10 | Farmer-Friendly UX | **Telugu/Hindi i18n built**, voice notes in trade | Voice commands navigation, WhatsApp-like simplified flows, full offline mode |
+| 11 | Multi-stakeholder Onboarding | **Only farmer + buyer roles exist** | Exporter onboarding, input supplier dashboard, bank partner portal, logistics partner app |
+| 12 | Government/Institutional Integration | **Scheme discovery exists** | NABARD/SFAC data feeds, PM-KISAN integration, eNAM linkage, soil health card data |
 
 ---
 
-## 📋 PHASE 1: Must-Have (Weeks 1–6)
+## 🎯 Implementation Priority Stack — Agriculture OS Roadmap
+
+### Phased OS Build Strategy
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  PHASE 1 (Weeks 1-6): CORE OS FOUNDATION                              │
+│  "Make the existing platform work end-to-end for farmers"              │
+├─────────────────────────────────────────────────────────────────────────┤
+│  1A. Logistics System (farm pickup → buyer delivery)                   │
+│  1B. Input Marketplace (seeds, fertilizers, pesticides)                │
+│  1C. Farmer OS Enhancement (AI crop planning + season P&L)            │
+│  1D. Multi-Role Onboarding (exporter, input supplier, logistics)       │
+└─────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  PHASE 2 (Weeks 7-12): INTELLIGENCE + TRUST LAYER                     │
+│  "Make the platform smart — predict, recommend, verify"                │
+├─────────────────────────────────────────────────────────────────────────┤
+│  2A. Demand Intelligence ML (price prediction + market signals)        │
+│  2B. Contract Farming & Forward Contracts                              │
+│  2C. Trust Score & Verified Identity System                            │
+│  2D. Satellite + Weather Crop Monitoring Integration                   │
+└─────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  PHASE 3 (Weeks 13-18): FINANCIAL + SCALE LAYERS                      │
+│  "Add money layer — credit, insurance, banking APIs"                   │
+├─────────────────────────────────────────────────────────────────────────┤
+│  3A. Financial Ecosystem (credit scoring, micro-loans, insurance)      │
+│  3B. Agent Network (village agents, assisted onboarding, commissions)  │
+│  3C. Voice-First UX (voice commands, simplified flows, offline)        │
+└─────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  PHASE 4 (Weeks 19-24): ECOSYSTEM EXPANSION                           │
+│  "Open platform for institutional partners"                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│  4A. Bank/NBFC Partner Portal (loan disbursement API)                  │
+│  4B. Government Integration (NABARD/SFAC/PM-KISAN/eNAM)               │
+│  4C. Exporter Dashboard (bulk procurement, quality certificates)       │
+│  4D. Open API Layer (third-party integrations)                         │
+│  4E. Analytics & Reporting (district-level dashboards)                 │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### How Modules Map to OS Layers
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    USER INTERFACE LAYER                           │
+│  Telugu-first │ Voice commands │ Offline mode │ Agent-assisted   │
+├──────────────────────────────────────────────────────────────────┤
+│                    APPLICATION MODULES                            │
+│  Farmer OS │ Marketplace │ Intelligence │ Logistics │ Finance   │
+├──────────────────────────────────────────────────────────────────┤
+│                    PLATFORM SERVICES                              │
+│  Auth │ Payments │ Notifications │ Chat │ Cache │ Storage       │
+├──────────────────────────────────────────────────────────────────┤
+│                    DATA + INTELLIGENCE                            │
+│  PostgreSQL │ ML Models │ Price Feeds │ Weather │ Satellite     │
+├──────────────────────────────────────────────────────────────────┤
+│                    INTEGRATION LAYER                              │
+│  APMC/eNAM │ Banks │ NABARD │ Insurance │ Logistics Partners   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📋 PHASE 1: Core OS Foundation (Weeks 1–6)
+
+> **Goal:** Make the platform work end-to-end — a farmer can plan crops, buy inputs, sell produce, and get it delivered.
 
 ### 1A. Logistics System 🚚
 
@@ -442,7 +565,121 @@ function recommendCrops(farmerProfile, marketData, weatherForecast) {
 
 ---
 
-## 📋 PHASE 2: High Impact (Weeks 7–12)
+### 1D. Multi-Stakeholder Onboarding System 🌐
+
+**Why Critical:** The Agriculture OS serves 7+ user types. Each needs a tailored onboarding flow and dashboard.
+
+#### User Roles Architecture
+
+```sql
+-- Enhancement to existing users table
+ALTER TABLE users ADD COLUMN IF NOT EXISTS user_type VARCHAR(50) DEFAULT 'farmer';
+-- Types: farmer, fpo, trader, exporter, input_supplier, logistics_partner, bank_partner, agent, admin
+
+-- Exporter profiles
+CREATE TABLE IF NOT EXISTS exporter_profiles (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID REFERENCES users(id) UNIQUE,
+  company_name    VARCHAR(200) NOT NULL,
+  export_license  VARCHAR(100),
+  iec_code        VARCHAR(20),  -- Import Export Code
+  fssai_license   VARCHAR(50),
+  countries_exported TEXT[] DEFAULT '{}',
+  crops_interested UUID[] DEFAULT '{}',
+  annual_volume_tonnes DECIMAL(10,2),
+  quality_certifications TEXT[] DEFAULT '{}',
+  -- APEDA, GlobalGAP, Organic, etc.
+  warehouse_locations JSONB DEFAULT '[]',
+  is_verified     BOOLEAN DEFAULT false,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Input supplier profiles
+CREATE TABLE IF NOT EXISTS supplier_profiles (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID REFERENCES users(id) UNIQUE,
+  company_name    VARCHAR(200) NOT NULL,
+  supplier_type   VARCHAR(50) NOT NULL,
+  -- dealer, manufacturer, distributor, cooperative
+  license_number  VARCHAR(100),
+  gst_number      VARCHAR(20),
+  product_categories UUID[] DEFAULT '{}',
+  district_ids    UUID[] DEFAULT '{}',
+  delivery_available BOOLEAN DEFAULT true,
+  minimum_order   DECIMAL(10,2) DEFAULT 0,
+  credit_offered  BOOLEAN DEFAULT false,
+  credit_days     INTEGER DEFAULT 0,
+  is_verified     BOOLEAN DEFAULT false,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Bank/NBFC partner profiles
+CREATE TABLE IF NOT EXISTS bank_partners (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID REFERENCES users(id) UNIQUE,
+  institution_name VARCHAR(200) NOT NULL,
+  institution_type VARCHAR(50) NOT NULL,
+  -- bank, nbfc, microfinance, cooperative_bank
+  license_number  VARCHAR(100),
+  districts_served UUID[] DEFAULT '{}',
+  products_offered TEXT[] DEFAULT '{}',
+  -- kcc, crop_loan, working_capital, equipment_finance, warehouse_receipt
+  interest_range  VARCHAR(50),
+  max_loan_amount DECIMAL(14,2),
+  api_enabled     BOOLEAN DEFAULT false,
+  webhook_url     TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### Onboarding Flows (Per Role)
+
+| Role | Onboarding Steps | Dashboard Features |
+|------|------------------|-------------------|
+| **Farmer** | Phone → OTP → Name → Village → Land → Crops → Soil | Farm Diary, Marketplace, Intelligence, Inputs |
+| **FPO** | Registration → Members → District → Crops → License | Procurement, Members, Inventory, Analytics |
+| **Trader** | Phone → GST → Business → Crops → Districts → License | Buy Discovery, Inquiries, Orders, Intelligence |
+| **Exporter** | Company → IEC → FSSAI → Crops → Countries → Certs | Supply Search, Contracts, Quality, Logistics |
+| **Input Supplier** | Company → License → Products → Districts → Delivery | Inventory, Orders, Analytics, Credit Mgmt |
+| **Logistics Partner** | Name → Vehicle → District → Capacity → Bank | Delivery Requests, Route Planner, Earnings |
+| **Bank Partner** | Institution → License → Products → Districts → API | Loan Applications, Disbursement, Portfolio |
+| **Agent** | Name → District → Villages → Training → Device | Farmer Onboarding, Orders, Commissions |
+
+#### Backend Routes (`backend/src/routes/onboarding.js`)
+
+```
+POST   /api/onboarding/exporter          — Register as exporter
+POST   /api/onboarding/supplier          — Register as input supplier
+POST   /api/onboarding/bank-partner      — Register as bank partner
+GET    /api/onboarding/status            — My onboarding completion status
+POST   /api/onboarding/verify            — Submit verification documents
+```
+
+#### Frontend: Role-Based Home Screens
+
+Each user type sees a different home screen with relevant modules:
+
+```javascript
+// src/screens/HomeScreen.js — enhanced routing
+function getHomeModules(userType) {
+  switch (userType) {
+    case 'farmer': return ['farm-diary', 'marketplace', 'intelligence', 'inputs', 'weather', 'community'];
+    case 'fpo': return ['procurement', 'members', 'marketplace', 'contracts', 'intelligence', 'finance'];
+    case 'trader': return ['buy-discovery', 'inquiries', 'orders', 'intelligence', 'logistics'];
+    case 'exporter': return ['supply-search', 'contracts', 'quality', 'logistics', 'intelligence'];
+    case 'input_supplier': return ['inventory', 'orders', 'analytics', 'logistics'];
+    case 'logistics_partner': return ['deliveries', 'route-planner', 'earnings', 'schedule'];
+    case 'bank_partner': return ['loan-applications', 'disbursement', 'portfolio', 'analytics'];
+    case 'agent': return ['onboard-farmer', 'assist-orders', 'commissions', 'training'];
+  }
+}
+```
+
+---
+
+## 📋 PHASE 2: Intelligence + Trust Layer (Weeks 7–12)
+
+> **Goal:** Make the platform smart — predict prices, recommend actions, verify users, monitor crops remotely.
 
 ### 2A. Demand Intelligence ML Layer 📊
 
@@ -622,7 +859,89 @@ GET  /api/trust/leaderboard      — Top trusted users in district
 
 ---
 
-## 📋 PHASE 3: Scale Layers (Weeks 13–18)
+### 2D. Satellite + Weather Crop Monitoring 🛰️
+
+**Why:** Remote crop health monitoring builds trust with buyers/exporters and enables insurance claims.
+
+#### Database Schema
+
+```sql
+CREATE TABLE IF NOT EXISTS crop_monitoring (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  farmer_id       UUID REFERENCES users(id),
+  plan_id         UUID REFERENCES crop_plans(id),
+  -- Location
+  field_boundary  JSONB,  -- GeoJSON polygon of field
+  field_lat       DECIMAL(10,7),
+  field_lng       DECIMAL(10,7),
+  area_acres      DECIMAL(6,2),
+  -- Satellite data
+  ndvi_score      DECIMAL(4,3),  -- Normalized Difference Vegetation Index (0-1)
+  ndvi_trend      VARCHAR(20),   -- improving, stable, declining
+  crop_health     VARCHAR(30),   -- excellent, good, moderate, poor, critical
+  -- Alerts
+  alert_type      VARCHAR(50),
+  -- pest_risk, drought_stress, flood_risk, nutrient_deficiency, ready_harvest
+  alert_severity  VARCHAR(20) DEFAULT 'info',
+  alert_message   TEXT,
+  alert_message_te TEXT,
+  -- Weather correlation
+  rainfall_mm_7d  DECIMAL(6,2),
+  temperature_avg DECIMAL(4,1),
+  humidity_avg    DECIMAL(4,1),
+  -- Timestamp
+  observed_date   DATE NOT NULL,
+  data_source     VARCHAR(50) DEFAULT 'sentinel-2',
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS soil_health_records (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  farmer_id       UUID REFERENCES users(id),
+  -- Soil Health Card data (government integration)
+  card_number     VARCHAR(50),
+  sample_date     DATE,
+  -- Nutrients
+  nitrogen_level  VARCHAR(20),  -- low, medium, high
+  phosphorus_level VARCHAR(20),
+  potassium_level VARCHAR(20),
+  organic_carbon  DECIMAL(4,2),
+  ph_level        DECIMAL(3,1),
+  ec_level        DECIMAL(4,2),
+  -- Recommendations
+  recommended_fertilizers JSONB DEFAULT '[]',
+  recommended_crops JSONB DEFAULT '[]',
+  -- Source
+  data_source     VARCHAR(50) DEFAULT 'manual',
+  -- manual, soil_health_card_api, lab_test
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### Backend Routes
+
+```
+GET    /api/monitoring/crop-health       — Current crop health for my fields
+GET    /api/monitoring/alerts            — Active alerts (pest, weather, etc.)
+GET    /api/monitoring/ndvi-history      — NDVI trend over time for a field
+POST   /api/monitoring/field-boundary    — Save field boundary (GPS polygon)
+GET    /api/monitoring/soil-health       — My soil health records
+POST   /api/monitoring/soil-health       — Add soil health test result
+GET    /api/monitoring/satellite-image   — Latest satellite image for field
+```
+
+#### Integration Approach
+
+1. **Sentinel-2 (Free)** — NDVI computation from ESA satellite imagery (10m resolution, 5-day revisit)
+2. **Open Weather API** — Temperature, humidity, rainfall correlation
+3. **Soil Health Card Portal** — Data scraping/API when available
+4. **Custom Alerts** — Rule-based alerts from NDVI decline + weather patterns
+
+---
+
+## 📋 PHASE 3: Financial + Scale Layers (Weeks 13–18)
+
+> **Goal:** Add the money layer — credit, insurance, and agent-assisted execution network.
 
 ### 3A. Financial Ecosystem 💰
 
@@ -813,7 +1132,7 @@ const VOICE_COMMANDS = {
 
 ## 📋 Implementation Checklist Summary
 
-### Phase 1 (Weeks 1-6) — MUST BUILD
+### Phase 1 (Weeks 1-6) — CORE OS FOUNDATION
 
 - [ ] **Logistics System**
   - [ ] DB migration (logistics_partners, delivery_requests, delivery_batches)
@@ -836,7 +1155,14 @@ const VOICE_COMMANDS = {
   - [ ] Recommendation algorithm (heuristic v1)
   - [ ] Season P&L report generation
 
-### Phase 2 (Weeks 7-12) — HIGH IMPACT
+- [ ] **Multi-Stakeholder Onboarding**
+  - [ ] DB migration (exporter_profiles, supplier_profiles, bank_partners)
+  - [ ] Backend routes (role-specific registration)
+  - [ ] Frontend: Role selection on signup → tailored onboarding
+  - [ ] Role-based home screen routing
+  - [ ] Verification document upload for each role
+
+### Phase 2 (Weeks 7-12) — INTELLIGENCE + TRUST
 
 - [ ] **Demand Intelligence ML**
   - [ ] DB migration (price_predictions, demand_signals)
@@ -858,11 +1184,18 @@ const VOICE_COMMANDS = {
   - [ ] Frontend: Trust badge display on all profiles
   - [ ] Verification document upload flow
 
-### Phase 3 (Weeks 13-18) — SCALE
+- [ ] **Satellite Crop Monitoring**
+  - [ ] DB migration (crop_monitoring, soil_health_records)
+  - [ ] Sentinel-2 NDVI data pipeline (scheduled fetch)
+  - [ ] Alert generation from NDVI + weather correlation
+  - [ ] Frontend: Field health view with map + NDVI timeline
+  - [ ] Soil health card data entry/import
+
+### Phase 3 (Weeks 13-18) — FINANCIAL + SCALE
 
 - [ ] **Financial Ecosystem**
   - [ ] DB migration (credit_scores, micro_loans, crop_insurance)
-  - [ ] Credit scoring algorithm
+  - [ ] Credit scoring algorithm (from farm data + transactions)
   - [ ] Loan application workflow
   - [ ] Insurance plans and claim flow
   - [ ] Frontend: FinanceScreen
@@ -870,7 +1203,7 @@ const VOICE_COMMANDS = {
 - [ ] **Agent Network**
   - [ ] DB migration (agents, agent_activities, agent_commissions)
   - [ ] Agent registration + training module
-  - [ ] Assisted onboarding flow
+  - [ ] Assisted onboarding flow (agent fills on behalf)
   - [ ] Commission calculation system
   - [ ] Frontend: AgentDashboardScreen
 
@@ -881,6 +1214,43 @@ const VOICE_COMMANDS = {
   - [ ] Simplified "chat-like" order flow
   - [ ] Large-text / elder-friendly mode
 
+### Phase 4 (Weeks 19-24) — ECOSYSTEM EXPANSION
+
+- [ ] **Bank/NBFC Partner Portal**
+  - [ ] Partner login with API key
+  - [ ] Loan application forwarding API
+  - [ ] Disbursement webhook + status tracking
+  - [ ] Portfolio analytics dashboard
+  - [ ] Automated credit data sharing (with farmer consent)
+
+- [ ] **Government Integration Layer**
+  - [ ] PM-KISAN beneficiary data integration
+  - [ ] eNAM (National Agriculture Market) listing sync
+  - [ ] Soil Health Card portal data fetch
+  - [ ] PMFBY crop insurance claim integration
+  - [ ] NABARD/SFAC FPO registration data sync
+
+- [ ] **Exporter Dashboard**
+  - [ ] Bulk procurement order creation
+  - [ ] Quality certificate management (lab reports, phytosanitary)
+  - [ ] Container/shipment tracking integration
+  - [ ] Multi-FPO sourcing from single crop/district
+  - [ ] Export documentation auto-generation
+
+- [ ] **Open API & Integration Layer**
+  - [ ] REST API documentation (Swagger/OpenAPI)
+  - [ ] API key management for partners
+  - [ ] Webhook system for real-time events
+  - [ ] Rate limiting + usage analytics
+  - [ ] SDK/client libraries (Node.js, Python)
+
+- [ ] **District-Level Analytics Dashboard**
+  - [ ] Crop-wise area, production, yield analytics
+  - [ ] Price trends and market flow visualization
+  - [ ] Farmer income heatmap
+  - [ ] FPO performance scorecards
+  - [ ] Agent network coverage maps
+
 ---
 
 ## 🔑 Key Architecture Decisions
@@ -888,11 +1258,14 @@ const VOICE_COMMANDS = {
 | Decision | Rationale |
 |----------|-----------|
 | **Add to existing monorepo** | All code follows same Express + PostgreSQL + Vite pattern |
-| **New DB migrations (V6)** | Follow existing migrate-v5 pattern, non-breaking |
+| **New DB migrations (V6, V7)** | Follow existing migrate-v5 pattern, non-breaking |
 | **Same route pattern** | Express router with authMiddleware, same error handling |
 | **Same frontend pattern** | Vanilla JS screens with api.js calls, same UI components |
 | **Leverage existing services** | Push notifications, cache, payments, SMS already work |
 | **Scheduler for intelligence** | Extend existing `scheduler.js` for daily score/prediction jobs |
+| **Multi-role architecture** | Single user table with role-specific profile tables |
+| **API-first for Phase 4** | Partner integrations via well-documented REST APIs |
+| **Event-driven for scaling** | WebSocket + webhooks for real-time partner notifications |
 
 ---
 
@@ -900,21 +1273,82 @@ const VOICE_COMMANDS = {
 
 | Phase | KPI | Target |
 |-------|-----|--------|
-| Phase 1 | Orders with delivery completed | 50+ in first month |
-| Phase 1 | Input orders placed | 100+ in first month |
-| Phase 1 | Farmers using crop planning | 30% of active users |
-| Phase 2 | Contract farming agreements | 20+ active contracts |
-| Phase 2 | Price prediction accuracy | >75% within 10% error |
-| Phase 2 | Users with trust score > 50 | 60% of active users |
-| Phase 3 | Micro-loans disbursed | 50+ in first quarter |
-| Phase 3 | Active agents | 10+ per district |
-| Phase 3 | Voice command usage | 20% of interactions |
+| **Phase 1** | Orders with delivery completed | 50+ in first month |
+| **Phase 1** | Input orders placed | 100+ in first month |
+| **Phase 1** | Farmers using crop planning | 30% of active users |
+| **Phase 1** | Multi-role registrations | 20+ non-farmer signups |
+| **Phase 2** | Contract farming agreements | 20+ active contracts |
+| **Phase 2** | Price prediction accuracy | >75% within 10% error |
+| **Phase 2** | Users with trust score > 50 | 60% of active users |
+| **Phase 2** | Fields with satellite monitoring | 100+ fields mapped |
+| **Phase 3** | Micro-loans disbursed | 50+ in first quarter |
+| **Phase 3** | Active agents | 10+ per district |
+| **Phase 3** | Voice command usage | 20% of interactions |
+| **Phase 4** | Bank partners integrated | 3+ institutions |
+| **Phase 4** | API calls from partners | 1000+ per month |
+| **Phase 4** | Exporters active on platform | 10+ with orders |
 
 ---
 
-## 🏗️ One-Line Summary
+## 🏗️ Platform Evolution Summary
 
-> **Current:** "Selling platform with marketplace + intelligence + community"  
-> **After Phase 1:** "Full-stack agri platform with marketplace + logistics + inputs"  
-> **After Phase 2:** "Intelligent farming platform with predictions + contracts + trust"  
-> **After Phase 3:** "Complete farmer OS with finance + agents + voice-first UX"
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  TODAY                                                                   │
+│  "Selling platform with marketplace + intelligence + community"         │
+├─────────────────────────────────────────────────────────────────────────┤
+│  AFTER PHASE 1                                                          │
+│  "Full-stack agri platform with logistics + inputs + multi-role"        │
+├─────────────────────────────────────────────────────────────────────────┤
+│  AFTER PHASE 2                                                          │
+│  "Intelligent platform with predictions + contracts + monitoring"       │
+├─────────────────────────────────────────────────────────────────────────┤
+│  AFTER PHASE 3                                                          │
+│  "Farmer OS with finance + agents + voice-first access"                │
+├─────────────────────────────────────────────────────────────────────────┤
+│  AFTER PHASE 4                                                          │
+│  "India's Agriculture Operating System — the unified ecosystem"         │
+│                                                                         │
+│  Connecting: Farmers ↔ FPOs ↔ Traders ↔ Exporters ↔ Suppliers ↔ Banks  │
+│  Powered by: Intelligence + Trust + Finance + Logistics                 │
+│  Accessible via: Telugu/Hindi + Voice + Offline + Agent-assisted        │
+│  Institutional: NABARD/SFAC/PM-KISAN/eNAM integrated                   │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🧭 Competitive Positioning
+
+| Platform | What They Do | Our Advantage |
+|----------|-------------|---------------|
+| **AgriStack (Govt)** | Farmer ID + Land records | We add intelligence + marketplace + execution |
+| **DeHaat** | Input delivery + advisory | We add buyer discovery + logistics + finance |
+| **Ninjacart** | Supply chain for retailers | We add farmer OS + planning + multi-stakeholder |
+| **AgroStar** | Input marketplace + advice | We add produce marketplace + contracts + trust |
+| **eNAM** | Mandi trading platform | We add pre-harvest contracts + logistics + credit |
+
+**Our Moat:** Only platform that operates as a **full Operating System** across all 7 agriculture value chain participants, with **Telugu-first + voice + offline + agent** access.
+
+---
+
+## 📝 Final Notes
+
+### What Makes This an "Operating System" (Not Just an App)
+
+1. **Multi-stakeholder:** Serves all 7+ participant types in the agri value chain
+2. **Data-driven:** Every transaction generates intelligence for better decisions
+3. **Self-reinforcing:** More farmers → more data → better predictions → more farmers
+4. **Platform effects:** Suppliers compete for farmers, buyers compete for supply
+5. **Infrastructure layer:** Banks, government, logistics all plug into the same system
+6. **Offline-capable:** Works in low-connectivity rural India via agents + offline mode
+
+### Risk Mitigation
+
+| Risk | Mitigation |
+|------|-----------|
+| Low internet in villages | Offline mode + agent network + USSD fallback |
+| Farmer trust in digital | Start with value (free intelligence) → build trust → enable transactions |
+| Regulatory (finance) | Partner with licensed banks/NBFCs, don't hold deposits |
+| Cold start (no supply/demand) | Agent-driven onboarding + FPO partnerships for bulk supply |
+| Competition from well-funded startups | Depth (full OS) > breadth (single feature apps) |
