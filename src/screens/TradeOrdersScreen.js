@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { navigate, showToast, showModal, closeModal } from '../app-shell.js';
-import { getRole } from '../store.js';
+import { getRole, getState } from '../store.js';
 
 /**
  * TradeOrdersScreen — End-to-End Trade Lifecycle Manager
@@ -111,7 +111,7 @@ export function renderTradeOrders(container) {
 
   function renderOrderCard(o) {
     const meta = STATUS_META[o.status] || { label: o.status, color: '#666', icon: '❓' };
-    const isBuyer = o.buyer_id === (window._userId || '');
+    const isBuyer = o.buyer_id === (getState().user?.id || '');
     const myRole = isBuyer ? 'buyer' : 'seller';
     const actionBtn = getActionButton(o, myRole);
 
