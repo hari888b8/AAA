@@ -54,6 +54,7 @@ import { renderVoiceAssist } from './screens/VoiceAssistScreen.js';
 import { renderCropLifecycle } from './screens/CropLifecycleScreen.js';
 import { renderToolsHub } from './screens/ToolsHubScreen.js';
 import { renderDistrictPilot } from './screens/DistrictPilotScreen.js';
+import { renderTradeOrders } from './screens/TradeOrdersScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -116,6 +117,7 @@ const ROUTES = {
   croplifecycle: { title: 'Crop Lifecycle',icon: '🔄', render: renderCropLifecycle,back: 'home'    },
   toolshub:      { title: 'Tools Hub',     icon: '🧰', render: renderToolsHub,     back: 'home'    },
   districtpilot: { title: 'District Pilot',icon: '🏘️', render: renderDistrictPilot,back: 'home'    },
+  tradeorders:   { title: 'Trade Orders', icon: '📋', render: renderTradeOrders,  back: 'agriflow' },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────
@@ -215,6 +217,7 @@ function renderApp() {
           <div style="padding:4px 16px;font-size:10px;font-weight:700;color:#C62828;text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">⚡ Core Engine</div>
           ${[
             {icon:'🌾',label:'Trade (AgriFlow)',route:'agriflow'},
+            {icon:'📋',label:'Trade Orders',route:'tradeorders'},
             {icon:'🎯',label:'Demand Engine',route:'demandengine'},
             {icon:'📝',label:'Contracts',route:'contracts'},
             {icon:'🚚',label:'Logistics',route:'logistics'},
