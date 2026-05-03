@@ -2,26 +2,15 @@ const express = require('express');
 const { query } = require('../db/pool');
 const { authMiddleware } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
+const { get: cacheGet, set: cacheSet } = require('../services/cache');
 const router = express.Router();
 
-// ── Redis cache helper ──────────────────────────────────────
-let redisClient = null;
-async function getRedisClient() {
-  if (redisClient) return redisClient;
-  try {
-    const { createClient } = require('redis');
-    redisClient = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
-    redisClient.on('error', () => { redisClient = null; });
-    await redisClient.connect();
-  } catch { redisClient = null; }
-  return redisClient;
-}
-
+// ── Redis cache helper (uses shared cache service) ──────────
 async function getCache(key) {
-  try { const c = await getRedisClient(); return c ? JSON.parse(await c.get(key)) : null; } catch { return null; }
+  return cacheGet(key);
 }
 async function setCache(key, value, ttlSeconds = 120) {
-  try { const c = await getRedisClient(); if (c) await c.setEx(key, ttlSeconds, JSON.stringify(value)); } catch {}
+  return cacheSet(key, value, ttlSeconds);
 }
 
 
