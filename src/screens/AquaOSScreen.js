@@ -90,9 +90,11 @@ export function renderAquaOS(container) {
           <button role="tab" aria-selected="${tab==='dashboard'}" class="tab-btn ${tab==='dashboard'?'active':''}" data-tab="dashboard">📊 ${t('dashboard')}</button>
           <button role="tab" aria-selected="${tab==='farms'}" class="tab-btn ${tab==='farms'?'active':''}" data-tab="farms">🏡 ${t('farms')}</button>
           <button role="tab" aria-selected="${tab==='ponds'}" class="tab-btn ${tab==='ponds'?'active':''}" data-tab="ponds">🐟 ${t('ponds')}</button>
-          <button role="tab" aria-selected="${tab==='sensors'}" class="tab-btn ${tab==='sensors'?'active':''}" data-tab="sensors">🌡️ IoT Sensors</button>
+          <button role="tab" aria-selected="${tab==='units'}" class="tab-btn ${tab==='units'?'active':''}" data-tab="units">🏗️ Units</button>
+          <button role="tab" aria-selected="${tab==='sensors'}" class="tab-btn ${tab==='sensors'?'active':''}" data-tab="sensors">🌡️ IoT</button>
           <button role="tab" aria-selected="${tab==='feed'}" class="tab-btn ${tab==='feed'?'active':''}" data-tab="feed">🍽️ ${t('feed')}</button>
           <button role="tab" aria-selected="${tab==='advisory'}" class="tab-btn ${tab==='advisory'?'active':''}" data-tab="advisory">🧠 ${t('advisory')}</button>
+          <button role="tab" aria-selected="${tab==='harvest_opt'}" class="tab-btn ${tab==='harvest_opt'?'active':''}" data-tab="harvest_opt">🎯 Harvest</button>
           <button role="tab" aria-selected="${tab==='marketplace'}" class="tab-btn ${tab==='marketplace'?'active':''}" data-tab="marketplace">🛒 ${t('market')}</button>
           <button role="tab" aria-selected="${tab==='chats'}" class="tab-btn ${tab==='chats'?'active':''}" data-tab="chats">💬 ${t('chats')}</button>
           <button role="tab" aria-selected="${tab==='shop'}" class="tab-btn ${tab==='shop'?'active':''}" data-tab="shop">🛍️ ${t('shop')}</button>
@@ -107,6 +109,7 @@ export function renderAquaOS(container) {
           <button role="tab" aria-selected="${tab==='forecast'}" class="tab-btn ${tab==='forecast'?'active':''}" data-tab="forecast">📈 Forecast</button>
           <button role="tab" aria-selected="${tab==='escrow'}" class="tab-btn ${tab==='escrow'?'active':''}" data-tab="escrow">🔒 Payments</button>
           <button role="tab" aria-selected="${tab==='community'}" class="tab-btn ${tab==='community'?'active':''}" data-tab="community">🌐 ${t('community')}</button>
+          <button role="tab" aria-selected="${tab==='peracre'}" class="tab-btn ${tab==='peracre'?'active':''}" data-tab="peracre">📐 Per Acre</button>
           <button role="tab" aria-selected="${tab==='analytics'}" class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📈 ${t('analytics')}</button>
           <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         `}
@@ -144,6 +147,9 @@ export function renderAquaOS(container) {
       case 'rfq': return renderRFQTab();
       case 'forecast': return renderForecastTab();
       case 'escrow': return renderEscrowTab();
+      case 'units': return renderCultureUnitsTab();
+      case 'harvest_opt': return renderHarvestOptimizerTab();
+      case 'peracre': return renderPerAcreTab();
       case 'settings': return renderSettings();
       default: return renderDashboard();
     }
@@ -2032,6 +2038,136 @@ export function renderAquaOS(container) {
             </div>
           </div>
         `).join('')}
+      </div>
+    </div>`;
+  }
+
+  // ═══════════ CULTURE UNITS TAB ═══════════
+  function renderCultureUnitsTab() {
+    const SAMPLE_UNITS = [
+      { id:'cu1', unit_code:'Pond-1', unit_type:'pond', species:'Vannamei Shrimp', area_acres:3.0, status:'active', current_stock_count:120000, stocking_date:'2026-03-01', farm_name:'Main Farm' },
+      { id:'cu2', unit_code:'Pond-2', unit_type:'pond', species:'Vannamei Shrimp', area_acres:2.5, status:'active', current_stock_count:100000, stocking_date:'2026-03-15', farm_name:'Main Farm' },
+      { id:'cu3', unit_code:'RAS-Block-A', unit_type:'ras_tank', species:'Tilapia', tank_count:10, volume_m3:50, status:'active', current_stock_count:15000, stocking_date:'2026-02-10', farm_name:'Indoor Facility' },
+      { id:'cu4', unit_code:'Cage-1', unit_type:'cage', species:'Seabass', cage_count:4, volume_m3:200, status:'active', current_stock_count:2000, stocking_date:'2026-01-20', farm_name:'Coastal Site' },
+      { id:'cu5', unit_code:'Biofloc-1', unit_type:'biofloc', species:'Vannamei Shrimp', tank_count:6, volume_m3:30, status:'active', current_stock_count:30000, stocking_date:'2026-04-01', farm_name:'R&D Unit' },
+      { id:'cu6', unit_code:'Crab-Pen-1', unit_type:'cage', species:'Mud Crab', cage_count:20, status:'active', current_stock_count:500, stocking_date:'2026-03-20', farm_name:'Mangrove Site' },
+      { id:'cu7', unit_code:'Hatchery-1', unit_type:'hatchery', species:'Vannamei Shrimp', tank_count:20, volume_m3:10, status:'active', farm_name:'Seed Unit' },
+    ];
+    const typeIcons = { pond:'🏊', ras_tank:'🔄', cage:'🪤', biofloc:'🫧', hatchery:'🥚', nursery:'🍼', raceway:'🌊' };
+    const typeLabels = { pond:'Pond', ras_tank:'RAS Tank', cage:'Cage', biofloc:'Biofloc', hatchery:'Hatchery', nursery:'Nursery', raceway:'Raceway' };
+    return `<div class="section" style="padding-top:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 style="margin:0;font-size:15px">🏗️ Culture Units</h3>
+        <button class="btn-sm" style="font-size:11px">+ Add Unit</button>
+      </div>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Manage all culture systems: ponds, RAS tanks, cages, biofloc, hatcheries</p>
+      <div class="stats-grid" style="margin-bottom:12px">
+        <div class="stat-card"><div class="stat-value">${SAMPLE_UNITS.length}</div><div class="stat-label">Total Units</div></div>
+        <div class="stat-card"><div class="stat-value">${SAMPLE_UNITS.filter(u=>u.unit_type==='pond').length}</div><div class="stat-label">Ponds</div></div>
+        <div class="stat-card"><div class="stat-value">${SAMPLE_UNITS.filter(u=>u.unit_type==='ras_tank').length}</div><div class="stat-label">RAS Tanks</div></div>
+        <div class="stat-card"><div class="stat-value">${SAMPLE_UNITS.filter(u=>!['pond','ras_tank'].includes(u.unit_type)).length}</div><div class="stat-label">Cages/Bio</div></div>
+      </div>
+      ${SAMPLE_UNITS.map(u => `
+        <div class="list-card" style="margin-bottom:8px;padding:12px;border-left:4px solid ${u.status==='active'?'#00c9a7':'#999'}">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <strong>${typeIcons[u.unit_type]||'🐟'} ${u.unit_code}</strong>
+              <span style="font-size:10px;background:#f0f0f0;padding:2px 6px;border-radius:8px;margin-left:6px">${typeLabels[u.unit_type]||u.unit_type}</span>
+            </div>
+            <span style="font-size:10px;color:${u.status==='active'?'#00c9a7':'#999'};font-weight:600">${u.status.toUpperCase()}</span>
+          </div>
+          <div style="font-size:12px;color:#444;margin-top:4px">${u.species || 'Not stocked'} · ${u.farm_name}</div>
+          <div style="font-size:11px;color:#666;margin-top:2px">
+            ${u.area_acres ? `${u.area_acres} acres · ` : ''}${u.tank_count > 1 ? `${u.tank_count} tanks · ` : ''}${u.cage_count > 1 ? `${u.cage_count} cages · ` : ''}${u.volume_m3 ? `${u.volume_m3}m³ · ` : ''}Stock: ${(u.current_stock_count||0).toLocaleString()}
+          </div>
+          ${u.stocking_date ? `<div style="font-size:10px;color:#888;margin-top:2px">Stocked: ${u.stocking_date} · DOC: ${Math.round((Date.now() - new Date(u.stocking_date).getTime())/86400000)}d</div>` : ''}
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  // ═══════════ HARVEST OPTIMIZER TAB ═══════════
+  function renderHarvestOptimizerTab() {
+    const scenarios = [
+      { size:'30 count', target_weight_g:33, price:420, days_remaining:28, yield_kg:3300, revenue:1386000, feed_cost:95000, net:1291000, recommended:true },
+      { size:'40 count', target_weight_g:25, price:340, days_remaining:12, yield_kg:2750, revenue:935000, feed_cost:38000, net:897000 },
+      { size:'50 count', target_weight_g:20, price:290, days_remaining:0, yield_kg:2200, revenue:638000, feed_cost:0, net:638000 },
+      { size:'20 count', target_weight_g:50, price:550, days_remaining:55, yield_kg:4500, revenue:2475000, feed_cost:210000, net:2265000 },
+    ];
+    scenarios.sort((a,b) => b.net - a.net);
+    const best = scenarios[0];
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 6px;font-size:15px">🎯 Harvest Optimizer</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">AI recommends optimal harvest timing based on size-price relationship</p>
+
+      <div style="background:linear-gradient(135deg,#1a5276,#2471a3);color:#fff;padding:14px;border-radius:12px;margin-bottom:14px">
+        <div style="font-size:11px;opacity:0.8">⭐ RECOMMENDED: Wait for ${best.size}</div>
+        <div style="font-size:22px;font-weight:800;margin-top:4px">₹${(best.net/100000).toFixed(1)} lakh net</div>
+        <div style="font-size:11px;opacity:0.9;margin-top:2px">₹${best.price}/kg · ${best.days_remaining} more days · ${best.yield_kg}kg yield</div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">All Harvest Scenarios (Pond A — Vannamei)</div>
+      <div style="font-size:10px;color:#666;margin-bottom:6px">Current: DOC 62 · Avg 20g · 95,000 shrimp · 85% survival</div>
+
+      ${scenarios.map((s,i) => `
+        <div style="display:flex;align-items:center;padding:10px;border-radius:8px;margin-bottom:6px;background:${i===0?'#e8f8f5':'#f8f9fa'};border:${i===0?'2px solid #00c9a7':'1px solid #e9ecef'}">
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:12px">${s.recommended?'⭐ ':''} ${s.size} — ₹${s.price}/kg</div>
+            <div style="font-size:10px;color:#666">${s.days_remaining > 0 ? `${s.days_remaining} days to go` : '✅ Ready NOW'} · Yield: ${s.yield_kg}kg</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:14px;font-weight:700;color:#1a5276">₹${(s.net/100000).toFixed(1)}L</div>
+            <div style="font-size:9px;color:#888">net revenue</div>
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="background:#fff3cd;padding:10px;border-radius:8px;margin-top:12px;font-size:11px">
+        💡 <strong>Tip:</strong> Shrimp price increases significantly with size. Growing from 50ct (₹290) to 30ct (₹420) adds ₹130/kg but takes 28 days more feed.
+        The optimizer accounts for additional feed cost to find true profit maximum.
+      </div>
+    </div>`;
+  }
+
+  // ═══════════ PER-ACRE ANALYTICS TAB ═══════════
+  function renderPerAcreTab() {
+    const farmData = {
+      farm_name: 'Ramesh Aqua Farm', total_area_acres: 10,
+      metrics: { production_per_acre_kg: '6200', revenue_per_acre: '420000', expense_per_acre: '280000', profit_per_acre: '140000', feed_per_acre_kg: '9300', feed_cost_per_acre: '186000', avg_survival_pct: '85.2', avg_weight_g: '28.5' }
+    };
+    const m = farmData.metrics;
+    const benchmarks = [
+      { label:'Production/acre', value:`${Number(m.production_per_acre_kg).toLocaleString()} kg`, bench:'5,500 kg', status: Number(m.production_per_acre_kg) > 5500 ? 'above' : 'below' },
+      { label:'Revenue/acre', value:`₹${(Number(m.revenue_per_acre)/100000).toFixed(1)} lakh`, bench:'₹3.8 lakh', status:'above' },
+      { label:'Profit/acre', value:`₹${(Number(m.profit_per_acre)/100000).toFixed(1)} lakh`, bench:'₹1.0 lakh', status:'above' },
+      { label:'Feed/acre', value:`${Number(m.feed_per_acre_kg).toLocaleString()} kg`, bench:'9,000 kg', status: Number(m.feed_per_acre_kg) > 9000 ? 'high' : 'optimal' },
+      { label:'FCR (avg)', value:'1.5', bench:'1.6', status:'above' },
+      { label:'Survival', value:`${m.avg_survival_pct}%`, bench:'80%', status:'above' },
+    ];
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 6px;font-size:15px">📐 Per-Acre Analytics</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">${farmData.farm_name} · ${farmData.total_area_acres} acres total</p>
+
+      <div class="stats-grid" style="margin-bottom:14px">
+        <div class="stat-card" style="background:linear-gradient(135deg,#e8f8f5,#d1f2eb)"><div class="stat-value" style="font-size:16px">₹${(Number(m.profit_per_acre)/100000).toFixed(1)}L</div><div class="stat-label">Profit/Acre</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:16px">${Number(m.production_per_acre_kg).toLocaleString()}</div><div class="stat-label">Kg/Acre</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:16px">${m.avg_survival_pct}%</div><div class="stat-label">Survival</div></div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">Metrics vs Regional Benchmark</div>
+      ${benchmarks.map(b => `
+        <div style="display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid #f0f0f0">
+          <div style="flex:1;font-size:12px">${b.label}</div>
+          <div style="font-weight:700;font-size:12px;margin-right:12px">${b.value}</div>
+          <div style="font-size:10px;color:${b.status==='above'||b.status==='optimal'?'#27ae60':'#e74c3c'}">${b.status==='above'?'▲':'▼'} Bench: ${b.bench}</div>
+        </div>
+      `).join('')}
+
+      <div style="background:#eaf2f8;padding:12px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>📊 Farm Size = ${farmData.total_area_acres} acres</strong><br>
+        Output: Shrimp ${(Number(m.production_per_acre_kg)*farmData.total_area_acres/1000).toFixed(0)} tons · Feed ${(Number(m.feed_per_acre_kg)*farmData.total_area_acres/1000).toFixed(0)} tons · Revenue ₹${(Number(m.revenue_per_acre)*farmData.total_area_acres/100000).toFixed(0)} lakh
       </div>
     </div>`;
   }
