@@ -293,6 +293,28 @@ export function renderKisan(container) {
       <!-- Offline/Network Banner -->
       ${renderOfflineBanner()}
 
+      <!-- ROS Quick Access Hub -->
+      <div style="padding:10px 14px 4px">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+          <button onclick="navigate('vehicles')" style="border:none;background:#E3F2FD;border-radius:12px;padding:12px 4px;cursor:pointer;text-align:center">
+            <div style="font-size:20px">🚗</div>
+            <div style="font-size:9px;font-weight:600;color:#1565C0;margin-top:2px">Vehicles</div>
+          </button>
+          <button onclick="navigate('logistics')" style="border:none;background:#FFF3E0;border-radius:12px;padding:12px 4px;cursor:pointer;text-align:center">
+            <div style="font-size:20px">🚚</div>
+            <div style="font-size:9px;font-weight:600;color:#E65100;margin-top:2px">Transport</div>
+          </button>
+          <button onclick="navigate('delivery')" style="border:none;background:#F3E5F5;border-radius:12px;padding:12px 4px;cursor:pointer;text-align:center">
+            <div style="font-size:20px">📦</div>
+            <div style="font-size:9px;font-weight:600;color:#6A1B9A;margin-top:2px">Delivery</div>
+          </button>
+          <button onclick="navigate('gigworkers')" style="border:none;background:#E8F5E9;border-radius:12px;padding:12px 4px;cursor:pointer;text-align:center">
+            <div style="font-size:20px">👨‍🔧</div>
+            <div style="font-size:9px;font-weight:600;color:#2E7D32;margin-top:2px">Workers</div>
+          </button>
+        </div>
+      </div>
+
       <div class="mode-toggle-bar" role="tablist" aria-label="Browse mode" style="display:flex;margin:10px 14px 6px;background:#F5F5F5;border-radius:12px;padding:3px;border:1px solid #E0E0E0">
         <button role="tab" aria-selected="${mode==='connect'}" data-kmode="connect" style="flex:1;padding:9px 4px;border-radius:10px;font-size:11px;font-weight:700;border:none;cursor:pointer;${mode==='connect'?'background:#D32F2F;color:white;box-shadow:0 2px 8px rgba(211,47,47,0.3)':'background:transparent;color:#757575'}">📡 Connect</button>
         <button role="tab" aria-selected="${mode==='rent'}" data-kmode="rent" style="flex:1;padding:9px 4px;border-radius:10px;font-size:11px;font-weight:700;border:none;cursor:pointer;${mode==='rent'?'background:#0277BD;color:white;box-shadow:0 2px 8px rgba(2,119,189,0.3)':'background:transparent;color:#757575'}">🔑 Rent</button>
