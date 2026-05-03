@@ -465,6 +465,47 @@ class ApiClient {
   }
   getExtremeAlerts() { return this.get('/weather/extreme-alerts'); }
 
+  // ─── Verification & Trust ──────────────────────────────────
+  requestVerification(d) { return this.post('/verification/request', d); }
+  getVerificationStatus() { return this.get('/verification/status'); }
+  getTrustScore(userId) { return this.get(`/verification/trust-score/${userId}`); }
+  getUserBadges(userId) { return this.get(`/verification/badges/${userId}`); }
+  flagFraud(d) { return this.post('/verification/flag-fraud', d); }
+  adminReviewVerification(d) { return this.post('/verification/admin/review', d); }
+
+  // ─── Cart & Checkout ────────────────────────────────────────
+  getCart() { return this.get('/cart'); }
+  addToCart(d) { return this.post('/cart/add', d); }
+  updateCartItem(id, d) { return this.patch(`/cart/${id}`, d); }
+  removeCartItem(id) { return this.del(`/cart/${id}`); }
+  clearCart() { return this.del('/cart'); }
+  checkout(d) { return this.post('/cart/checkout', d); }
+  getCartCount() { return this.get('/cart/count'); }
+
+  // ─── Seller Tools ──────────────────────────────────────────
+  getSuggestedPrice(params) { return this.get(`/seller/suggested-price?${new URLSearchParams(params)}`); }
+  getSellerAnalytics() { return this.get('/seller/analytics'); }
+  getSellerNudges() { return this.get('/seller/nudges'); }
+  getDemandMatches() { return this.get('/seller/demand-matches'); }
+  getPriceTrends(cropId) { return this.get(`/seller/price-trends/${cropId}`); }
+
+  // ─── Livestock ─────────────────────────────────────────────
+  getLivestockListings(params = '') { return this.get(`/livestock${params}`); }
+  getLivestockListing(id) { return this.get(`/livestock/${id}`); }
+  createLivestockListing(d) { return this.post('/livestock', d); }
+  updateLivestockListing(id, d) { return this.patch(`/livestock/${id}`, d); }
+  deleteLivestockListing(id) { return this.del(`/livestock/${id}`); }
+  getMyLivestockListings() { return this.get('/livestock/my'); }
+  getLivestockCategories() { return this.get('/livestock/categories'); }
+
+  // ─── Service Booking ───────────────────────────────────────
+  getAvailability(providerId, params = '') { return this.get(`/booking/availability/${providerId}${params}`); }
+  setAvailability(d) { return this.post('/booking/availability', d); }
+  bookService(d) { return this.post('/booking/book', d); }
+  updateBookingStatus(id, d) { return this.patch(`/booking/${id}/status`, d); }
+  getMyBookingsAll(params = '') { return this.get(`/booking/my${params}`); }
+  getBooking(id) { return this.get(`/booking/${id}`); }
+  deleteAvailabilitySlot(slotId) { return this.del(`/booking/availability/${slotId}`); }
   // ─── Logistics ─────────────────────────────────────────────
   registerLogisticsPartner(d) { return this.post('/logistics/partners', d); }
   getLogisticsPartners(params = '') { return this.get(`/logistics/partners${params}`); }

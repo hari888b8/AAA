@@ -37,6 +37,8 @@ import { renderTickets } from './screens/TicketsScreen.js';
 import { renderEscrow } from './screens/EscrowScreen.js';
 import { renderWatchlists } from './screens/WatchlistsScreen.js';
 import { renderFPODashboard } from './screens/FPODashboardScreen.js';
+import { renderCart } from './screens/CartScreen.js';
+import { renderLivestock } from './screens/LivestockScreen.js';
 import { renderLogistics } from './screens/LogisticsScreen.js';
 import { renderInputs } from './screens/InputsScreen.js';
 import { renderCropPlanning } from './screens/CropPlanningScreen.js';
@@ -103,6 +105,8 @@ const ROUTES = {
   escrow:        { title: 'Escrow',        icon: '🔐', render: renderEscrow,       back: 'orders'  },
   watchlists:    { title: 'Watchlists',    icon: '👁️', render: renderWatchlists,   back: 'home'    },
   fpodashboard:  { title: 'FPO Hub',       icon: '🏢', render: renderFPODashboard, back: 'home'    },
+  cart:          { title: 'Cart',          icon: '🛒', render: renderCart,          back: 'home'    },
+  livestock:     { title: 'Livestock',     icon: '🐄', render: renderLivestock,     back: 'agriflow'},
   logistics:     { title: 'Logistics',     icon: '🚚', render: renderLogistics,    back: 'home'    },
   inputs:        { title: 'Agri Inputs',   icon: '🌱', render: renderInputs,       back: 'home'    },
   cropplanning:  { title: 'Crop Plan AI',  icon: '🧠', render: renderCropPlanning, back: 'farmdiary' },
@@ -222,6 +226,13 @@ function renderApp() {
           <div style="height:1px;background:#E0E0E0;margin:8px 16px"></div>
           <div style="padding:4px 16px;font-size:10px;font-weight:700;color:#C62828;text-transform:uppercase;letter-spacing:0.5px;margin-top:8px">⚡ Core Engine</div>
           ${[
+            {icon:'🛒',label:'My Cart',route:'cart'},
+            {icon:'🐄',label:'Livestock Market',route:'livestock'},
+            {icon:'⭐',label:'Subscription Plans',route:'subscriptions'},
+            {icon:'❤️',label:'My Favorites',route:'favorites'},
+            {icon:'👁️',label:'Watchlists & Alerts',route:'watchlists'},
+            {icon:'🔐',label:'Escrow Payments',route:'escrow'},
+            {icon:'🎫',label:'Support Tickets',route:'tickets'},
             {icon:'🌾',label:'Trade (AgriFlow)',route:'agriflow'},
             {icon:'📋',label:'Trade Orders',route:'tradeorders'},
             {icon:'🎯',label:'Demand Engine',route:'demandengine'},
