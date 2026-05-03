@@ -436,6 +436,47 @@ class ApiClient {
     return this.get(`/weather/irrigation-schedule?${params.toString()}`);
   }
   getExtremeAlerts() { return this.get('/weather/extreme-alerts'); }
+
+  // ─── Logistics ─────────────────────────────────────────────
+  registerLogisticsPartner(d) { return this.post('/logistics/partners', d); }
+  getLogisticsPartners(params = '') { return this.get(`/logistics/partners${params}`); }
+  updateLogisticsPartner(id, d) { return this.patch(`/logistics/partners/${id}`, d); }
+  createDeliveryRequest(d) { return this.post('/logistics/request', d); }
+  getDeliveryRequests(params = '') { return this.get(`/logistics/requests${params}`); }
+  updateDeliveryStatus(id, d) { return this.patch(`/logistics/requests/${id}`, d); }
+  assignDeliveryPartner(d) { return this.post('/logistics/assign', d); }
+  getDeliveryEstimate(params) { return this.get(`/logistics/estimate?${params}`); }
+  createDeliveryBatch(d) { return this.post('/logistics/batch', d); }
+  getDeliveryBatch(id) { return this.get(`/logistics/batch/${id}`); }
+  getPartnerDashboard() { return this.get('/logistics/partner/dashboard'); }
+
+  // ─── Input Marketplace ─────────────────────────────────────
+  getInputCategories() { return this.get('/inputs/categories'); }
+  getInputProducts(params = '') { return this.get(`/inputs/products${params}`); }
+  getInputProduct(id) { return this.get(`/inputs/products/${id}`); }
+  getInputSellers(params = '') { return this.get(`/inputs/sellers${params}`); }
+  placeInputOrder(d) { return this.post('/inputs/orders', d); }
+  getInputOrders(params = '') { return this.get(`/inputs/orders${params}`); }
+  updateInputOrderStatus(id, d) { return this.patch(`/inputs/orders/${id}/status`, d); }
+  getInputRecommendations() { return this.get('/inputs/recommendations'); }
+
+  // ─── Crop Planning AI ──────────────────────────────────────
+  getCropRecommendations(params = '') { return this.get(`/cropplan/recommend${params}`); }
+  createCropPlan(d) { return this.post('/cropplan/plans', d); }
+  getCropPlans(params = '') { return this.get(`/cropplan/plans${params}`); }
+  getCropPlan(id) { return this.get(`/cropplan/plans/${id}`); }
+  updateCropPlan(id, d) { return this.patch(`/cropplan/plans/${id}`, d); }
+  getCropPlanTasks(planId) { return this.get(`/cropplan/tasks/${planId}`); }
+  completeCropTask(id) { return this.patch(`/cropplan/tasks/${id}/complete`, {}); }
+  getSeasonReport(params = '') { return this.get(`/cropplan/season-report${params}`); }
+  getSeasonComparison() { return this.get('/cropplan/comparison'); }
+
+  // ─── Onboarding (Multi-role) ───────────────────────────────
+  registerExporter(d) { return this.post('/onboarding/exporter', d); }
+  registerSupplier(d) { return this.post('/onboarding/supplier', d); }
+  registerBankPartner(d) { return this.post('/onboarding/bank-partner', d); }
+  getOnboardingStatus() { return this.get('/onboarding/status'); }
+  submitVerification(d) { return this.post('/onboarding/verify', d); }
 }
 
 export const api = new ApiClient();

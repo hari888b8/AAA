@@ -37,6 +37,16 @@ import { renderTickets } from './screens/TicketsScreen.js';
 import { renderEscrow } from './screens/EscrowScreen.js';
 import { renderWatchlists } from './screens/WatchlistsScreen.js';
 import { renderFPODashboard } from './screens/FPODashboardScreen.js';
+import { renderLogistics } from './screens/LogisticsScreen.js';
+import { renderInputs } from './screens/InputsScreen.js';
+import { renderCropPlanning } from './screens/CropPlanningScreen.js';
+import { renderContract } from './screens/ContractScreen.js';
+import { renderTrustScore } from './screens/TrustScoreScreen.js';
+import { renderSatellite } from './screens/SatelliteScreen.js';
+import { renderFinance } from './screens/FinanceScreen.js';
+import { renderAgentDashboard } from './screens/AgentDashboardScreen.js';
+import { renderExporter } from './screens/ExporterScreen.js';
+import { renderAnalytics } from './screens/AnalyticsScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -82,6 +92,16 @@ const ROUTES = {
   escrow:        { title: 'Escrow',        icon: '🔐', render: renderEscrow,       back: 'orders'  },
   watchlists:    { title: 'Watchlists',    icon: '👁️', render: renderWatchlists,   back: 'home'    },
   fpodashboard:  { title: 'FPO Hub',       icon: '🏢', render: renderFPODashboard, back: 'home'    },
+  logistics:     { title: 'Logistics',     icon: '🚚', render: renderLogistics,    back: 'home'    },
+  inputs:        { title: 'Agri Inputs',   icon: '🌱', render: renderInputs,       back: 'home'    },
+  cropplanning:  { title: 'Crop Plan AI',  icon: '🧠', render: renderCropPlanning, back: 'farmdiary' },
+  contracts:     { title: 'Contracts',     icon: '📝', render: renderContract,     back: 'home'    },
+  trustscore:    { title: 'Trust Score',   icon: '⭐', render: renderTrustScore,   back: 'profile' },
+  satellite:     { title: 'Satellite',     icon: '🛰️', render: renderSatellite,    back: 'farmdiary' },
+  finance:       { title: 'Finance',       icon: '💰', render: renderFinance,      back: 'home'    },
+  agentdashboard:{ title: 'Agent Hub',     icon: '🤝', render: renderAgentDashboard, back: 'home'  },
+  exporter:      { title: 'Exporter',      icon: '🌍', render: renderExporter,     back: 'home'    },
+  analytics:     { title: 'Analytics',     icon: '📊', render: renderAnalytics,    back: 'home'    },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────
