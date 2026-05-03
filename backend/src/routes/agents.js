@@ -131,4 +131,67 @@ router.get('/commissions', auth, async (req, res) => {
   }
 });
 
+// POST /api/agents/assisted-listing — Agent creates listing on behalf of farmer
+router.post('/assisted-listing', auth, async (req, res) => {
+  try {
+    const agent = await pool.query('SELECT * FROM agents WHERE user_id = $1', [req.user.id]);
+    if (!agent.rows.length) return res.status(403).json({ error: 'Not an agent' });
+
+    const {
+      farmer_phone, crop_id, quantity_kg, price_per_kg, grade,
+      lat, lng, photos, voice_note_url, farmer_name, district_id, description
+    } = req.body;
+
+    if (!farmer_phone || !crop_id || !quantity_kg) {
+      return res.status(400).json({ error: 'farmer_phone, crop_id, and quantity_kg required' });
+    }
+    if (!lat || !lng) {
+      return res.status(400).json({ error: 'GPS location (lat, lng) required' });
+    }
+
+    const agentId = agent.rows[0].id;
+
+    // Look up farmer by phone — require farmer to exist
+    const farmerResult = await pool.query('SELECT id FROM users WHERE phone = $1', [farmer_phone]);
+    if (!farmerResult.rows.length) {
+      return res.status(404).json({ error: 'Farmer not found. Please onboard farmer first via /api/agents/onboard-farmer' });
+    }
+    const farmerId = farmerResult.rows[0].id;
+
+    const listingId = uuidv4();
+    const result = await pool.query(`
+      INSERT INTO supply_listings (
+        id, farmer_id, crop_id, district_id, quantity_kg, grade, price_per_kg,
+        lat, lng, photos, voice_note_url, farmer_name, description, status
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'active')
+      RETURNING *
+    `, [listingId, farmerId, crop_id, district_id || agent.rows[0].district_id,
+        quantity_kg, grade || 'ungraded', price_per_kg || null,
+        lat, lng, JSON.stringify(photos || []), voice_note_url,
+        farmer_name || 'Farmer', description]);
+
+    // Log agent activity
+    const activity = await pool.query(`
+      INSERT INTO agent_activities (agent_id, activity_type, farmer_id, details)
+      VALUES ($1, 'assisted_listing', $2, $3)
+      RETURNING *
+    `, [agentId, farmerId, JSON.stringify({ listing_id: listingId, crop_id, quantity_kg, farmer_phone })]);
+
+    // Create commission for assisted listing
+    await pool.query(`
+      INSERT INTO agent_commissions (agent_id, activity_id, amount, commission_type)
+      VALUES ($1, $2, 25, 'assisted_listing')
+    `, [agentId, activity.rows[0].id]);
+
+    res.status(201).json({
+      listing: result.rows[0],
+      activity: activity.rows[0],
+      message: 'Listing created on behalf of farmer'
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

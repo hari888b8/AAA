@@ -156,17 +156,47 @@ export function renderHome(container) {
       </div>
     ` : ''}
 
-    <!-- PLATFORM APPS -->
-    ${sectionTitle('Platform Apps', 'Five apps. One ecosystem.')}
+    <!-- CORE BUSINESS ENGINE -->
+    ${sectionTitle('⚡ Core Engine', 'Trade · Execute · Finance')}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px">
-      ${platformTile({ icon:'🌐', title:'AgriGalaxy', sub:'Seeds & Inputs', meta:'2,150 stores', route:'agrigalaxy', color:'#6A1B9A' })}
-      ${platformTile({ icon:'🐟', title:'AquaOS',     sub:'Aquaculture',   meta:'Shrimp · Fish', route:'aquaos',     color:'#0277BD' })}
-      ${platformTile({ icon:'🌾', title:'Agri',       sub:'Crops & FPOs',  meta:'AgriFlow + more', route:'agri',     color:'#2E7D32' })}
-      ${platformTile({ icon:'🚜', title:'KisanConnect',sub:'Equipment',    meta:'Rent · Buy · Sell', route:'kisan',  color:'#E65100' })}
-      ${platformTile({ icon:'🏡', title:'BhoomiOS',   sub:'Land Market',   meta:'Buy · Rent farmland', route:'bhoomios', color:'#795548' })}
-      ${platformTile({ icon:'🏗️', title:'Platform',   sub:'Architecture',  meta:'How it works', route:'architecture', color:'#37474F' })}
+      ${platformTile({ icon:'🌾', title:'Trade',        sub:'Sell & Buy Crops',   meta:'AgriFlow matching', route:'agriflow', color:'#2E7D32' })}
+      ${platformTile({ icon:'🎯', title:'Demand Engine', sub:'Guaranteed Buyers',  meta:'Pre-harvest deals', route:'demandengine', color:'#E65100' })}
+      ${platformTile({ icon:'🚚', title:'Logistics',    sub:'Pickup & Delivery',  meta:'Track shipments',   route:'logistics', color:'#1565C0' })}
+      ${platformTile({ icon:'💰', title:'Finance',      sub:'Wallet · Loans · Escrow', meta:'Credit & payments', route:'finance', color:'#6A1B9A' })}
+      ${platformTile({ icon:'📍', title:'Local Market',  sub:'Hyperlocal Deals',   meta:'Nearby buyers',     route:'hyperlocal', color:'#0D47A1' })}
+      ${platformTile({ icon:'🤝', title:'Agent Hub',    sub:'Field Operations',    meta:'Onboard · Verify',  route:'agentdashboard', color:'#37474F' })}
     </div>
 
+    <!-- FARM OPERATING SYSTEM -->
+    ${sectionTitle('🌱 Farm OS', 'Daily engagement layer')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px">
+      ${platformTile({ icon:'🏡', title:'BhoomiOS',   sub:'Land & Planning',  meta:'Records · Diary', route:'bhoomios', color:'#795548' })}
+      ${platformTile({ icon:'🐟', title:'AquaOS',     sub:'Aquaculture',      meta:'Shrimp · Fish',   route:'aquaos',   color:'#0277BD' })}
+      ${platformTile({ icon:'📓', title:'Farm Diary',  sub:'Activities & Cost', meta:'Crop lifecycle', route:'farmdiary', color:'#2E7D32' })}
+      ${platformTile({ icon:'🌤️', title:'Weather',    sub:'Forecast & Alerts', meta:'7-day ahead',    route:'weather',  color:'#1565C0' })}
+      ${platformTile({ icon:'🩺', title:'Crop Doctor', sub:'Disease ID & Fix',  meta:'AI diagnosis',   route:'cropdoctor', color:'#C62828' })}
+      ${platformTile({ icon:'🔄', title:'Crop Cycle',  sub:'Input→Grow→Sell',  meta:'Closed-loop',    route:'croplifecycle', color:'#2E7D32' })}
+    </div>
+
+    <!-- TOOLS HUB -->
+    ${sectionTitle('🧰 Tools Hub', 'Calculators & utilities')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px">
+      ${platformTile({ icon:'🧰', title:'All Tools',    sub:'Calculators & more', meta:'20+ tools',       route:'toolshub',  color:'#283593' })}
+      ${platformTile({ icon:'🏛️', title:'Schemes',     sub:'Govt benefits',      meta:'PM-KISAN, PMFBY', route:'schemes',   color:'#1565C0' })}
+      ${platformTile({ icon:'🎓', title:'Training',     sub:'Courses & tips',     meta:'10 courses',      route:'training',  color:'#6A1B9A' })}
+      ${platformTile({ icon:'👷', title:'Agri Jobs',    sub:'Find farm work',     meta:'8 jobs near you', route:'jobs',       color:'#E65100' })}
+    </div>
+
+    <!-- PLATFORM APPS -->
+    ${sectionTitle('Platform Apps', 'Marketplace ecosystem')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px">
+      ${platformTile({ icon:'🌐', title:'AgriGalaxy', sub:'Seeds & Inputs', meta:'2,150 stores', route:'agrigalaxy', color:'#6A1B9A' })}
+      ${platformTile({ icon:'🚜', title:'KisanConnect',sub:'Equipment',    meta:'Rent · Buy · Sell', route:'kisan',  color:'#E65100' })}
+      ${platformTile({ icon:'🏘️', title:'District Pilot',sub:'Ground metrics', meta:'3 districts live', route:'districtpilot', color:'#1B5E20' })}
+      ${platformTile({ icon:'🏗️', title:'Platform Map',sub:'Architecture',  meta:'How it works', route:'architecture', color:'#37474F' })}
+    </div>
+
+    <!-- LIVE ACTIVITY -->
     <!-- LIVE PRICES -->
     ${sectionTitle('Mandi Prices', 'Updated 2 min ago', { label:'See all', nav:'intelligence' })}
     <div style="padding:0 14px">
@@ -183,15 +213,6 @@ export function renderHome(container) {
           </div>
         </div>
       `).join('')}
-    </div>
-
-    <!-- TOOLS & SERVICES -->
-    ${sectionTitle('Tools & Services')}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px">
-      ${platformTile({ icon:'📓', title:'Farm Diary',  sub:'Activities & expenses', meta:'Crop lifecycle',     route:'farmdiary', color:'#2E7D32' })}
-      ${platformTile({ icon:'🏛️', title:'Schemes',    sub:'Govt loans & insurance',meta:'PM-KISAN, KCC, PMFBY', route:'schemes', color:'#1565C0' })}
-      ${platformTile({ icon:'👷', title:'Agri Jobs',  sub:'Find farm work',         meta:'8 jobs near you',     route:'jobs',     color:'#E65100' })}
-      ${platformTile({ icon:'🎓', title:'Training',    sub:'Courses & tips',        meta:'10 courses',          route:'training', color:'#6A1B9A' })}
     </div>
 
     <!-- LIVE ACTIVITY -->

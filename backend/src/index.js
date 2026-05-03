@@ -76,6 +76,7 @@ const bankportalRouter = require('./routes/bankportal');
 const governmentRouter = require('./routes/government');
 const exporterRouter = require('./routes/exporter');
 const openapiRouter = require('./routes/openapi');
+const executionRouter = require('./routes/execution');
 
 const app = express();
 const server = http.createServer(app);
@@ -221,6 +222,7 @@ app.use('/api/bankportal', bankportalRouter);
 app.use('/api/government', governmentRouter);
 app.use('/api/exporter', exporterRouter);
 app.use('/api/openapi', openapiRouter);
+app.use('/api/execution', executionRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

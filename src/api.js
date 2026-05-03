@@ -128,11 +128,39 @@ class ApiClient {
   getComments(id) { return this.get(`/community/posts/${id}/comments`); }
   addComment(id, d) { return this.post(`/community/posts/${id}/comments`, d); }
 
-  // Orders
+  // Orders (legacy)
   getOrders(params = '') { return this.get(`/orders${params}`); }
   getOrder(id) { return this.get(`/orders/${id}`); }
   createOrder(d) { return this.post('/orders', d); }
   updateOrderStatus(id, d) { return this.patch(`/orders/${id}/status`, d); }
+
+  // ─── Trade Flow (End-to-End: Listing → Bid → Escrow → Delivery → Payment) ──
+  // Listings
+  createTradeListing(d) { return this.post('/trade/listings', d); }
+  getTradeListings(params = '') { return this.get(`/trade/listings${params}`); }
+  // Bids
+  placeBid(d) { return this.post('/trade/bids', d); }
+  getBids(params = '') { return this.get(`/trade/bids${params}`); }
+  acceptBid(bid_id) { return this.post('/trade/accept-bid', { bid_id }); }
+  // Trade Orders
+  getTradeOrders(params = '') { return this.get(`/trade/orders${params}`); }
+  getTradeOrder(id) { return this.get(`/trade/orders/${id}`); }
+  // Trade Order Lifecycle Actions
+  fundEscrow(orderId) { return this.post(`/trade/orders/${orderId}/fund`, {}); }
+  verifyQuality(orderId, d) { return this.post(`/trade/orders/${orderId}/verify-quality`, d); }
+  dispatchOrder(orderId, d) { return this.post(`/trade/orders/${orderId}/dispatch`, d); }
+  updateOrderLocation(orderId, d) { return this.post(`/trade/orders/${orderId}/update-location`, d); }
+  confirmDelivery(orderId, d) { return this.post(`/trade/orders/${orderId}/confirm-delivery`, d); }
+  disputeOrder(orderId, d) { return this.post(`/trade/orders/${orderId}/dispute`, d); }
+  cancelTradeOrder(orderId, d) { return this.post(`/trade/orders/${orderId}/cancel`, d); }
+
+  // ─── Agent Network ─────────────────────────────────────────────
+  registerAgent(d) { return this.post('/agents/register', d); }
+  getAgentProfile() { return this.get('/agents/me'); }
+  getAgentDashboard() { return this.get('/agents/dashboard'); }
+  agentOnboardFarmer(d) { return this.post('/agents/onboard-farmer', d); }
+  agentAssistedListing(d) { return this.post('/agents/assisted-listing', d); }
+  getAgentCommissions() { return this.get('/agents/commissions'); }
 
   // Weather
   getForecast(params = '') { return this.get(`/weather/forecast${params}`); }

@@ -336,7 +336,8 @@ export function renderAgriFlow(container) {
               </div>
               <div style="text-align:right;flex-shrink:0">
                 <div style="font-weight:800;font-size:15px;color:#E65100">₹${Number(l.price_per_kg||0).toFixed(0)}/kg</div>
-                <button class="inq-btn" data-lid="${l.id}" style="margin-top:5px;padding:6px 10px;background:#E65100;color:white;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">Inquire</button>
+                <button class="bid-btn" data-lid="${l.id}" style="margin-top:5px;padding:6px 10px;background:#1B5E20;color:white;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">🤝 Bid</button>
+                <button class="inq-btn" data-lid="${l.id}" style="margin-top:4px;padding:6px 10px;background:#E65100;color:white;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">Inquire</button>
                 <button class="watch-btn" data-lid="${l.id}" style="margin-top:4px;display:block;width:100%;padding:4px 6px;background:#F5F5F5;border:none;border-radius:6px;font-size:10px;cursor:pointer">${watchlist.some(w=>w.listing_id==l.id)?'⭐ Watching':'☆ Watch'}</button>
               </div>
             </div>
@@ -577,6 +578,7 @@ export function renderAgriFlow(container) {
     container.querySelector('#searchInput')?.addEventListener('input', e => { search = e.target.value; render(); });
     container.querySelectorAll('[data-crop]').forEach(b => b.addEventListener('click', () => { filterCrop = b.dataset.crop; render(); }));
     container.querySelectorAll('.inq-btn').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); showSendInquiry(b.dataset.lid); }));
+    container.querySelectorAll('.bid-btn').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); showPlaceBid(b.dataset.lid); }));
     container.querySelectorAll('.watch-btn').forEach(b => b.addEventListener('click', async e => {
       e.stopPropagation();
       const l = listings.find(x=>x.id==b.dataset.lid);
@@ -737,6 +739,35 @@ export function renderAgriFlow(container) {
       const qty = document.querySelector('#iqQty').value;
       if (!qty) { showToast('Enter quantity','error'); return; }
       try { await api.createInquiry({listing_id:l.id,quantity_needed:Number(qty),offered_price:Number(document.querySelector('#iqPrice').value)||undefined,message:document.querySelector('#iqMsg').value}); showToast('Inquiry sent!','success'); closeModal(); } catch(e){showToast(e.message,'error');}
+    });
+  }
+
+  function showPlaceBid(lid) {
+    const l = listings.find(x=>x.id==lid);
+    if (!l) return;
+    showModal(`<div class="modal-handle"></div><h3>🤝 Place Bid — ${l.crop_name||'Crop'}</h3>
+      <div style="background:#E8F5E9;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px">
+        ${l.crop_name||'Crop'} · ${l.district_name||l.location_label||'District'} · ${Number(l.quantity_kg||0).toLocaleString()} kg available @ ₹${l.price_per_kg||'—'}/kg
+      </div>
+      <div class="form-group"><label>Your bid price (₹/kg)</label><input class="form-input" type="number" id="bidPrice" placeholder="${l.price_per_kg||''}" step="0.5"></div>
+      <div class="form-group"><label>Quantity (kg)</label><input class="form-input" type="number" id="bidQty" placeholder="${l.quantity_kg||500}"></div>
+      <div class="form-group"><label>Delivery address</label><input class="form-input" type="text" id="bidAddr" placeholder="Your delivery location"></div>
+      <button id="submitBid" style="width:100%;padding:12px;background:#1B5E20;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Place Bid</button>
+      <div style="font-size:10px;color:#757575;text-align:center;margin-top:6px">💰 If seller accepts, you'll fund escrow next</div>`);
+    document.querySelector('#submitBid')?.addEventListener('click', async () => {
+      const price = document.querySelector('#bidPrice').value;
+      const qty = document.querySelector('#bidQty').value;
+      if (!price || !qty) { showToast('Enter price and quantity','error'); return; }
+      try {
+        await api.placeBid({
+          listing_id: l.id,
+          price_per_kg: Number(price),
+          quantity_kg: Number(qty),
+          delivery_address: document.querySelector('#bidAddr')?.value || ''
+        });
+        showToast('Bid placed! Seller will review.','success');
+        closeModal();
+      } catch(e) { showToast(e.message,'error'); }
     });
   }
 

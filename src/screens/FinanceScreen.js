@@ -49,6 +49,51 @@ async function loadFinanceTab(tab, container) {
           <p class="eligible-amount">Eligible for up to <strong>₹${(cs.eligible_amount || 0).toLocaleString()}</strong></p>
           <button class="btn btn-primary" id="recompute-credit">Refresh Score</button>
         </div>
+
+        <div style="margin-top:16px;background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+          <h3 style="margin:0 0 12px;font-size:0.95rem">📊 Alternative Credit Scoring</h3>
+          <p style="font-size:0.8rem;color:#666;margin:0 0 12px">Your score is built from farming data — no bank history needed</p>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#f9f9f9;border-radius:8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:1.1rem">🌾</span>
+                <div><div style="font-weight:600;font-size:0.82rem">Farm History</div><div style="font-size:0.72rem;color:#888">Land size, crop rotation, tenure</div></div>
+              </div>
+              <span style="font-weight:700;color:#2E7D32;font-size:0.9rem">${Math.round((cs.farm_history_score || 65))}%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#f9f9f9;border-radius:8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:1.1rem">📈</span>
+                <div><div style="font-weight:600;font-size:0.82rem">Yield Data</div><div style="font-size:0.72rem;color:#888">Past harvest records, productivity</div></div>
+              </div>
+              <span style="font-weight:700;color:#1565C0;font-size:0.9rem">${Math.round((cs.yield_score || 70))}%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#f9f9f9;border-radius:8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:1.1rem">💳</span>
+                <div><div style="font-weight:600;font-size:0.82rem">Transaction History</div><div style="font-size:0.72rem;color:#888">Platform trades, payment consistency</div></div>
+              </div>
+              <span style="font-weight:700;color:#E65100;font-size:0.9rem">${Math.round((cs.transaction_score || 55))}%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#f9f9f9;border-radius:8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:1.1rem">🛰️</span>
+                <div><div style="font-weight:600;font-size:0.82rem">Satellite Verification</div><div style="font-size:0.72rem;color:#888">Land use, crop health, irrigation</div></div>
+              </div>
+              <span style="font-weight:700;color:#6A1B9A;font-size:0.9rem">${Math.round((cs.satellite_score || 60))}%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#f9f9f9;border-radius:8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:1.1rem">⭐</span>
+                <div><div style="font-weight:600;font-size:0.82rem">Trust Score</div><div style="font-size:0.72rem;color:#888">Platform reputation, ratings</div></div>
+              </div>
+              <span style="font-weight:700;color:#F57C00;font-size:0.9rem">${Math.round((cs.trust_component || 72))}%</span>
+            </div>
+          </div>
+          <div style="margin-top:12px;background:#E8F5E9;padding:12px;border-radius:8px;font-size:0.8rem;color:#1B5E20">
+            💡 <strong>Improve your score:</strong> Log farm activities, complete transactions, maintain consistent yields, and keep your profile updated.
+          </div>
+        </div>
       `;
       content.querySelector('#recompute-credit').addEventListener('click', async () => {
         await api('/api/finance/credit-score/compute', { method: 'POST' });
