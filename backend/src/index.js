@@ -62,6 +62,10 @@ const tradeRouter = require('./routes/trade');
 const healthRouter = require('./routes/health');
 const translateRouter = require('./routes/translate');
 const settingsRouter = require('./routes/settings');
+const logisticsRouter = require('./routes/logistics');
+const inputsRouter = require('./routes/inputs');
+const cropplanningRouter = require('./routes/cropplanning');
+const onboardingRouter = require('./routes/onboarding');
 
 const app = express();
 const server = http.createServer(app);
@@ -193,6 +197,10 @@ app.use('/api/trade', tradeRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/translate', translateRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/logistics', logisticsRouter);
+app.use('/api/inputs', inputsRouter);
+app.use('/api/cropplan', cropplanningRouter);
+app.use('/api/onboarding', onboardingRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -218,6 +226,8 @@ async function start() {
     await migrateV4();
     const { migrateV5 } = require('./db/migrate-v5-platform');
     await migrateV5();
+    const { migrateV6AgriOS } = require('./db/migrate-v6-agrios');
+    await migrateV6AgriOS();
     logger.info('Database migrations applied');
 
     // Recover any pending jobs from previous crash

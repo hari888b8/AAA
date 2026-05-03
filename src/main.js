@@ -37,6 +37,9 @@ import { renderTickets } from './screens/TicketsScreen.js';
 import { renderEscrow } from './screens/EscrowScreen.js';
 import { renderWatchlists } from './screens/WatchlistsScreen.js';
 import { renderFPODashboard } from './screens/FPODashboardScreen.js';
+import { renderLogistics } from './screens/LogisticsScreen.js';
+import { renderInputs } from './screens/InputsScreen.js';
+import { renderCropPlanning } from './screens/CropPlanningScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -82,6 +85,9 @@ const ROUTES = {
   escrow:        { title: 'Escrow',        icon: '🔐', render: renderEscrow,       back: 'orders'  },
   watchlists:    { title: 'Watchlists',    icon: '👁️', render: renderWatchlists,   back: 'home'    },
   fpodashboard:  { title: 'FPO Hub',       icon: '🏢', render: renderFPODashboard, back: 'home'    },
+  logistics:     { title: 'Logistics',     icon: '🚚', render: renderLogistics,    back: 'home'    },
+  inputs:        { title: 'Agri Inputs',   icon: '🌱', render: renderInputs,       back: 'home'    },
+  cropplanning:  { title: 'Crop Plan AI',  icon: '🧠', render: renderCropPlanning, back: 'farmdiary' },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────
