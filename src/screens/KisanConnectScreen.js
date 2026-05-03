@@ -107,15 +107,20 @@ export function renderKisan(container) {
   // ══════════════════════════════════════════════════════════════
   // DYNAMIC PRICING ENGINE
   // ══════════════════════════════════════════════════════════════
+  const PEAK_SEASON_MONTHS = [5, 6, 9, 10, 11, 0]; // Jun-Jul, Oct-Jan (harvest seasons)
+  const BASE_DISTANCE_KM = 5;
+  const DISTANCE_TIER_KM = 10;
+  const DISTANCE_MULTIPLIER = 0.05;
+
   function calculateDynamicPrice(baseRate, opts = {}) {
     let multiplier = 1.0;
-    // Time-based surge (peak season: Jun-Jul harvest, Oct-Jan)
+    // Time-based surge (peak harvest seasons)
     const month = new Date().getMonth();
-    if ([5, 6, 9, 10, 11, 0].includes(month)) multiplier += 0.15;
+    if (PEAK_SEASON_MONTHS.includes(month)) multiplier += 0.15;
     // Urgency factor
     if (opts.urgency === 'urgent') multiplier += 0.25;
-    // Distance factor (per 10km beyond 5km base)
-    if (opts.distanceKm && opts.distanceKm > 5) multiplier += ((opts.distanceKm - 5) / 10) * 0.05;
+    // Distance factor (per tier beyond base distance)
+    if (opts.distanceKm && opts.distanceKm > BASE_DISTANCE_KM) multiplier += ((opts.distanceKm - BASE_DISTANCE_KM) / DISTANCE_TIER_KM) * DISTANCE_MULTIPLIER;
     // Demand factor (high demand in area)
     if (opts.highDemand) multiplier += 0.10;
     return Math.round(baseRate * multiplier);
@@ -144,8 +149,8 @@ export function renderKisan(container) {
   // ══════════════════════════════════════════════════════════════
   function showLiveTrackingModal(booking) {
     const op = booking.operator || {};
-    const etaMin = Math.floor(Math.random() * 20) + 5;
-    const distKm = (Math.random() * 8 + 1).toFixed(1);
+    const etaMin = op.eta_minutes || Math.floor(Math.random() * 20) + 5;
+    const distKm = op.distance_km || (Math.random() * 8 + 1).toFixed(1);
 
     showModal(`
       <div class="modal-handle"></div>
@@ -161,10 +166,10 @@ export function renderKisan(container) {
           </div>
         </div>
         <!-- Simulated map area -->
-        <div style="margin-top:12px;background:rgba(255,255,255,0.1);border-radius:10px;padding:20px;text-align:center;position:relative;min-height:80px">
-          <div style="font-size:32px;position:absolute;left:20%;top:30%;animation:pulse 2s infinite">📍</div>
-          <div style="font-size:28px;position:absolute;right:20%;top:25%;animation:pulse 1.5s infinite">🚜</div>
-          <div style="position:absolute;left:30%;right:30%;top:50%;height:2px;background:rgba(255,255,255,0.4);border-top:2px dashed rgba(255,255,255,0.6)"></div>
+        <div style="margin-top:12px;background:rgba(255,255,255,0.1);border-radius:10px;padding:20px;text-align:center;position:relative;min-height:80px" role="img" aria-label="Live tracking map showing operator en route to your location">
+          <div style="font-size:32px;position:absolute;left:20%;top:30%;animation:pulse 2s infinite" aria-hidden="true">📍</div>
+          <div style="font-size:28px;position:absolute;right:20%;top:25%;animation:pulse 1.5s infinite" aria-hidden="true">🚜</div>
+          <div style="position:absolute;left:30%;right:30%;top:50%;height:2px;background:rgba(255,255,255,0.4);border-top:2px dashed rgba(255,255,255,0.6)" aria-hidden="true"></div>
           <div style="font-size:9px;opacity:0.7;position:absolute;bottom:4px;left:50%;transform:translateX(-50%)">Live location updates every 30s</div>
         </div>
       </div>
@@ -177,16 +182,16 @@ export function renderKisan(container) {
             <div style="position:absolute;bottom:-2px;right:-2px;background:#4CAF50;width:14px;height:14px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:8px">✓</div>
           </div>
           <div style="flex:1">
-            <div style="font-weight:700;font-size:14px">${op.operator_name || 'Ramesh Yadav'}</div>
-            <div style="font-size:11px;color:#757575">${op.machine_name || 'John Deere 5310'} · ⭐ ${op.rating || '4.8'}</div>
+            <div style="font-weight:700;font-size:14px">${op.operator_name || 'Operator'}</div>
+            <div style="font-size:11px;color:#757575">${op.machine_name || 'Equipment'} · ⭐ ${op.rating ? Number(op.rating).toFixed(1) : 'N/A'}</div>
             <div style="display:flex;gap:4px;margin-top:4px">
               <span style="background:#E8F5E9;color:#2E7D32;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:600">✅ Verified</span>
-              <span style="background:#E3F2FD;color:#1565C0;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:600">${op.total_jobs || 156} jobs</span>
+              ${op.total_jobs ? `<span style="background:#E3F2FD;color:#1565C0;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:600">${op.total_jobs} jobs</span>` : ''}
             </div>
           </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:12px">
-          <a href="tel:+91${op.phone || '9876543210'}" style="flex:1;background:#E8F5E9;color:#2E7D32;text-align:center;padding:10px;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none">📞 Call</a>
+          ${op.phone ? `<a href="tel:+91${op.phone}" style="flex:1;background:#E8F5E9;color:#2E7D32;text-align:center;padding:10px;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none">📞 Call</a>` : ''}
           <button id="trackChatBtn" style="flex:1;background:#E3F2FD;color:#1565C0;border:none;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer">💬 Chat</button>
           <button id="trackShareBtn" style="flex:1;background:#F3E5F5;color:#6A1B9A;border:none;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer">📤 Share</button>
         </div>
@@ -576,7 +581,7 @@ export function renderKisan(container) {
               <div style="display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid #F5F5F5">
                 <span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:700">✅ KYC Verified</span>
                 <span style="background:#E3F2FD;color:#1565C0;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:600">🛡️ Insured</span>
-                <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:600">${op.total_jobs}+ completed</span>
+                ${op.total_jobs ? `<span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:600">${op.total_jobs}+ completed</span>` : ''}
               </div>
             </div>
           </div>
@@ -1226,8 +1231,8 @@ export function renderKisan(container) {
             <div style="font-size:11px;color:#757575">${op.machine_name || mt?.label} · ${op.experience_years}yr exp</div>
             <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">
               <span style="background:#E8F5E9;color:#2E7D32;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:700">✅ KYC Verified</span>
-              <span style="background:#FFF8E1;color:#F9A825;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:600">⭐ ${Number(op.rating).toFixed(1)}</span>
-              <span style="background:#E3F2FD;color:#1565C0;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:600">${op.total_jobs} jobs done</span>
+              <span style="background:#FFF8E1;color:#F9A825;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:600">⭐ ${Number(op.rating || 0).toFixed(1)}</span>
+              ${op.total_jobs ? `<span style="background:#E3F2FD;color:#1565C0;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:600">${op.total_jobs} jobs done</span>` : ''}
             </div>
           </div>
         </div>
