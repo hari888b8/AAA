@@ -2,6 +2,7 @@ const express = require('express');
 const { query } = require('../db/pool');
 const { optionalAuth } = require('../middleware/auth');
 const weatherService = require('../services/weather');
+const { cacheMiddleware } = require('../services/cache');
 
 const router = express.Router();
 
@@ -119,7 +120,7 @@ function getCropAdvisories(forecast, crops = []) {
 }
 
 // GET /api/weather/forecast?district_id=&days=7&lat=&lng=
-router.get('/forecast', optionalAuth, async (req, res) => {
+router.get('/forecast', optionalAuth, cacheMiddleware(600, (req) => `weather:forecast:${req.query.district_id || 'default'}:${req.query.days || 7}`), async (req, res) => {
   try {
     const { district_id, days = 7, lat, lng } = req.query;
     let districtName = 'Your Location';

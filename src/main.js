@@ -36,6 +36,7 @@ import { renderFavorites } from './screens/FavoritesScreen.js';
 import { renderTickets } from './screens/TicketsScreen.js';
 import { renderEscrow } from './screens/EscrowScreen.js';
 import { renderWatchlists } from './screens/WatchlistsScreen.js';
+import { renderFPODashboard } from './screens/FPODashboardScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -80,6 +81,7 @@ const ROUTES = {
   tickets:       { title: 'Support',       icon: '🎫', render: renderTickets,      back: 'profile' },
   escrow:        { title: 'Escrow',        icon: '🔐', render: renderEscrow,       back: 'orders'  },
   watchlists:    { title: 'Watchlists',    icon: '👁️', render: renderWatchlists,   back: 'home'    },
+  fpodashboard:  { title: 'FPO Hub',       icon: '🏢', render: renderFPODashboard, back: 'home'    },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────
@@ -111,6 +113,13 @@ export function navigate(route) {
   renderApp();
 }
 _registerNavigator(navigate);
+
+// Global navigateBack for screens that use it
+window.navigateBack = () => {
+  const route = ROUTES[currentRoute];
+  if (route?.back) navigate(route.back);
+  else navigate('home');
+};
 
 // ===== RENDER =====
 function renderApp() {

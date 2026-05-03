@@ -18,6 +18,8 @@ const { migrate } = require('./db/migrate');
 const { migrateV2 } = require('./db/migrate-v2');
 const { migrateV3Trade } = require('./db/migrate-v3-trade');
 const { setupWebSocket } = require('./services/websocket');
+const { initRedis } = require('./services/cache');
+const { auditMiddleware } = require('./services/audit');
 const { requestId } = require('./middleware/requestId');
 const { sanitize } = require('./middleware/sanitize');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
@@ -59,6 +61,7 @@ const ticketsRouter = require('./routes/tickets');
 const tradeRouter = require('./routes/trade');
 const healthRouter = require('./routes/health');
 const translateRouter = require('./routes/translate');
+const settingsRouter = require('./routes/settings');
 
 const app = express();
 const server = http.createServer(app);
@@ -92,6 +95,7 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(sanitize);
+app.use(auditMiddleware);
 
 // ─── Structured HTTP Logging ─────────────────────────────────
 app.use(pinoHttp({
@@ -188,6 +192,7 @@ app.use('/api/tickets', ticketsRouter);
 app.use('/api/trade', tradeRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/translate', translateRouter);
+app.use('/api/settings', settingsRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -202,12 +207,17 @@ async function start() {
     // Connect to DB with retry
     await connectWithRetry(config.db.retryAttempts, config.db.retryDelay);
 
+    // Initialize Redis cache
+    await initRedis();
+
     // Run migrations
     await migrate();
     await migrateV2();
     await migrateV3Trade();
     const { migrateV4 } = require('./db/migrate-v4-infrastructure');
     await migrateV4();
+    const { migrateV5 } = require('./db/migrate-v5-platform');
+    await migrateV5();
     logger.info('Database migrations applied');
 
     // Recover any pending jobs from previous crash
@@ -241,10 +251,12 @@ function gracefulShutdown(signal) {
   server.close(async () => {
     logger.info('HTTP server closed');
     try {
+      const { disconnect } = require('./services/cache');
+      await disconnect();
       await pool.end();
       logger.info('Database pool closed');
     } catch (err) {
-      logger.error({ err }, 'Error closing database pool');
+      logger.error({ err }, 'Error closing connections');
     }
     process.exit(0);
   });
