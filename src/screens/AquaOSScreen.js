@@ -133,6 +133,9 @@ export function renderAquaOS(container) {
           <button role="tab" aria-selected="${tab==='negotiate'}" class="tab-btn ${tab==='negotiate'?'active':''}" data-tab="negotiate">🤝 Negotiate</button>
           <button role="tab" aria-selected="${tab==='insights'}" class="tab-btn ${tab==='insights'?'active':''}" data-tab="insights">🧠 Insights</button>
           <button role="tab" aria-selected="${tab==='privacy'}" class="tab-btn ${tab==='privacy'?'active':''}" data-tab="privacy">🔒 Privacy</button>
+          <button role="tab" aria-selected="${tab==='ai_predict'}" class="tab-btn ${tab==='ai_predict'?'active':''}" data-tab="ai_predict">🤖 AI Predict</button>
+          <button role="tab" aria-selected="${tab==='payments_v10'}" class="tab-btn ${tab==='payments_v10'?'active':''}" data-tab="payments_v10">💳 Payments</button>
+          <button role="tab" aria-selected="${tab==='growth'}" class="tab-btn ${tab==='growth'?'active':''}" data-tab="growth">🚀 Growth</button>
           <button role="tab" aria-selected="${tab==='analytics'}" class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📈 ${t('analytics')}</button>
           <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         `}
@@ -194,6 +197,9 @@ export function renderAquaOS(container) {
       case 'negotiate': return renderNegotiateTab();
       case 'insights': return renderInsightsTab();
       case 'privacy': return renderPrivacyTab();
+      case 'ai_predict': return renderAIPredictTab();
+      case 'payments_v10': return renderPaymentsV10Tab();
+      case 'growth': return renderGrowthTab();
       case 'settings': return renderSettings();
       default: return renderDashboard();
     }
@@ -780,6 +786,127 @@ export function renderAquaOS(container) {
         </div>
       `).join('')}
       <button class="btn-primary" style="width:100%;margin-top:14px;padding:10px;font-size:12px" onclick="showToast('Privacy settings saved')">💾 Save Privacy Settings</button>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // V10: AI PREDICT TAB — Disease, Yield, Feed predictions
+  // ════════════════════════════════════════════════════════════════
+  function renderAIPredictTab() {
+    const predictions = [
+      { type:'disease_prediction', model:'WSSV Risk Model', risk:'high', confidence:82, label:'High Risk', rec:'Reduce stocking density. Monitor for white spots. Prepare emergency harvest plan.', icon:'🦠' },
+      { type:'yield_prediction', model:'Yield Estimator v1', risk:'low', confidence:88, value:3150, rec:'Expected yield 3,150 kg. Harvest at DOC 110 for optimal size-price.', icon:'📊' },
+      { type:'feed_optimization', model:'Feed Optimizer v1', risk:'low', confidence:91, value:42.5, rec:'Recommend 42.5 kg/day. Reduce by 10% if poor weather. Switch to finisher feed at DOC 80.', icon:'🍽️' },
+      { type:'price_prediction', model:'Price Forecast v1', risk:'medium', confidence:78, value:395, rec:'Price expected to rise to ₹395/kg. Consider holding harvest 7 days for better price.', icon:'💰' },
+      { type:'mortality_risk', model:'Mortality Alert v1', risk:'medium', confidence:75, label:'Elevated', rec:'Oxygen levels critical. Activate aerators immediately. Reduce feeding by 30%.', icon:'⚠️' },
+    ];
+    const riskColors = { high:'#F44336', medium:'#FF9800', low:'#4CAF50' };
+    return `<div class="section" style="padding:12px">
+      <h3 style="margin:0 0 4px;font-size:15px;font-weight:700">🤖 AI Advisory Predictions</h3>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:12px">Machine learning models analyze your farm data to predict disease risk, yield, optimal feed, and market prices.</p>
+      <div class="card" style="padding:10px;margin-bottom:12px;background:#E8F5E9;border:1px solid #C8E6C9">
+        <div style="font-size:11px;color:#2E7D32"><b>Future AI Modules:</b> Disease Detection (Computer Vision) • Satellite Pond Monitoring • Automated Feeding Optimization</div>
+      </div>
+      ${predictions.map(p => `
+        <div class="card" style="padding:12px;margin-bottom:10px;border-left:4px solid ${riskColors[p.risk]}">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:13px;font-weight:600">${p.icon} ${p.type.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase())}</span>
+            <span style="font-size:10px;padding:2px 6px;border-radius:8px;background:${riskColors[p.risk]}22;color:${riskColors[p.risk]}">${p.risk.toUpperCase()} (${p.confidence}%)</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">Model: ${p.model}${p.value ? ` • Value: ${p.value}` : ''}</div>
+          <div style="font-size:11px;margin-top:6px;padding:6px 8px;background:#f5f5f5;border-radius:6px">💡 ${p.rec}</div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // V10: PAYMENTS TAB — Transaction history & subscriptions
+  // ════════════════════════════════════════════════════════════════
+  function renderPaymentsV10Tab() {
+    const plans = [
+      { name:'Farmer Basic', price:'FREE', features:['Full Farm OS','Advisory','Community','List harvest','Buy inputs','Chat'], role:'farmer' },
+      { name:'Buyer Pro', price:'₹4,999/mo', features:['Unlimited offers','Priority alerts','Advanced filters','Direct chat','Price forecasts'], role:'buyer' },
+      { name:'Supplier Premium', price:'₹2,999/mo', features:['Unlimited listings','Featured placement','Campaign tools','Sales leads','Analytics'], role:'supplier' },
+    ];
+    const transactions = [
+      { id:'txn1', type:'harvest_sale', amount:95000, status:'completed', desc:'Vannamei Shrimp 250kg to Coastal Exports', date:'2026-04-28', commission:'₹2,375' },
+      { id:'txn2', type:'input_purchase', amount:12500, status:'completed', desc:'CP Aqua Feed 500kg', date:'2026-04-25', commission:'₹375' },
+      { id:'txn3', type:'harvest_sale', amount:48000, status:'pending', desc:'Rohu 300kg to Fresh Mart', date:'2026-05-01', commission:'₹1,200' },
+    ];
+    return `<div class="section" style="padding:12px">
+      <h3 style="margin:0 0 4px;font-size:15px;font-weight:700">💳 Payments & Monetization</h3>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:12px">Secure payments via Razorpay. Farmers always FREE. Commission: 2.5% harvest, 3% inputs.</p>
+      <div style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">📋 Subscription Plans</div>
+        ${plans.map(p => `
+          <div class="card" style="padding:10px;margin-bottom:6px;${p.role==='farmer'?'border:2px solid var(--success)':''}">
+            <div style="display:flex;justify-content:space-between"><span style="font-weight:600;font-size:12px">${p.name}</span><span style="font-size:12px;color:var(--primary);font-weight:700">${p.price}</span></div>
+            <div style="font-size:10px;color:var(--text3);margin-top:3px">${p.features.join(' • ')}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px">📜 Recent Transactions</div>
+      ${transactions.map(t => `
+        <div class="card" style="padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:11px;font-weight:500">${t.desc}</div>
+            <div style="font-size:10px;color:var(--text3)">${t.date} • Commission: ${t.commission}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:12px;font-weight:700">₹${t.amount.toLocaleString()}</div>
+            <span style="font-size:9px;padding:1px 4px;border-radius:4px;background:${t.status==='completed'?'#E8F5E9':'#FFF3E0'};color:${t.status==='completed'?'#2E7D32':'#E65100'}">${t.status}</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // V10: GROWTH TAB — Launch strategy & metrics
+  // ════════════════════════════════════════════════════════════════
+  function renderGrowthTab() {
+    const districts = [
+      { name:'Nellore', farmers:15800, target:35000, pct:45.1 },
+      { name:'Krishna', farmers:12100, target:30000, pct:40.3 },
+      { name:'West Godavari', farmers:8500, target:25000, pct:34.0 },
+      { name:'East Godavari', farmers:6200, target:20000, pct:31.0 },
+    ];
+    const phases = [
+      { name:'Phase 1: Farm OS + Harvest Marketplace', status:'active', color:'#4CAF50' },
+      { name:'Phase 2: Input Marketplace', status:'upcoming', color:'#FF9800' },
+      { name:'Phase 3: Advisory Engine + AI', status:'planned', color:'#2196F3' },
+      { name:'Phase 4: Community + Full Ecosystem', status:'planned', color:'#9C27B0' },
+    ];
+    return `<div class="section" style="padding:12px">
+      <h3 style="margin:0 0 4px;font-size:15px;font-weight:700">🚀 Growth & Launch Strategy</h3>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:12px">Andhra Pradesh first. Target: 100K farmers, 10K buyers, 2K suppliers.</p>
+      <div style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">🎯 Launch Phases</div>
+        ${phases.map(p => `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5">
+            <span style="width:8px;height:8px;border-radius:50%;background:${p.color}"></span>
+            <span style="font-size:11px;flex:1">${p.name}</span>
+            <span style="font-size:10px;padding:1px 6px;border-radius:8px;background:${p.color}22;color:${p.color}">${p.status}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px">📍 District Progress</div>
+      ${districts.map(d => `
+        <div class="card" style="padding:8px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;font-size:11px"><span style="font-weight:500">${d.name}</span><span>${d.farmers.toLocaleString()} / ${d.target.toLocaleString()}</span></div>
+          <div style="height:6px;background:#e0e0e0;border-radius:3px;margin-top:4px;overflow:hidden">
+            <div style="height:100%;width:${d.pct}%;background:var(--primary);border-radius:3px"></div>
+          </div>
+          <div style="font-size:9px;color:var(--text3);text-align:right;margin-top:2px">${d.pct}%</div>
+        </div>
+      `).join('')}
+      <div class="card" style="padding:10px;margin-top:10px;background:#E3F2FD;border:1px solid #BBDEFB">
+        <div style="font-size:11px;color:#1565C0"><b>Key Metrics:</b> GMV ₹4.25 Cr • 890 completed deals • 3.2 avg days to sell • 42,600 registered farmers</div>
+      </div>
+      <div class="card" style="padding:10px;margin-top:8px;background:#F3E5F5;border:1px solid #CE93D8">
+        <div style="font-size:11px;color:#6A1B9A"><b>Market Opportunity:</b> India aquaculture growing 10%+ YoY. AP = 70% of India's shrimp production. Strong export demand to US, EU, Japan, Vietnam, Thailand.</div>
+      </div>
     </div>`;
   }
 
