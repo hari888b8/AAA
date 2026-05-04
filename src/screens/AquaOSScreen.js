@@ -130,6 +130,9 @@ export function renderAquaOS(container) {
           <button role="tab" aria-selected="${tab==='crop_post'}" class="tab-btn ${tab==='crop_post'?'active':''}" data-tab="crop_post">🌾 Crop Post</button>
           <button role="tab" aria-selected="${tab==='experts'}" class="tab-btn ${tab==='experts'?'active':''}" data-tab="experts">🧑‍🔬 Experts</button>
           <button role="tab" aria-selected="${tab==='workflow'}" class="tab-btn ${tab==='workflow'?'active':''}" data-tab="workflow">🔄 Workflow</button>
+          <button role="tab" aria-selected="${tab==='negotiate'}" class="tab-btn ${tab==='negotiate'?'active':''}" data-tab="negotiate">🤝 Negotiate</button>
+          <button role="tab" aria-selected="${tab==='insights'}" class="tab-btn ${tab==='insights'?'active':''}" data-tab="insights">🧠 Insights</button>
+          <button role="tab" aria-selected="${tab==='privacy'}" class="tab-btn ${tab==='privacy'?'active':''}" data-tab="privacy">🔒 Privacy</button>
           <button role="tab" aria-selected="${tab==='analytics'}" class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📈 ${t('analytics')}</button>
           <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         `}
@@ -188,6 +191,9 @@ export function renderAquaOS(container) {
       case 'crop_post': return renderCropPostTab();
       case 'experts': return renderExpertsTab();
       case 'workflow': return renderWorkflowTab();
+      case 'negotiate': return renderNegotiateTab();
+      case 'insights': return renderInsightsTab();
+      case 'privacy': return renderPrivacyTab();
       case 'settings': return renderSettings();
       default: return renderDashboard();
     }
@@ -647,6 +653,133 @@ export function renderAquaOS(container) {
         <div class="fw-600 text-sm">💡 How search alerts work</div>
         <div class="text-sm text-muted mt-sm">When a farmer lists a harvest matching your filters, you'll see it instantly here. Upgrade to Pro/Enterprise for push + email notifications.</div>
       </div>
+    </div>`;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // V9: NEGOTIATE TAB — Real-time negotiation rooms
+  // ══════════════════════════════════════════════════════════════
+  function renderNegotiateTab() {
+    const rooms = [
+      { id:'n1', buyer_name:'Coastal Exports Ltd', species:'Vannamei Shrimp', current_offer:395, counter_offer:410, quantity:'2,500 kg', status:'active', round:3, last_action:'buyer', updated:'2 hrs ago' },
+      { id:'n2', buyer_name:'SeaFresh Processors', species:'Vannamei Shrimp', current_offer:380, counter_offer:null, quantity:'1,800 kg', status:'active', round:1, last_action:'buyer', updated:'5 hrs ago' },
+      { id:'n3', buyer_name:'AP Marine Exports', species:'Rohu', current_offer:165, counter_offer:null, quantity:'3,000 kg', status:'agreed', agreed_price:162, updated:'1 day ago' },
+    ];
+    return `<div class="section" style="padding:12px">
+      <h3 style="margin:0 0 8px;font-size:15px;font-weight:700">🤝 Negotiation Rooms</h3>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:12px">Real-time price negotiation with buyers. Counter offers, accept or reject deals.</p>
+      ${rooms.map(r => `
+        <div class="card" style="padding:12px;margin-bottom:10px;border-left:4px solid ${r.status==='agreed'?'var(--success)':'var(--primary)'}">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <div style="font-weight:600;font-size:13px">${r.buyer_name}</div>
+              <div style="font-size:11px;color:var(--text3)">${r.species} · ${r.quantity} · Round ${r.round}</div>
+            </div>
+            <span style="font-size:10px;padding:2px 6px;border-radius:8px;background:${r.status==='agreed'?'#E8F5E9':'#E3F2FD'};color:${r.status==='agreed'?'#2E7D32':'#1565C0'}">${r.status}</span>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:8px;font-size:12px">
+            <span>Offer: <b>₹${r.current_offer}/kg</b></span>
+            ${r.counter_offer ? `<span>Your counter: <b>₹${r.counter_offer}/kg</b></span>` : ''}
+            ${r.agreed_price ? `<span style="color:var(--success)">✓ Agreed: <b>₹${r.agreed_price}/kg</b></span>` : ''}
+          </div>
+          ${r.status === 'active' ? `
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn-primary" style="flex:1;padding:6px;font-size:11px" onclick="showToast('Accepting offer...')">✓ Accept</button>
+            <button style="flex:1;padding:6px;font-size:11px;background:#FFF3E0;border:1px solid #FFB74D;border-radius:6px;cursor:pointer" onclick="showToast('Send counter-offer...')">↩ Counter</button>
+            <button style="flex:1;padding:6px;font-size:11px;background:#FFEBEE;border:1px solid #EF9A9A;border-radius:6px;cursor:pointer" onclick="showToast('Rejecting...')">✗ Reject</button>
+          </div>` : ''}
+          <div style="font-size:10px;color:var(--text3);margin-top:6px;text-align:right">Updated ${r.updated}</div>
+        </div>
+      `).join('')}
+      <div class="card" style="padding:12px;background:#F3E5F5;border:1px dashed #CE93D8">
+        <div style="font-size:12px;font-weight:600;color:#6A1B9A">💡 Platform Workflow</div>
+        <ol style="font-size:11px;color:#4A148C;margin:6px 0 0;padding-left:18px">
+          <li>Farmer posts crop → Buyers see listing</li>
+          <li>Buyer sends offer → Negotiation starts</li>
+          <li>Counter-offers exchanged in real-time</li>
+          <li>Deal agreed → Escrow payment</li>
+          <li>Platform collects 2% commission</li>
+        </ol>
+      </div>
+    </div>`;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // V9: INSIGHTS TAB — Production data (hidden asset)
+  // ══════════════════════════════════════════════════════════════
+  function renderInsightsTab() {
+    const insightsData = [
+      { type:'🎯 Survival Rate', items:[{d:'Nellore',v:'72.5%',s:245},{d:'West Godavari',v:'68.3%',s:180},{d:'East Godavari',v:'74.1%',s:156}] },
+      { type:'📈 Growth Rate', items:[{d:'Nellore',v:'0.28 g/day',s:245},{d:'West Godavari',v:'0.31 g/day',s:180}] },
+      { type:'🍽️ FCR', items:[{d:'Nellore',v:'1.42',s:200},{d:'West Godavari',v:'1.38',s:165}] },
+      { type:'🏭 Top Feed Performance', items:[{d:'CP Foods',v:'0.32 g/day',s:120},{d:'Avanti Feeds',v:'0.29 g/day',s:95}] },
+      { type:'📊 Yield/Acre', items:[{d:'Nellore',v:'4,200 kg/acre',s:245},{d:'West Godavari',v:'3,800 kg/acre',s:180}] },
+      { type:'🦠 Disease Hotspots', items:[{d:'Nellore (WSSV)',v:'12.5%',s:245},{d:'East Godavari (EHP)',v:'8.2%',s:156}] },
+    ];
+    return `<div class="section" style="padding:12px">
+      <h3 style="margin:0 0 4px;font-size:15px;font-weight:700">🧠 Production Insights</h3>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:4px">Aggregated data from 1,250+ farms across Andhra Pradesh. <b>Your biggest hidden asset.</b></p>
+      <div style="font-size:10px;color:#1565C0;margin-bottom:12px">Updated: April 2026 · Species: Vannamei Shrimp</div>
+      ${insightsData.map(cat => `
+        <div style="margin-bottom:12px">
+          <div style="font-weight:600;font-size:12px;margin-bottom:4px">${cat.type}</div>
+          ${cat.items.map(i => `
+            <div style="display:flex;justify-content:space-between;padding:4px 8px;background:#FAFAFA;border-radius:4px;margin-bottom:2px;font-size:11px">
+              <span>${i.d}</span>
+              <span style="font-weight:600">${i.v} <span style="color:var(--text3);font-weight:400">(n=${i.s})</span></span>
+            </div>
+          `).join('')}
+        </div>
+      `).join('')}
+      <div class="card" style="padding:10px;background:#E8F5E9;border:1px solid #A5D6A7">
+        <div style="font-size:11px;font-weight:600;color:#2E7D32">📊 Why this data matters:</div>
+        <ul style="font-size:10px;color:#1B5E20;margin:4px 0 0;padding-left:16px">
+          <li>Average shrimp survival: 72% (industry benchmark)</li>
+          <li>Best feed brand growth rate comparison</li>
+          <li>Optimal harvest period identification</li>
+          <li>Disease outbreak early warning by region</li>
+        </ul>
+      </div>
+    </div>`;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // V9: PRIVACY TAB — Farmer controls data visibility
+  // ══════════════════════════════════════════════════════════════
+  function renderPrivacyTab() {
+    const ps = privacySettings || {};
+    const toggles = [
+      { key:'show_farm_location', label:'Show farm location to buyers', val: ps.show_farm_location !== false },
+      { key:'show_production_volumes', label:'Show production volumes', val: ps.show_production_volumes !== false },
+      { key:'show_contact_phone', label:'Show phone number', val: ps.show_contact_phone === true },
+      { key:'show_contact_email', label:'Show email address', val: ps.show_contact_email !== false },
+      { key:'show_pond_details', label:'Show pond details', val: ps.show_pond_details !== false },
+      { key:'show_feed_brand', label:'Show feed brand used', val: ps.show_feed_brand === true },
+      { key:'show_survival_rate', label:'Show survival rate', val: ps.show_survival_rate === true },
+      { key:'allow_buyer_contact', label:'Allow buyers to contact me', val: ps.allow_buyer_contact !== false },
+      { key:'allow_supplier_contact', label:'Allow suppliers to contact me', val: ps.allow_supplier_contact !== false },
+      { key:'anonymous_community_posts', label:'Post anonymously in community', val: ps.anonymous_community_posts === true },
+      { key:'data_sharing_consent', label:'Share anonymized data for insights', val: ps.data_sharing_consent !== false },
+      { key:'analytics_opt_in', label:'Help improve platform with usage data', val: ps.analytics_opt_in !== false },
+    ];
+    return `<div class="section" style="padding:12px">
+      <h3 style="margin:0 0 4px;font-size:15px;font-weight:700">🔒 Privacy Controls</h3>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:12px">Control what data is visible to buyers, suppliers, and the platform.</p>
+      <div class="card" style="padding:10px;margin-bottom:12px;background:#FFF3E0;border:1px solid #FFE0B2">
+        <div style="font-size:11px;color:#E65100">
+          <b>Data Visibility Rules:</b> Buyers can see your crop posts. Suppliers CANNOT see your farm data. Other farmers CANNOT see your details.
+        </div>
+      </div>
+      ${toggles.map(t => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f5f5f5">
+          <span style="font-size:12px">${t.label}</span>
+          <label style="position:relative;width:36px;height:20px;display:inline-block">
+            <input type="checkbox" ${t.val?'checked':''} style="opacity:0;width:0;height:0" data-privacy="${t.key}">
+            <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:${t.val?'var(--primary)':'#ccc'};border-radius:20px;transition:0.3s"></span>
+          </label>
+        </div>
+      `).join('')}
+      <button class="btn-primary" style="width:100%;margin-top:14px;padding:10px;font-size:12px" onclick="showToast('Privacy settings saved')">💾 Save Privacy Settings</button>
     </div>`;
   }
 
