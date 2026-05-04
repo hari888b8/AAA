@@ -127,6 +127,9 @@ export function renderAquaOS(container) {
           <button role="tab" aria-selected="${tab==='training_hub'}" class="tab-btn ${tab==='training_hub'?'active':''}" data-tab="training_hub">📚 Training</button>
           <button role="tab" aria-selected="${tab==='disputes'}" class="tab-btn ${tab==='disputes'?'active':''}" data-tab="disputes">⚖️ Disputes</button>
           <button role="tab" aria-selected="${tab==='trade_credit'}" class="tab-btn ${tab==='trade_credit'?'active':''}" data-tab="trade_credit">💳 Credit</button>
+          <button role="tab" aria-selected="${tab==='crop_post'}" class="tab-btn ${tab==='crop_post'?'active':''}" data-tab="crop_post">🌾 Crop Post</button>
+          <button role="tab" aria-selected="${tab==='experts'}" class="tab-btn ${tab==='experts'?'active':''}" data-tab="experts">🧑‍🔬 Experts</button>
+          <button role="tab" aria-selected="${tab==='workflow'}" class="tab-btn ${tab==='workflow'?'active':''}" data-tab="workflow">🔄 Workflow</button>
           <button role="tab" aria-selected="${tab==='analytics'}" class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📈 ${t('analytics')}</button>
           <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         `}
@@ -182,6 +185,9 @@ export function renderAquaOS(container) {
       case 'training_hub': return renderTrainingHubTab();
       case 'disputes': return renderDisputesTab();
       case 'trade_credit': return renderTradeCreditTab();
+      case 'crop_post': return renderCropPostTab();
+      case 'experts': return renderExpertsTab();
+      case 'workflow': return renderWorkflowTab();
       case 'settings': return renderSettings();
       default: return renderDashboard();
     }
@@ -3159,6 +3165,130 @@ export function renderAquaOS(container) {
 
       <div style="background:#e8eaf6;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
         <strong>💳 How it works:</strong> Apply once → Auto credit check → Get approved limit → Buy on Net 30/60/90 terms → Pay by due date → Credit score improves → Higher limits unlocked
+      </div>
+    </div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // V8: CROP POST TAB (Farmer posts harvest, buyers see)
+  // ═══════════════════════════════════════════════════════════════
+  function renderCropPostTab() {
+    const myCrops = [
+      { id:'cp1', species:'Vannamei Shrimp', size_grade:'30 count', expected_quantity_kg:2500, harvest_date:'2026-05-15', location_district:'West Godavari', asking_price_per_kg:420, culture_days:95, survival_rate:82, status:'available', offers_count:3, views_count:28 },
+      { id:'cp2', species:'Rohu', size_grade:'800g-1kg', expected_quantity_kg:3200, harvest_date:'2026-05-22', location_district:'Krishna', asking_price_per_kg:165, culture_days:180, survival_rate:75, status:'available', offers_count:1, views_count:12 },
+    ];
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🌾 Crop Post — Post Your Harvest</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Post when crop is ready · Only verified buyers can see · Get competitive offers</p>
+
+      <button class="btn-primary" style="width:100%;padding:12px;font-size:13px;margin-bottom:14px" onclick="showToast('Opening crop post form...')">+ Post New Crop for Sale</button>
+
+      <div style="font-weight:700;font-size:12px;margin-bottom:8px">📋 My Active Crop Posts</div>
+      ${myCrops.map(c => `
+        <div class="card" style="padding:12px;margin-bottom:8px;border-left:4px solid ${c.status==='available'?'#4caf50':'#ff9800'}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700">🐟 ${c.species} · ${c.size_grade}</div>
+              <div style="font-size:11px;color:#555;margin-top:2px">📍 ${c.location_district} · Harvest: ${c.harvest_date}</div>
+              <div style="font-size:10px;color:#777;margin-top:2px">Culture: ${c.culture_days} days · Survival: ${c.survival_rate}%</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:14px;font-weight:800;color:#2f80ed">₹${c.asking_price_per_kg}/kg</div>
+              <div style="font-size:11px;color:#555">${(c.expected_quantity_kg/1000).toFixed(1)} tons</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:#333">
+            <span>👁️ ${c.views_count} views</span>
+            <span>💬 ${c.offers_count} offers</span>
+            <span style="color:${c.status==='available'?'#4caf50':'#ff9800'}">● ${c.status}</span>
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="background:#e8f5e9;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>🔒 Privacy:</strong> Your crop posts are visible only to verified buyers. Other farmers cannot see your listings. Personal details shared only after you accept an offer.
+      </div>
+
+      <div style="background:#fff3e0;padding:10px;border-radius:8px;margin-top:8px;font-size:11px">
+        <strong>💡 Tip:</strong> Post 15-20 days before harvest for best offers. Include size grade and survival rate for premium prices. Buyers in Japan/US pay ₹80-120/kg more for export-grade 30ct.
+      </div>
+    </div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // V8: EXPERTS TAB
+  // ═══════════════════════════════════════════════════════════════
+  function renderExpertsTab() {
+    const experts = [
+      { name:'Dr. Ramesh Kumar', specialization:'Shrimp Disease Management', rating:4.8, experience_years:15, hourly_rate_inr:1500, languages:['EN','TE'], availability:'available' },
+      { name:'Dr. Lakshmi Narayana', specialization:'Feed Optimization & Nutrition', rating:4.6, experience_years:12, hourly_rate_inr:1200, languages:['EN','TE','HI'], availability:'available' },
+      { name:'Prof. Suresh Babu', specialization:'Biofloc & RAS Technology', rating:4.9, experience_years:20, hourly_rate_inr:2000, languages:['EN','TE'], availability:'busy' },
+      { name:'Dr. Anitha Devi', specialization:'Water Quality Management', rating:4.5, experience_years:8, hourly_rate_inr:1000, languages:['EN','TE','TA'], availability:'available' },
+      { name:'Venkat Rao', specialization:'Farm Economics & Marketing', rating:4.3, experience_years:10, hourly_rate_inr:800, languages:['EN','TE','HI'], availability:'available' },
+    ];
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🧑‍🔬 Expert Advisory Directory</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Aquaculture consultants · Veterinarians · Farm technicians · Get expert advice</p>
+
+      ${experts.map(e => `
+        <div class="card" style="padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700">${e.name}</div>
+              <div style="font-size:11px;color:#555">${e.specialization}</div>
+              <div style="font-size:10px;color:#777;margin-top:2px">${e.experience_years} yrs exp · ${e.languages.join(', ')}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:12px;font-weight:700">⭐ ${e.rating}</div>
+              <div style="font-size:11px;color:#2f80ed;font-weight:600">₹${e.hourly_rate_inr}/hr</div>
+              <span style="font-size:9px;color:${e.availability==='available'?'#4caf50':'#ff9800'}">● ${e.availability}</span>
+            </div>
+          </div>
+          <button class="btn-primary" style="width:100%;margin-top:8px;padding:8px;font-size:11px" onclick="showToast('Booking consultation with ${e.name}...')" ${e.availability!=='available'?'disabled':''}>
+            ${e.availability==='available'?'📞 Book Consultation':'⏳ Currently Busy'}
+          </button>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // V8: WORKFLOW TAB (7-step platform lifecycle)
+  // ═══════════════════════════════════════════════════════════════
+  function renderWorkflowTab() {
+    const steps = [
+      { step:1, name:'Create farm profile', icon:'🏡', done:true },
+      { step:2, name:'Log stocking', icon:'🐟', done:true },
+      { step:3, name:'Track crop age', icon:'📅', done:true },
+      { step:4, name:'Post crop (near harvest)', icon:'🌾', done:false },
+      { step:5, name:'Receive buyer offers', icon:'💬', done:false },
+      { step:6, name:'Complete deal', icon:'🤝', done:false },
+      { step:7, name:'Earn & grow', icon:'💰', done:false },
+    ];
+    const completedCount = steps.filter(s => s.done).length;
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🔄 Platform Workflow</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Your journey from pond to profit · ${completedCount}/7 steps completed</p>
+
+      <div style="height:8px;background:#e0e0e0;border-radius:4px;margin-bottom:14px;overflow:hidden">
+        <div style="height:100%;width:${(completedCount/7*100).toFixed(0)}%;background:linear-gradient(90deg,#4caf50,#2f80ed);border-radius:4px;transition:width 0.3s"></div>
+      </div>
+
+      ${steps.map(s => `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0">
+          <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;background:${s.done?'#e8f5e9':'#f5f5f5'}">${s.icon}</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:${s.done?'700':'400'};color:${s.done?'#333':'#999'}">Step ${s.step}: ${s.name}</div>
+          </div>
+          <div style="font-size:16px">${s.done?'✅':'⬜'}</div>
+        </div>
+      `).join('')}
+
+      <div style="background:#e3f2fd;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>📊 Your biggest asset</strong> is not the app — it is your farmer data + crop data + market data. Complete all steps to unlock premium analytics & better buyer connections.
       </div>
     </div>`;
   }
