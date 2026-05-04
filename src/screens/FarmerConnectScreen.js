@@ -393,7 +393,6 @@ export function renderFarmerConnect(container) {
       try {
         const res = await api.get(`/farmerconnect/properties/${p.id}/contact`);
         if (res.phone) {
-          showToast(`Owner: ${res.phone}`, 'success');
           document.querySelector('#contactOwnerBtn').textContent = `📞 ${res.phone}`;
         } else {
           showToast(res.error || 'Contact limit reached. Upgrade to view.', 'info');

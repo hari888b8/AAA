@@ -593,8 +593,9 @@ router.get('/demand-signals', async (req, res) => {
     const signals = result.rows.map(r => {
       const inquiries7d = parseInt(r.inquiries_7d) || 0;
       const watchlistCount = parseInt(r.watchlist_count) || 0;
-      const activeListings = parseInt(r.active_listings) || 1;
-      const score = inquiries7d * 3 + watchlistCount * 2 + Math.min(10, Math.round(10 / activeListings));
+      const activeListings = parseInt(r.active_listings) || 0;
+      const supplyScore = activeListings > 0 ? Math.min(10, Math.round(10 / activeListings)) : 10;
+      const score = inquiries7d * 3 + watchlistCount * 2 + supplyScore;
       return {
         ...r,
         demand_score: score,
