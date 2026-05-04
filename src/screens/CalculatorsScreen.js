@@ -315,6 +315,10 @@ export function renderCalculators(container) {
 
       try {
         const res = await api(form.endpoint, { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({ error: 'Calculation failed' }));
+          throw new Error(errData.error || `Server error ${res.status}`);
+        }
         const data = await res.json();
         container.querySelector('#calcResult').innerHTML = form.renderResult(data);
       } catch (err) {

@@ -300,7 +300,7 @@ router.post('/aqua/stocking', (req, res) => {
     const budget_feasible = available_budget >= total_estimated_cost;
 
     // If budget constrains, suggest lower density
-    const budget_adjusted_stock = budget_feasible ? total_stock : Math.round((available_budget / total_estimated_cost) * total_stock);
+    const budget_adjusted_stock = budget_feasible || total_estimated_cost === 0 ? total_stock : Math.round((available_budget / total_estimated_cost) * total_stock);
 
     res.json({
       recommendation: {
@@ -912,7 +912,8 @@ router.post('/crop/spray-schedule', (req, res) => {
 
     if (pest_observed !== 'none' || disease_observed !== 'none') {
       const issue = pest_observed !== 'none' ? pest_observed : disease_observed;
-      recommendation = cropProtocol.curative[issue] || { spray: 'Consult local agriculture officer', dose_per_acre: 'As directed', repeat: 'Based on severity' };
+      const curativeData = Object.hasOwn(cropProtocol.curative, issue) ? cropProtocol.curative[issue] : null;
+      recommendation = { ...(curativeData || { spray: 'Consult local agriculture officer', dose_per_acre: 'As directed', repeat: 'Based on severity' }) };
       recommendation.type = 'CURATIVE';
       recommendation.urgency = 'Spray within 24-48 hours';
     } else {
