@@ -60,6 +60,7 @@ import { renderTradeOrders } from './screens/TradeOrdersScreen.js';
 import { renderVehicles } from './screens/VehiclesScreen.js';
 import { renderDelivery } from './screens/DeliveryScreen.js';
 import { renderGigWorkers } from './screens/GigWorkersScreen.js';
+import { renderCalculators } from './screens/CalculatorsScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -128,6 +129,7 @@ const ROUTES = {
   vehicles:      { title: 'Vehicles',     icon: '🚗', render: renderVehicles,    back: 'kisan'    },
   delivery:      { title: 'Delivery',     icon: '📦', render: renderDelivery,    back: 'kisan'    },
   gigworkers:    { title: 'Gig Workers',  icon: '👨‍🔧', render: renderGigWorkers,  back: 'kisan'    },
+  calculators:   { title: 'Calculators', icon: '🧮', render: renderCalculators, back: 'home'     },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────

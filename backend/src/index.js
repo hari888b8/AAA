@@ -106,6 +106,8 @@ const aquaosV8Router = require('./routes/aquaos-v8');
 const aquaosV9Router = require('./routes/aquaos-v9');
 // Phase 14 — AquaOS V10 Analytics + Search + Payments + Pricing + Chat + AI + Growth + IoT
 const aquaosV10Router = require('./routes/aquaos-v10');
+// Calculators — Aqua Calculator + Crop Calculator (real-time problem solvers)
+const calculatorsRouter = require('./routes/calculators');
 
 const app = express();
 const server = http.createServer(app);
@@ -279,6 +281,8 @@ app.use('/api/vehicles', vehiclesRouter);
 app.use('/api/delivery', deliveryRouter);
 app.use('/api/gigworkers', gigworkersRouter);
 app.use('/api/transport', transportRouter);
+// Calculators — Aqua + Crop
+app.use('/api/calculators', calculatorsRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
