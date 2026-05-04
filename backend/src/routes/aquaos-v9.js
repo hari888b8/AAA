@@ -126,11 +126,22 @@ router.post('/negotiations/:id/messages', authMiddleware, async (req, res) => {
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *
     `, [uuidv4(), req.params.id, req.user.id, role, message_type || 'text', content, price_offered, quantity_kg]);
 
-    // Update room
-    const updates = ['updated_at = NOW()', `last_action_by = '${role}'`, `negotiation_round = negotiation_round + 1`];
-    if (price_offered && role === 'buyer') updates.push(`current_offer = ${price_offered}`);
-    if (price_offered && role === 'farmer') updates.push(`counter_offer = ${price_offered}`);
-    await query(`UPDATE aqua_negotiation_rooms SET ${updates.join(', ')} WHERE id = $1`, [req.params.id]);
+    // Update room with parameterized queries
+    const roomParams = [req.params.id, role];
+    let roomSql = 'UPDATE aqua_negotiation_rooms SET updated_at = NOW(), last_action_by = $2, negotiation_round = negotiation_round + 1';
+    let paramIdx = 3;
+    if (price_offered && role === 'buyer') {
+      roomSql += `, current_offer = $${paramIdx}`;
+      roomParams.push(price_offered);
+      paramIdx++;
+    }
+    if (price_offered && role === 'farmer') {
+      roomSql += `, counter_offer = $${paramIdx}`;
+      roomParams.push(price_offered);
+      paramIdx++;
+    }
+    roomSql += ' WHERE id = $1';
+    await query(roomSql, roomParams);
 
     res.status(201).json({ message: msg.rows[0] });
   } catch (err) { res.status(500).json({ error: err.message }); }
