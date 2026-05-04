@@ -93,6 +93,8 @@ const aquaosV2Router = require('./routes/aquaos-v2');
 const aquaosV3Router = require('./routes/aquaos-v3');
 // Phase 8 — AquaOS V4 Culture Units + Harvest Optimizer + IoT + Trust
 const aquaosV4Router = require('./routes/aquaos-v4');
+// Phase 9 — AquaOS V5 Advanced KPI Engine + Predictive Models + Supply Marketplace
+const aquaosV5Router = require('./routes/aquaos-v5');
 
 const app = express();
 const server = http.createServer(app);
@@ -193,6 +195,7 @@ app.use('/api/aquaos', aquaosRouter);
 app.use('/api/aquaos-v2', aquaosV2Router);
 app.use('/api/aquaos-v3', aquaosV3Router);
 app.use('/api/aquaos-v4', aquaosV4Router);
+app.use('/api/aquaos-v5', aquaosV5Router);
 app.use('/api/farmerconnect', farmerconnectRouter);
 app.use('/api/kisanconnect', kisanconnectRouter);
 app.use('/api/intelligence', intelligenceRouter);

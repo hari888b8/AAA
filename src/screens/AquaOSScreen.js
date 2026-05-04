@@ -113,6 +113,10 @@ export function renderAquaOS(container) {
           <button role="tab" aria-selected="${tab==='escrow'}" class="tab-btn ${tab==='escrow'?'active':''}" data-tab="escrow">🔒 Payments</button>
           <button role="tab" aria-selected="${tab==='community'}" class="tab-btn ${tab==='community'?'active':''}" data-tab="community">🌐 ${t('community')}</button>
           <button role="tab" aria-selected="${tab==='peracre'}" class="tab-btn ${tab==='peracre'?'active':''}" data-tab="peracre">📐 Per Acre</button>
+          <button role="tab" aria-selected="${tab==='kpi_engine'}" class="tab-btn ${tab==='kpi_engine'?'active':''}" data-tab="kpi_engine">📊 KPIs</button>
+          <button role="tab" aria-selected="${tab==='predictions'}" class="tab-btn ${tab==='predictions'?'active':''}" data-tab="predictions">🔮 Predict</button>
+          <button role="tab" aria-selected="${tab==='supply_market'}" class="tab-btn ${tab==='supply_market'?'active':''}" data-tab="supply_market">🏪 Supply Mkt</button>
+          <button role="tab" aria-selected="${tab==='alert_engine'}" class="tab-btn ${tab==='alert_engine'?'active':''}" data-tab="alert_engine">🔔 Alerts</button>
           <button role="tab" aria-selected="${tab==='analytics'}" class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📈 ${t('analytics')}</button>
           <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         `}
@@ -154,6 +158,10 @@ export function renderAquaOS(container) {
       case 'units': return renderCultureUnitsTab();
       case 'harvest_opt': return renderHarvestOptimizerTab();
       case 'peracre': return renderPerAcreTab();
+      case 'kpi_engine': return renderKPIEngineTab();
+      case 'predictions': return renderPredictionsTab();
+      case 'supply_market': return renderSupplyMarketTab();
+      case 'alert_engine': return renderAlertEngineTab();
       case 'settings': return renderSettings();
       default: return renderDashboard();
     }
@@ -2221,6 +2229,286 @@ export function renderAquaOS(container) {
       <div style="background:#eaf2f8;padding:12px;border-radius:8px;margin-top:14px;font-size:11px">
         <strong>📊 Farm Size = ${farmData.total_area_acres} acres</strong><br>
         Output: Shrimp ${(Number(m.production_per_acre_kg)*farmData.total_area_acres/1000).toFixed(0)} tons · Feed ${(Number(m.feed_per_acre_kg)*farmData.total_area_acres/1000).toFixed(0)} tons · Revenue ₹${(Number(m.revenue_per_acre)*farmData.total_area_acres/100000).toFixed(0)} lakh
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // V5: KPI ENGINE TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderKPIEngineTab() {
+    const sampleKPIs = {
+      cycle_info: { species: 'Vannamei Shrimp', unit_code: 'Pond-1', days_of_culture: 78, seed_count: 200000, current_count: 168000 },
+      kpis: { fcr: 1.42, sgr_pct_per_day: 3.21, adg_g_per_day: 0.28, survival_rate_pct: 84.0, current_biomass_kg: 4200, total_feed_kg: 3150, feed_cost_per_kg_production: 62 },
+      growth_trend: [
+        { sample_date: '2026-03-15', avg_weight_g: 2.5, sgr_interval: 8.2, adg_g_per_day: 0.18 },
+        { sample_date: '2026-03-30', avg_weight_g: 6.8, sgr_interval: 6.5, adg_g_per_day: 0.29 },
+        { sample_date: '2026-04-14', avg_weight_g: 12.4, sgr_interval: 4.1, adg_g_per_day: 0.37 },
+        { sample_date: '2026-04-29', avg_weight_g: 19.2, sgr_interval: 2.9, adg_g_per_day: 0.45 },
+        { sample_date: '2026-05-04', avg_weight_g: 25.0, sgr_interval: 2.5, adg_g_per_day: 0.42 },
+      ],
+      benchmark: { target_fcr: 1.5, expected_growth_g_per_day: 0.25, typical_culture_days: 120, harvest_size_range: '20-40g' },
+      performance_vs_benchmark: { fcr_vs_target: '95%', growth_vs_expected: '112%', days_remaining: 42 }
+    };
+    const k = sampleKPIs.kpis;
+    const p = sampleKPIs.performance_vs_benchmark;
+    const b = sampleKPIs.benchmark;
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">📊 Advanced KPI Engine</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">${sampleKPIs.cycle_info.species} · ${sampleKPIs.cycle_info.unit_code} · Day ${sampleKPIs.cycle_info.days_of_culture}</p>
+
+      <div class="stats-grid" style="margin-bottom:12px">
+        <div class="stat-card" style="background:${k.fcr<=1.5?'linear-gradient(135deg,#e8f8f5,#d1f2eb)':'linear-gradient(135deg,#fef9e7,#fdebd0)'}">
+          <div class="stat-value" style="font-size:18px">${k.fcr}</div><div class="stat-label">FCR</div>
+          <div style="font-size:9px;color:${k.fcr<=b.target_fcr?'#27ae60':'#e67e22'}">Target: ${b.target_fcr}</div>
+        </div>
+        <div class="stat-card"><div class="stat-value" style="font-size:18px">${k.sgr_pct_per_day}%</div><div class="stat-label">SGR/day</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:18px">${k.adg_g_per_day}g</div><div class="stat-label">ADG</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:18px">${k.survival_rate_pct}%</div><div class="stat-label">Survival</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <div class="card" style="padding:10px;text-align:center"><div style="font-size:18px;font-weight:800;color:var(--primary)">${k.current_biomass_kg.toLocaleString()} kg</div><div class="text-sm text-muted">Current Biomass</div></div>
+        <div class="card" style="padding:10px;text-align:center"><div style="font-size:18px;font-weight:800">₹${k.feed_cost_per_kg_production}</div><div class="text-sm text-muted">Feed ₹/kg Fish</div></div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">📈 Growth Trend (SGR at intervals)</div>
+      <div style="overflow-x:auto;margin-bottom:14px">
+        <table style="width:100%;font-size:11px;border-collapse:collapse">
+          <tr style="background:#f8f9fa"><th style="padding:6px;text-align:left">Date</th><th>Weight</th><th>SGR%</th><th>ADG g/d</th></tr>
+          ${sampleKPIs.growth_trend.map(g => `
+            <tr style="border-bottom:1px solid #eee">
+              <td style="padding:5px">${g.sample_date.slice(5)}</td>
+              <td style="text-align:center;font-weight:600">${g.avg_weight_g}g</td>
+              <td style="text-align:center;color:${g.sgr_interval>3?'#27ae60':'#e67e22'}">${g.sgr_interval}%</td>
+              <td style="text-align:center">${g.adg_g_per_day}</td>
+            </tr>
+          `).join('')}
+        </table>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">🎯 Performance vs Benchmark</div>
+      <div style="background:#f0f8ff;padding:10px;border-radius:8px;font-size:12px;margin-bottom:12px">
+        <div style="margin-bottom:4px"><strong>FCR Efficiency:</strong> ${p.fcr_vs_target} of target (${k.fcr <= b.target_fcr ? '✅ Better' : '⚠️ Above target'})</div>
+        <div style="margin-bottom:4px"><strong>Growth vs Expected:</strong> ${p.growth_vs_expected} ${parseInt(p.growth_vs_expected)>100?'✅ Faster':'⚠️ Slower'}</div>
+        <div><strong>Days Remaining:</strong> ${p.days_remaining} days · Harvest size: ${b.harvest_size_range}</div>
+      </div>
+
+      <div style="background:#eaf2f8;padding:10px;border-radius:8px;font-size:11px">
+        <strong>ℹ️ Formulas Used:</strong><br>
+        • FCR = Total Feed (kg) ÷ Total Weight Gain (kg)<br>
+        • SGR (%/day) = [ln(Wf) - ln(Wi)] ÷ Days × 100<br>
+        • ADG (g/day) = (Final Wt - Initial Wt) ÷ Days<br>
+        • Survival Rate = (Final Count ÷ Initial Count) × 100
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // V5: PREDICTIONS TAB (Von Bertalanffy + Bio-Economic)
+  // ════════════════════════════════════════════════════════════════
+  function renderPredictionsTab() {
+    const prediction = {
+      model: 'von_bertalanffy_bio_economic',
+      current_state: { day: 78, weight_g: 25, count: 168000, biomass_kg: 4200 },
+      growth_predictions: [
+        { day: 78, date: '2026-05-04', predicted_weight_g: 25.0, predicted_biomass_kg: 4200, confidence_low_kg: 3570, confidence_high_kg: 4830 },
+        { day: 85, date: '2026-05-11', predicted_weight_g: 27.2, predicted_biomass_kg: 4526, confidence_low_kg: 3805, confidence_high_kg: 5247 },
+        { day: 92, date: '2026-05-18', predicted_weight_g: 29.1, predicted_biomass_kg: 4818, confidence_low_kg: 4000, confidence_high_kg: 5636 },
+        { day: 99, date: '2026-05-25', predicted_weight_g: 30.8, predicted_biomass_kg: 5078, confidence_low_kg: 4163, confidence_high_kg: 5993 },
+        { day: 106, date: '2026-06-01', predicted_weight_g: 32.3, predicted_biomass_kg: 5310, confidence_low_kg: 4301, confidence_high_kg: 6319 },
+        { day: 113, date: '2026-06-08', predicted_weight_g: 33.6, predicted_biomass_kg: 5515, confidence_low_kg: 4413, confidence_high_kg: 6617 },
+        { day: 120, date: '2026-06-15', predicted_weight_g: 34.8, predicted_biomass_kg: 5696, confidence_low_kg: 4503, confidence_high_kg: 6889 },
+      ],
+      profit_optimization: {
+        optimal_harvest_day: 106, optimal_harvest_date: '2026-06-01',
+        optimal_weight_g: 32.3, max_profit: 1245000,
+        profit_curve: [
+          { day: 85, weight_g: 27.2, revenue: 1267000, total_cost: 540000, profit: 727000 },
+          { day: 92, weight_g: 29.1, revenue: 1540000, total_cost: 620000, profit: 920000 },
+          { day: 99, weight_g: 30.8, revenue: 1726000, total_cost: 710000, profit: 1016000 },
+          { day: 106, weight_g: 32.3, revenue: 2065000, total_cost: 820000, profit: 1245000 },
+          { day: 113, weight_g: 33.6, revenue: 2152000, total_cost: 940000, profit: 1212000 },
+          { day: 120, weight_g: 34.8, revenue: 2222000, total_cost: 1070000, profit: 1152000 },
+        ]
+      },
+      production_range: { low_estimate_kg: 4503, expected_kg: 5696, high_estimate_kg: 6889 }
+    };
+    const opt = prediction.profit_optimization;
+    const rng = prediction.production_range;
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🔮 Growth Prediction & Harvest Optimizer</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Von Bertalanffy Bio-Economic Model</p>
+
+      <div class="card" style="padding:12px;margin-bottom:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:white">
+        <div style="font-size:12px;opacity:0.9">🎯 Optimal Harvest Recommendation</div>
+        <div style="font-size:22px;font-weight:800;margin:4px 0">Day ${opt.optimal_harvest_day} · ${opt.optimal_harvest_date}</div>
+        <div style="display:flex;gap:16px;font-size:12px;margin-top:6px">
+          <div>Target: <strong>${opt.optimal_weight_g}g</strong></div>
+          <div>Max Profit: <strong>₹${(opt.max_profit/100000).toFixed(1)} lakh</strong></div>
+        </div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">📈 Production Forecast (Probabilistic)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px;text-align:center">
+        <div class="card" style="padding:8px"><div style="font-size:10px;color:#e74c3c">Low</div><div style="font-weight:700">${(rng.low_estimate_kg/1000).toFixed(1)} tons</div></div>
+        <div class="card" style="padding:8px;border:2px solid var(--primary)"><div style="font-size:10px;color:var(--primary)">Expected</div><div style="font-weight:800;font-size:16px">${(rng.expected_kg/1000).toFixed(1)} tons</div></div>
+        <div class="card" style="padding:8px"><div style="font-size:10px;color:#27ae60">High</div><div style="font-weight:700">${(rng.high_estimate_kg/1000).toFixed(1)} tons</div></div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">💰 Profit Curve (Revenue vs Cost)</div>
+      <div style="overflow-x:auto;margin-bottom:14px">
+        <table style="width:100%;font-size:11px;border-collapse:collapse">
+          <tr style="background:#f8f9fa"><th style="padding:5px">Day</th><th>Weight</th><th>Revenue</th><th>Cost</th><th>Profit</th></tr>
+          ${opt.profit_curve.map(p => `
+            <tr style="border-bottom:1px solid #eee;${p.day===opt.optimal_harvest_day?'background:#e8f8f5;font-weight:700':''}">
+              <td style="padding:5px;text-align:center">${p.day}${p.day===opt.optimal_harvest_day?' ⭐':''}</td>
+              <td style="text-align:center">${p.weight_g}g</td>
+              <td style="text-align:center;color:#27ae60">₹${(p.revenue/100000).toFixed(1)}L</td>
+              <td style="text-align:center;color:#e74c3c">₹${(p.total_cost/100000).toFixed(1)}L</td>
+              <td style="text-align:center;font-weight:700">₹${(p.profit/100000).toFixed(1)}L</td>
+            </tr>
+          `).join('')}
+        </table>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">📉 Weight Projection with Confidence Bands</div>
+      <div style="overflow-x:auto;margin-bottom:12px">
+        <table style="width:100%;font-size:11px;border-collapse:collapse">
+          <tr style="background:#f8f9fa"><th style="padding:5px">Date</th><th>Day</th><th>Weight</th><th>Biomass</th><th>Range</th></tr>
+          ${prediction.growth_predictions.map(g => `
+            <tr style="border-bottom:1px solid #eee"><td style="padding:5px">${g.date.slice(5)}</td><td style="text-align:center">${g.day}</td><td style="text-align:center;font-weight:600">${g.predicted_weight_g}g</td><td style="text-align:center">${(g.predicted_biomass_kg/1000).toFixed(1)}t</td><td style="text-align:center;font-size:10px;color:#666">${(g.confidence_low_kg/1000).toFixed(1)}-${(g.confidence_high_kg/1000).toFixed(1)}t</td></tr>
+          `).join('')}
+        </table>
+      </div>
+
+      <div style="background:#fef9e7;padding:10px;border-radius:8px;font-size:11px">
+        <strong>⚠️ Important:</strong> Predictions are probabilistic estimates based on current growth data. Actual results may vary due to disease, weather, or management changes. The model uses:<br>
+        • Von Bertalanffy growth function: W(t) = W∞ × (1 - e^(-K×(t-t₀)))³<br>
+        • Bio-economic optimization: Max(Revenue - Cost) over harvest timeline
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // V5: SUPPLY MARKETPLACE TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderSupplyMarketTab() {
+    const products = [
+      { id: 1, product_name: 'Avanti Supreme Shrimp Feed 35P', brand: 'Avanti Feeds', category: 'feed', price_per_unit: 85, unit: 'kg', bulk_price: 78, bulk_min_qty: 500, supplier_name: 'Avanti Feeds Ltd', supplier_verified: true, rating: 4.5, stock_available: 50000 },
+      { id: 2, product_name: 'SPF Vannamei PL-10 Seeds', brand: 'BMR Aqua', category: 'seed', price_per_unit: 350, unit: 'thousand', supplier_name: 'BMR Aqua Seeds', supplier_verified: true, rating: 4.3, stock_available: 5000 },
+      { id: 3, product_name: '2HP Paddle Wheel Aerator', brand: 'AquaTech', category: 'aerator', price_per_unit: 28000, unit: 'piece', bulk_price: 25000, bulk_min_qty: 5, supplier_name: 'AquaTech Equipment', supplier_verified: true, rating: 4.6, stock_available: 200 },
+      { id: 4, product_name: 'HDPE Pond Liner 500 micron', brand: 'AquaTech', category: 'pond_liner', price_per_unit: 65, unit: 'sqm', bulk_price: 55, bulk_min_qty: 5000, supplier_name: 'AquaTech Equipment', supplier_verified: true, rating: 4.4, stock_available: 100000 },
+      { id: 5, product_name: 'ProBio Aqua Probiotic', brand: 'Avanti Feeds', category: 'probiotic', price_per_unit: 650, unit: 'kg', supplier_name: 'Avanti Feeds Ltd', supplier_verified: true, rating: 4.2, stock_available: 5000 },
+      { id: 6, product_name: 'OxyTab DO Booster', brand: 'CP Aquaculture', category: 'water_treatment', price_per_unit: 380, unit: 'kg', supplier_name: 'CP Aquaculture India', supplier_verified: true, rating: 4.1, stock_available: 10000 },
+    ];
+    const categories = ['all', 'feed', 'seed', 'medicine', 'probiotic', 'equipment', 'aerator', 'pond_liner', 'water_treatment'];
+    const catIcons = { feed: '🍽️', seed: '🌱', medicine: '💊', probiotic: '🧫', equipment: '⚙️', aerator: '💨', pond_liner: '🛡️', water_treatment: '💧', all: '📦' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🏪 Aqua Supply Marketplace</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:10px">B2B marketplace for seeds, feed, equipment, medicines & more</p>
+
+      <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px">
+        ${categories.map(c => `<button style="flex-shrink:0;padding:5px 10px;border-radius:16px;border:1px solid ${c==='all'?'var(--primary)':'#ddd'};background:${c==='all'?'var(--primary)':'white'};color:${c==='all'?'white':'#333'};font-size:11px;cursor:pointer">${catIcons[c]||'📦'} ${c==='all'?'All':c.replace('_',' ')}</button>`).join('')}
+      </div>
+
+      ${products.map(p => `
+        <div class="card" style="padding:12px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700;margin-bottom:2px">${p.product_name}</div>
+              <div style="font-size:11px;color:#666;margin-bottom:4px">${p.supplier_name} ${p.supplier_verified?'✅':''} · ⭐${p.rating}</div>
+              <div style="display:flex;gap:8px;font-size:11px;margin-bottom:4px">
+                <span style="background:#eee;padding:2px 6px;border-radius:4px">${catIcons[p.category]||'📦'} ${p.category}</span>
+                <span style="color:#27ae60">In Stock: ${p.stock_available.toLocaleString()} ${p.unit}</span>
+              </div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:16px;font-weight:800;color:var(--primary)">₹${p.price_per_unit.toLocaleString()}</div>
+              <div style="font-size:10px;color:#666">per ${p.unit}</div>
+              ${p.bulk_price?`<div style="font-size:10px;color:#27ae60">Bulk: ₹${p.bulk_price}/${p.unit} (${p.bulk_min_qty}+)</div>`:''}
+            </div>
+          </div>
+          <button style="width:100%;margin-top:8px;padding:8px;background:var(--primary);color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🛒 Add to Order</button>
+        </div>
+      `).join('')}
+
+      <div style="background:#f0f8ff;padding:12px;border-radius:8px;margin-top:8px;font-size:11px">
+        <strong>🏪 Marketplace Features:</strong><br>
+        • Direct from verified suppliers (Avanti Feeds, CP Aquaculture, etc.)<br>
+        • Bulk pricing for large orders<br>
+        • Track order status & delivery<br>
+        • Rate suppliers after delivery<br>
+        • Species-specific product recommendations
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // V5: ALERT ENGINE TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderAlertEngineTab() {
+    const activeAlerts = [
+      { id: 1, severity: 'critical', title: '🚨 Low Dissolved Oxygen', message: 'DO below 4 mg/L (3.2). Risk of fish stress/mortality.', parameter: 'dissolved_oxygen', actual_value: 3.2, threshold: 4.0, category: 'water_quality', created_at: '2026-05-04T06:30:00Z', acknowledged: false },
+      { id: 2, severity: 'warning', title: '⚠️ High FCR Detected', message: 'Feed conversion ratio high (2.6). Feed may be wasted.', parameter: 'fcr', actual_value: 2.6, threshold: 2.5, category: 'feed', created_at: '2026-05-03T14:00:00Z', acknowledged: false },
+      { id: 3, severity: 'info', title: 'ℹ️ Harvest Ready', message: 'Estimated harvest in 5 days. Start planning logistics.', parameter: 'days_to_harvest', actual_value: 5, threshold: 7, category: 'harvest', created_at: '2026-05-02T08:00:00Z', acknowledged: true },
+    ];
+    const rules = [
+      { rule_name: 'Low pH Alert', category: 'water_quality', parameter: 'ph', condition: '< 6.5', severity: 'critical', is_system: true },
+      { rule_name: 'Low Dissolved Oxygen', category: 'water_quality', parameter: 'dissolved_oxygen', condition: '< 4.0', severity: 'critical', is_system: true },
+      { rule_name: 'High Ammonia', category: 'water_quality', parameter: 'ammonia', condition: '> 0.5', severity: 'warning', is_system: true },
+      { rule_name: 'Mortality Spike', category: 'mortality', parameter: 'daily_mortality_pct', condition: '> 1%', severity: 'critical', is_system: true },
+      { rule_name: 'High FCR', category: 'feed', parameter: 'fcr', condition: '> 2.5', severity: 'warning', is_system: true },
+      { rule_name: 'Growth Slowdown', category: 'growth', parameter: 'sgr', condition: '< 1.0', severity: 'warning', is_system: true },
+    ];
+    const sevColors = { critical: '#e74c3c', warning: '#f39c12', info: '#3498db' };
+    const sevBg = { critical: '#fdeaea', warning: '#fef9e7', info: '#ebf5fb' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🔔 Smart Alert Engine</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Rule-based alerts for water quality, growth, feed & disease</p>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">Active Alerts (${activeAlerts.filter(a=>!a.acknowledged).length} unread)</div>
+      ${activeAlerts.map(a => `
+        <div class="card" style="padding:10px;margin-bottom:8px;border-left:4px solid ${sevColors[a.severity]};background:${sevBg[a.severity]}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700">${a.title}</div>
+              <div style="font-size:11px;color:#555;margin-top:2px">${a.message}</div>
+              <div style="font-size:10px;color:#999;margin-top:4px">${a.category} · ${new Date(a.created_at).toLocaleDateString()}</div>
+            </div>
+            ${!a.acknowledged?`<button style="flex-shrink:0;padding:4px 8px;font-size:10px;border:1px solid #ccc;border-radius:4px;background:white;cursor:pointer">✓ Ack</button>`:`<span style="font-size:10px;color:#27ae60">✓ Seen</span>`}
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="font-size:13px;font-weight:700;margin:16px 0 8px">📋 Active Alert Rules</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;font-size:11px;border-collapse:collapse">
+          <tr style="background:#f8f9fa"><th style="padding:5px;text-align:left">Rule</th><th>Parameter</th><th>Condition</th><th>Severity</th></tr>
+          ${rules.map(r => `
+            <tr style="border-bottom:1px solid #eee">
+              <td style="padding:5px;font-weight:600">${r.rule_name}</td>
+              <td style="text-align:center">${r.parameter}</td>
+              <td style="text-align:center;font-family:monospace">${r.condition}</td>
+              <td style="text-align:center"><span style="background:${sevColors[r.severity]};color:white;padding:1px 6px;border-radius:3px;font-size:9px">${r.severity}</span></td>
+            </tr>
+          `).join('')}
+        </table>
+      </div>
+
+      <button style="width:100%;margin-top:12px;padding:10px;background:white;border:2px dashed var(--primary);color:var(--primary);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">+ Add Custom Alert Rule</button>
+
+      <div style="background:#eaf2f8;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>ℹ️ How Alerts Work:</strong><br>
+        • Rules are evaluated each time you log data (water params, feed, sampling)<br>
+        • System rules are pre-configured for common thresholds<br>
+        • Custom rules let you set your own thresholds<br>
+        • Critical alerts = immediate attention needed<br>
+        • No AI required — simple threshold calculations
       </div>
     </div>`;
   }
