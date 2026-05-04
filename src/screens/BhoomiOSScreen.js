@@ -87,6 +87,7 @@ export function renderBhoomiOS(container) {
           <button role="tab" aria-selected="${tab==='map'}" class="tab-btn ${tab==='map'?'active':''}" data-tab="map">🗺️ Map View</button>
           <button role="tab" aria-selected="${tab==='saved'}" class="tab-btn ${tab==='saved'?'active':''}" data-tab="saved">⭐ Saved</button>
           <button role="tab" aria-selected="${tab==='enquiries'}" class="tab-btn ${tab==='enquiries'?'active':''}" data-tab="enquiries">📋 My Enquiries</button>
+          <button role="tab" aria-selected="${tab==='soil'}" class="tab-btn ${tab==='soil'?'active':''}" data-tab="soil">🌱 Soil</button>
         `}
       </div>
 
@@ -98,6 +99,7 @@ export function renderBhoomiOS(container) {
           : tab === 'saved' ? renderSaved()
           : tab === 'documents' ? renderDocumentVault()
           : tab === 'analytics' ? renderOwnerAnalytics()
+          : tab === 'soil' ? renderSoilTab()
           : ''}
       </div>
     `;
@@ -582,6 +584,69 @@ export function renderBhoomiOS(container) {
     container.querySelector('#uploadDocBtn')?.addEventListener('click', showUploadDoc);
     container.querySelectorAll('.view-doc-btn').forEach(b => b.addEventListener('click', () => showToast('📄 Document viewer — launching...', 'info')));
     container.querySelectorAll('.share-doc-btn').forEach(b => b.addEventListener('click', () => showToast('📤 Share link copied to clipboard!', 'success')));
+    // Soil tab events
+    container.querySelector('#submitSoilCard')?.addEventListener('click', async () => {
+      const ph = parseFloat(container.querySelector('#soilPh')?.value) || null;
+      const n  = parseFloat(container.querySelector('#soilN')?.value)  || null;
+      const p  = parseFloat(container.querySelector('#soilP')?.value)  || null;
+      const k  = parseFloat(container.querySelector('#soilK')?.value)  || null;
+      const oc = parseFloat(container.querySelector('#soilOC')?.value) || null;
+      const crop = container.querySelector('#soilCrop')?.value || '';
+      const testDate = container.querySelector('#soilDate')?.value || null;
+      const labName  = container.querySelector('#soilLab')?.value?.trim() || null;
+      if (!ph && !n && !p && !k) { showToast('Enter at least one soil value', 'error'); return; }
+      try {
+        const result = await api.post('/bhoomios/soil-cards', {
+          ph_value: ph, nitrogen_kg_ha: n, phosphorus_kg_ha: p, potassium_kg_ha: k,
+          organic_carbon: oc, test_date: testDate, lab_name: labName,
+        });
+        soilRecommendations = await api.get(`/bhoomios/fertilizer-recommendations?soil_card_id=${result.id}&crop=${crop}`).catch(() => null);
+        if (!soilRecommendations) {
+          const params = new URLSearchParams();
+          if (ph) params.set('ph', ph); if (n) params.set('n', n); if (p) params.set('p', p); if (k) params.set('k', k); if (oc) params.set('organic_carbon', oc); if (crop) params.set('crop', crop);
+          soilRecommendations = await api.get(`/bhoomios/fertilizer-recommendations?${params}`).catch(() => null);
+        }
+        if (!soilRecommendations && (ph || n || p || k)) {
+          soilRecommendations = buildLocalRecommendations(ph, n, p, k, oc, crop);
+        }
+        soilCards = [result, ...soilCards];
+        showToast('✅ Soil card saved with recommendations!', 'success');
+        render();
+      } catch (e) {
+        // Fallback: compute recommendations locally without saving
+        soilRecommendations = buildLocalRecommendations(ph, n, p, k, oc, crop);
+        showToast('Recommendations computed (not saved — please login)', 'info');
+        render();
+      }
+    });
+    container.querySelector('#mapFieldBtn')?.addEventListener('click', () => {
+      showModal(`
+        <div class="modal-handle"></div>
+        <h3>📐 Map Field Boundary</h3>
+        <div style="font-size:12px;color:#757575;margin-bottom:12px">Enter GPS coordinates of your field corners (lat,lng per line)</div>
+        <div class="form-group"><label>Field Name</label><input class="form-input" id="fbName" placeholder="e.g. North Paddy Field"></div>
+        <div class="form-group"><label>Coordinates (one per line: lat,lng)</label>
+          <textarea class="form-input" id="fbCoords" rows="5" placeholder="17.3850,78.4867&#10;17.3860,78.4867&#10;17.3860,78.4877&#10;17.3850,78.4877"></textarea></div>
+        <div class="form-group"><label>Notes</label><input class="form-input" id="fbNotes" placeholder="Optional notes"></div>
+        <button id="saveBoundary" style="width:100%;padding:12px;background:#0277BD;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Save Field Boundary</button>
+      `);
+      document.querySelector('#saveBoundary')?.addEventListener('click', async () => {
+        const name = document.querySelector('#fbName')?.value?.trim();
+        const raw  = document.querySelector('#fbCoords')?.value?.trim();
+        const notes = document.querySelector('#fbNotes')?.value?.trim();
+        if (!raw) { showToast('Enter coordinates', 'error'); return; }
+        const points = raw.split('\n').map(l => { const [lat,lng] = l.split(',').map(Number); return { lat, lng }; }).filter(p => p.lat && p.lng);
+        if (points.length < 3) { showToast('Need at least 3 corner points', 'error'); return; }
+        const centroid_lat = points.reduce((s,p)=>s+p.lat,0)/points.length;
+        const centroid_lng = points.reduce((s,p)=>s+p.lng,0)/points.length;
+        try {
+          const result = await api.post('/bhoomios/field-boundaries', { field_name: name, boundary_geojson: points, centroid_lat, centroid_lng, notes });
+          fieldBoundaries = [result, ...fieldBoundaries];
+          showToast(`✅ Field mapped! Area: ${result.area_calculated_acres?.toFixed(2)} acres`, 'success');
+          closeModal(); render();
+        } catch (e) { showToast('Login required to save boundaries', 'error'); closeModal(); }
+      });
+    });
   }
 
   function showUploadDoc() {
@@ -612,18 +677,155 @@ export function renderBhoomiOS(container) {
     });
   }
 
+  // ─── SOIL TAB — Soil Health Cards, Labs, Field Boundaries ──────────────
+  let soilLabs = [];
+  let soilCards = [];
+  let fieldBoundaries = [];
+  let soilRecommendations = null;
+
+  function renderSoilTab() {
+    const CROPS = ['paddy','cotton','maize','groundnut','chilli','tomato','sugarcane','wheat'];
+    return `
+      <div style="padding:12px 14px 0">
+
+        <!-- Soil Health Card Form -->
+        <div style="background:white;border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:14px">
+          <div style="font-weight:800;font-size:14px;color:#2E7D32;margin-bottom:10px">🌱 Add Soil Health Card</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div><label style="font-size:11px;color:#757575;display:block;margin-bottom:2px">pH Value</label>
+              <input id="soilPh" type="number" step="0.1" min="0" max="14" placeholder="e.g. 7.2" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #E0E0E0;border-radius:8px;font-size:13px"></div>
+            <div><label style="font-size:11px;color:#757575;display:block;margin-bottom:2px">Nitrogen (kg/ha)</label>
+              <input id="soilN" type="number" placeholder="e.g. 240" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #E0E0E0;border-radius:8px;font-size:13px"></div>
+            <div><label style="font-size:11px;color:#757575;display:block;margin-bottom:2px">Phosphorus (kg/ha)</label>
+              <input id="soilP" type="number" placeholder="e.g. 20" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #E0E0E0;border-radius:8px;font-size:13px"></div>
+            <div><label style="font-size:11px;color:#757575;display:block;margin-bottom:2px">Potassium (kg/ha)</label>
+              <input id="soilK" type="number" placeholder="e.g. 260" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #E0E0E0;border-radius:8px;font-size:13px"></div>
+            <div><label style="font-size:11px;color:#757575;display:block;margin-bottom:2px">Organic Carbon (%)</label>
+              <input id="soilOC" type="number" step="0.01" placeholder="e.g. 0.42" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #E0E0E0;border-radius:8px;font-size:13px"></div>
+            <div><label style="font-size:11px;color:#757575;display:block;margin-bottom:2px">Crop</label>
+              <select id="soilCrop" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #E0E0E0;border-radius:8px;font-size:13px">
+                <option value="">Select crop</option>
+                ${CROPS.map(c=>`<option value="${c}">${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('')}
+              </select></div>
+            <div><label style="font-size:11px;color:#757575;display:block;margin-bottom:2px">Test Date</label>
+              <input id="soilDate" type="date" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #E0E0E0;border-radius:8px;font-size:13px"></div>
+            <div><label style="font-size:11px;color:#757575;display:block;margin-bottom:2px">Lab Name</label>
+              <input id="soilLab" placeholder="e.g. ANGRAU Lab" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #E0E0E0;border-radius:8px;font-size:13px"></div>
+          </div>
+          <button id="submitSoilCard" style="margin-top:10px;width:100%;padding:10px;background:#2E7D32;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px">Get Recommendations</button>
+        </div>
+
+        <!-- Recommendations Output -->
+        ${soilRecommendations ? `
+        <div style="background:#E8F5E9;border-radius:14px;padding:14px;margin-bottom:14px;border:1px solid #A5D6A7">
+          <div style="font-weight:800;font-size:14px;color:#1B5E20;margin-bottom:10px">🧪 Fertilizer Recommendations</div>
+          ${soilRecommendations.recommendations.map(stage => stage.inputs.length ? `
+            <div style="margin-bottom:10px">
+              <div style="font-size:12px;font-weight:700;color:#2E7D32;margin-bottom:6px">${stage.stage}</div>
+              ${stage.inputs.map(inp=>`
+                <div style="background:white;border-radius:8px;padding:8px 10px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">
+                  <div>
+                    <div style="font-size:13px;font-weight:600">${inp.input}</div>
+                    <div style="font-size:11px;color:#757575">${inp.reason || ''}</div>
+                  </div>
+                  <div style="font-size:12px;font-weight:700;color:#388E3C">${inp.dose}</div>
+                </div>`).join('')}
+            </div>` : '').join('')}
+          ${soilRecommendations.soil_status ? `
+          <div style="margin-top:8px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+            ${Object.entries(soilRecommendations.soil_status).filter(([,v])=>v).map(([k,v])=>`
+              <div style="background:white;border-radius:8px;padding:6px;text-align:center">
+                <div style="font-size:10px;color:#757575;text-transform:capitalize">${k.replace('_',' ')}</div>
+                <div style="font-size:12px;font-weight:700;color:${v.status==='Low'?'#C62828':v.status==='High'?'#1565C0':'#2E7D32'}">${v.status}</div>
+              </div>`).join('')}
+          </div>` : ''}
+        </div>` : ''}
+
+        <!-- My Soil Cards -->
+        ${soilCards.length ? `
+        <div style="background:white;border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:14px">
+          <div style="font-weight:800;font-size:14px;color:#795548;margin-bottom:10px">📋 My Soil Cards (${soilCards.length})</div>
+          ${soilCards.slice(0,3).map(c=>`
+            <div style="background:#F9F7F5;border-radius:10px;padding:10px;margin-bottom:6px">
+              <div style="display:flex;justify-content:space-between">
+                <div style="font-size:12px;font-weight:600">${c.soil_type || 'Soil Card'}</div>
+                <div style="font-size:11px;color:#9E9E9E">${c.test_date ? c.test_date.slice(0,10) : ''}</div>
+              </div>
+              <div style="font-size:11px;color:#757575;margin-top:4px">pH: ${c.ph_value||'—'} · N: ${c.nitrogen_kg_ha||'—'} · P: ${c.phosphorus_kg_ha||'—'} · K: ${c.potassium_kg_ha||'—'}</div>
+            </div>`).join('')}
+        </div>` : ''}
+
+        <!-- Field Boundaries -->
+        <div style="background:white;border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-weight:800;font-size:14px;color:#0277BD">📐 Field Boundaries</div>
+            <button id="mapFieldBtn" style="padding:6px 12px;background:#0277BD;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">+ Map Field</button>
+          </div>
+          ${fieldBoundaries.length ? fieldBoundaries.slice(0,3).map(b=>`
+            <div style="background:#E3F2FD;border-radius:10px;padding:10px;margin-bottom:6px">
+              <div style="font-weight:600;font-size:13px">${b.field_name || 'Field'}</div>
+              <div style="font-size:11px;color:#0277BD">${b.area_calculated_acres ? b.area_calculated_acres.toFixed(2)+' acres' : ''} · ${b.perimeter_m ? Math.round(b.perimeter_m)+'m perimeter' : ''}</div>
+            </div>`).join('')
+          : '<div style="font-size:13px;color:#9E9E9E;text-align:center;padding:12px">No field boundaries mapped yet. Use GPS to map your field.</div>'}
+        </div>
+
+        <!-- Soil Testing Labs -->
+        <div style="background:white;border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:14px">
+          <div style="font-weight:800;font-size:14px;color:#E65100;margin-bottom:10px">🔬 Find Soil Testing Labs</div>
+          ${soilLabs.length ? soilLabs.slice(0,5).map(lab=>`
+            <div style="border:1px solid #F5E6DA;border-radius:10px;padding:10px;margin-bottom:8px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:700">${lab.name}</div>
+                  <div style="font-size:11px;color:#757575;margin-top:2px">${lab.address || ''} · ${lab.state || ''}</div>
+                  <div style="font-size:11px;color:#E65100;margin-top:3px">📞 ${lab.phone || 'N/A'} · ⏱ ${lab.turnaround_days} days</div>
+                  <div style="font-size:10px;color:#9E9E9E;margin-top:2px">${(lab.tests_offered||[]).slice(0,4).join(', ')}</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;background:${lab.lab_type==='government'?'#E8F5E9':'#FFF8E1'};color:${lab.lab_type==='government'?'#2E7D32':'#E65100'};padding:3px 7px;border-radius:6px;font-weight:600">${lab.lab_type}</div>
+                  ${lab.is_accredited ? '<div style="font-size:10px;color:#1565C0;margin-top:4px">✅ Accredited</div>' : ''}
+                  <div style="font-size:12px;font-weight:700;color:#E65100;margin-top:4px">${lab.price_range || ''}</div>
+                </div>
+              </div>
+            </div>`).join('')
+          : '<div style="text-align:center;padding:16px;color:#9E9E9E;font-size:13px">Loading labs...</div>'}
+        </div>
+
+      </div>`;
+  }
+
+  function buildLocalRecommendations(ph, n, p, k, oc) {
+    const recs = [];
+    if (n && n < 280) recs.push({ stage: 'Basal (Pre-sowing)', inputs: [{ input: 'Urea', dose: '50 kg/acre', reason: 'Low nitrogen' }] });
+    if (p && p < 25)  recs.push({ stage: 'Basal (Pre-sowing)', inputs: [{ input: 'DAP', dose: '50 kg/acre', reason: 'Low phosphorus' }] });
+    if (k && k < 280) recs.push({ stage: 'Top Dressing', inputs: [{ input: 'MOP', dose: '25 kg/acre', reason: 'Low potassium' }] });
+    if (ph && ph < 6) recs.push({ stage: 'Pre-sowing', inputs: [{ input: 'Agricultural Lime', dose: '200 kg/acre', reason: 'Acidic soil' }] });
+    if (ph && ph > 8.5) recs.push({ stage: 'Pre-sowing', inputs: [{ input: 'Gypsum', dose: '200 kg/acre', reason: 'Alkaline soil' }] });
+    if (oc && oc < 0.5) recs.push({ stage: 'Organic Inputs', inputs: [{ input: 'Vermicompost', dose: '2 tonnes/acre', reason: 'Low organic carbon' }] });
+    const soil_status = {
+      ph:           ph  ? { value: ph,  status: ph  < 6 ? 'Acidic' : ph  > 8.5 ? 'Alkaline' : 'Neutral' } : null,
+      nitrogen:     n   ? { value: n,   status: n   < 280 ? 'Low' : n   < 560 ? 'Medium' : 'High' } : null,
+      phosphorus:   p   ? { value: p,   status: p   < 25  ? 'Low' : p   < 50  ? 'Medium' : 'High' } : null,
+      potassium:    k   ? { value: k,   status: k   < 280 ? 'Low' : k   < 560 ? 'Medium' : 'High' } : null,
+      organic_carbon: oc ? { value: oc, status: oc  < 0.5 ? 'Low' : oc  < 0.75 ? 'Medium' : 'High' } : null,
+    };
+    return { recommendations: recs, soil_status };
+  }
+
   // ─── DATA ────────────────────────────────────────────────────────────────
   async function loadData() {
     loading = true; render();
     try {
-      const [ls, ml, enq] = await Promise.all([
+      const [ls, ml, enq, labs] = await Promise.all([
         api.get('/bhoomios/listings?limit=50').catch(() => []),
         api.get('/bhoomios/my-listings').catch(() => []),
         api.get('/bhoomios/enquiries').catch(() => []),
+        api.get('/bhoomios/labs?limit=20').catch(() => ({ labs: [] })),
       ]);
       listings   = Array.isArray(ls) ? ls : (ls.listings || []);
       myListings = Array.isArray(ml) ? ml : (ml.listings || []);
       enquiries  = Array.isArray(enq) ? enq : (enq.enquiries || []);
+      soilLabs   = Array.isArray(labs) ? labs : (labs.labs || []);
       // Fallback to sample data
       if (listings.length === 0) listings = SAMPLE_LISTINGS;
     } catch (e) {

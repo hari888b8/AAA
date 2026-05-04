@@ -328,6 +328,8 @@ async function start() {
     await migrateV19AquaOSV10();
     const { migrateV21Sprint1 } = require('./db/migrate-v21-sprint1');
     await migrateV21Sprint1();
+    const { migrateV22BhoomiOsGalaxy } = require('./db/migrate-v22-bhoomios-galaxy');
+    await migrateV22BhoomiOsGalaxy();
     logger.info('Database migrations applied');
 
     // Recover any pending jobs from previous crash
