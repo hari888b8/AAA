@@ -4,6 +4,8 @@ const { authMiddleware } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
+const ASYMPTOTIC_WEIGHT_MULTIPLIER = 1.5; // W_inf = max_harvest_weight × 1.5 (biological asymptote beyond harvestable size)
+
 // ════════════════════════════════════════════════════════════════
 // ADVANCED KPI ENGINE — Interval-Based Growth Metrics
 // FCR, SGR (per interval), ADG, Biomass Tracking
@@ -230,7 +232,7 @@ router.get('/predict-growth/:cycleId', authMiddleware, async (req, res) => {
     // ─── VON BERTALANFFY GROWTH MODEL ───
     // W(t) = W_inf * (1 - b * e^(-K*t))^3
     // Simplified: W(t) = W_inf * (1 - e^(-K*(t-t0)))^n
-    const W_inf = parseFloat(config.harvest_size_max_g) * 1.5; // Asymptotic weight
+    const W_inf = parseFloat(config.harvest_size_max_g) * ASYMPTOTIC_WEIGHT_MULTIPLIER;
     const K = 0.015; // Growth coefficient (calibrate from data if available)
     const t0 = -5; // Theoretical age at zero weight
 
@@ -458,6 +460,8 @@ function evaluateCondition(value, op, threshold) {
     case '>=': return value >= threshold;
     case '=': return value === threshold;
     case '!=': return value !== threshold;
+    case 'spike': return value > threshold; // spike = value exceeds threshold (sudden increase)
+    case 'drop': return value < threshold;  // drop = value falls below threshold (sudden decrease)
     default: return false;
   }
 }
