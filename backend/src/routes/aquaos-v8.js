@@ -4,12 +4,20 @@ const { authMiddleware } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
+// Whitelist of allowed roles — prevents injection via x-user-role header
+const ALLOWED_ROLES = ['farmer', 'buyer', 'admin', 'supplier', 'fpo', 'service_provider'];
+
+function sanitizeRole(req) {
+  const raw = req.user?.role || req.headers['x-user-role'] || 'farmer';
+  return ALLOWED_ROLES.includes(raw) ? raw : 'farmer';
+}
+
 // ════════════════════════════════════════════════════════════════
 // ROLE-BASED DATA VISIBILITY MIDDLEWARE
 // ════════════════════════════════════════════════════════════════
 function roleGuard(...allowedRoles) {
   return (req, res, next) => {
-    const role = req.user?.role || req.headers['x-user-role'] || 'farmer';
+    const role = sanitizeRole(req);
     if (!allowedRoles.includes(role)) {
       return res.status(403).json({ error: `Access denied. Required roles: ${allowedRoles.join(', ')}` });
     }
@@ -166,7 +174,7 @@ router.post('/community', authMiddleware, async (req, res) => {
     if (!category || !title || !content) {
       return res.status(400).json({ error: 'category, title, and content required' });
     }
-    const role = req.user?.role || req.headers['x-user-role'] || 'farmer';
+    const role = sanitizeRole(req);
     const result = await query(`
       INSERT INTO aqua_community_posts (id, author_id, author_role, category, title, content, species_tag, district_tag, images)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *
@@ -180,7 +188,7 @@ router.post('/community/:id/comment', authMiddleware, async (req, res) => {
   try {
     const { content } = req.body;
     if (!content) return res.status(400).json({ error: 'content required' });
-    const role = req.user?.role || req.headers['x-user-role'] || 'farmer';
+    const role = sanitizeRole(req);
     const result = await query(`
       INSERT INTO aqua_community_comments (id, post_id, author_id, author_role, content)
       VALUES ($1,$2,$3,$4,$5) RETURNING *
@@ -370,7 +378,7 @@ router.get('/experts', authMiddleware, async (req, res) => {
 router.post('/workflow/track', authMiddleware, async (req, res) => {
   try {
     const { workflow_step, step_name, metadata } = req.body;
-    const role = req.user?.role || req.headers['x-user-role'] || 'farmer';
+    const role = sanitizeRole(req);
     const result = await query(`
       INSERT INTO aqua_workflow_events (id, user_id, user_role, workflow_step, step_name, metadata)
       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *

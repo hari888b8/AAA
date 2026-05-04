@@ -4,12 +4,20 @@ const { authMiddleware } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
+// Whitelist of allowed roles — prevents injection via x-user-role header
+const ALLOWED_ROLES = ['farmer', 'buyer', 'admin', 'supplier', 'fpo', 'service_provider'];
+
+function sanitizeRole(req) {
+  const raw = req.user?.role || req.headers['x-user-role'] || 'farmer';
+  return ALLOWED_ROLES.includes(raw) ? raw : 'farmer';
+}
+
 // ════════════════════════════════════════════════════════════════
 // ROLE GUARD MIDDLEWARE
 // ════════════════════════════════════════════════════════════════
 function roleGuard(...roles) {
   return (req, res, next) => {
-    const role = req.user?.role || req.headers['x-user-role'] || 'farmer';
+    const role = sanitizeRole(req);
     if (!roles.includes(role) && role !== 'admin') {
       return res.status(403).json({ error: `Access denied. Required: ${roles.join(', ')}` });
     }
@@ -97,7 +105,7 @@ router.post('/negotiations', authMiddleware, roleGuard('buyer'), async (req, res
 // GET /negotiations — list my negotiation rooms
 router.get('/negotiations', authMiddleware, async (req, res) => {
   try {
-    const role = req.user?.role || req.headers['x-user-role'] || 'farmer';
+    const role = sanitizeRole(req);
     const col = role === 'buyer' ? 'buyer_id' : 'farmer_id';
     const result = await query(`
       SELECT * FROM aqua_negotiation_rooms WHERE ${col} = $1 ORDER BY updated_at DESC LIMIT 50
@@ -120,7 +128,7 @@ router.get('/negotiations/:id/messages', authMiddleware, async (req, res) => {
 router.post('/negotiations/:id/messages', authMiddleware, async (req, res) => {
   try {
     const { message_type, content, price_offered, quantity_kg } = req.body;
-    const role = req.user?.role || req.headers['x-user-role'] || 'farmer';
+    const role = sanitizeRole(req);
     const msg = await query(`
       INSERT INTO aqua_negotiation_messages (id, room_id, sender_id, sender_role, message_type, content, price_offered, quantity_kg)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *
@@ -391,7 +399,7 @@ router.post('/verification/submit', authMiddleware, async (req, res) => {
   try {
     const { verification_type, documents } = req.body;
     if (!verification_type) return res.status(400).json({ error: 'verification_type required' });
-    const role = req.user?.role || req.headers['x-user-role'] || 'supplier';
+    const role = sanitizeRole(req);
     const result = await query(`
       INSERT INTO aqua_verification_queue (id, user_id, user_role, verification_type, documents)
       VALUES ($1,$2,$3,$4,$5) RETURNING *

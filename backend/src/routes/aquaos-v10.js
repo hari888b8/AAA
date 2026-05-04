@@ -4,12 +4,20 @@ const { authMiddleware } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
+// Whitelist of allowed roles — prevents injection via x-user-role header
+const ALLOWED_ROLES = ['farmer', 'buyer', 'admin', 'supplier', 'fpo', 'service_provider'];
+
+function sanitizeRole(req) {
+  const raw = req.user?.role || req.headers['x-user-role'] || 'farmer';
+  return ALLOWED_ROLES.includes(raw) ? raw : 'farmer';
+}
+
 // ════════════════════════════════════════════════════════════════
 // ROLE GUARD MIDDLEWARE
 // ════════════════════════════════════════════════════════════════
 function roleGuard(...roles) {
   return (req, res, next) => {
-    const role = req.user?.role || req.headers['x-user-role'] || 'farmer';
+    const role = sanitizeRole(req);
     if (!roles.includes(role) && role !== 'admin') {
       return res.status(403).json({ error: `Access denied. Required: ${roles.join(', ')}` });
     }

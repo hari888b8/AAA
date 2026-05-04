@@ -23,6 +23,7 @@ const { auditMiddleware } = require('./services/audit');
 const { requestId } = require('./middleware/requestId');
 const { sanitize } = require('./middleware/sanitize');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { marketplaceWriteLimiter, auctionBidLimiter, paymentLimiter, negotiationLimiter, searchLimiter, iotIngestionLimiter } = require('./middleware/rateLimiters');
 
 // Routes
 const authRouter = require('./routes/auth');
@@ -168,6 +169,14 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth/send-otp', authLimiter);
 app.use('/api/auth/verify-otp', authLimiter);
+
+// Per-route rate limits for AquaOS sensitive endpoints
+app.use('/api/aquaos-v6/listings', marketplaceWriteLimiter);
+app.use('/api/aquaos-v6/auctions', auctionBidLimiter);
+app.use('/api/aquaos-v9/negotiations', negotiationLimiter);
+app.use('/api/aquaos-v10/payments', paymentLimiter);
+app.use('/api/aquaos-v10/search', searchLimiter);
+app.use('/api/aquaos-v10/iot', iotIngestionLimiter);
 
 // ─── Health Check ────────────────────────────────────────────
 app.get('/health', async (req, res) => {
