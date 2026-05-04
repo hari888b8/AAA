@@ -66,13 +66,15 @@ router.get('/analytics/disease-outbreaks', authMiddleware, async (req, res) => {
 // GET /search — universal search
 router.get('/search', authMiddleware, async (req, res) => {
   try {
-    const { q, type, district, species, page = 1, limit = 20 } = req.query;
-    if (!q || q.length < 2) return res.status(400).json({ error: 'Query must be at least 2 characters' });
+    const { type, district, species, page = 1, limit = 20 } = req.query;
+    const q = Array.isArray(req.query.q) ? req.query.q[0] : req.query.q;
+    if (!q || String(q).length < 2) return res.status(400).json({ error: 'Query must be at least 2 characters' });
+    const searchQuery = String(q).substring(0, 200);
 
     let sql = `SELECT *, ts_rank(to_tsvector('english', coalesce(title,'') || ' ' || coalesce(body,'')), plainto_tsquery('english', $1)) as rank
       FROM aqua_search_index WHERE is_active = true
       AND to_tsvector('english', coalesce(title,'') || ' ' || coalesce(body,'')) @@ plainto_tsquery('english', $1)`;
-    const params = [q];
+    const params = [searchQuery];
     let idx = 2;
 
     if (type) { sql += ` AND entity_type = $${idx}`; params.push(type); idx++; }
@@ -83,7 +85,7 @@ router.get('/search', authMiddleware, async (req, res) => {
     params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
 
     const result = await query(sql, params);
-    res.json({ results: result.rows, query: q, page: parseInt(page), total: result.rows.length });
+    res.json({ results: result.rows, query: searchQuery, page: parseInt(page), total: result.rows.length });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
