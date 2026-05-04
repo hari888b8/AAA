@@ -4,6 +4,19 @@ const { authMiddleware } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
+const SAMPLING_INTERVAL_DAYS = 10;
+const SPECIES_PRICE_PER_KG = {
+  vannamei: 350, shrimp: 350, tiger: 600, crab: 500, pangasius: 95, default: 160
+};
+
+function getSpeciesPrice(species) {
+  const s = (species || '').toLowerCase();
+  for (const [key, price] of Object.entries(SPECIES_PRICE_PER_KG)) {
+    if (key !== 'default' && s.includes(key)) return price;
+  }
+  return SPECIES_PRICE_PER_KG.default;
+}
+
 // ════════════════════════════════════════════════════════════════
 // FARM MANAGEMENT
 // ════════════════════════════════════════════════════════════════
@@ -362,12 +375,7 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
 
     // Revenue estimate based on species market prices
     const revenueEstimate = harvestEstimates.reduce((sum, h) => {
-      const pricePerKg = (h.species || '').toLowerCase().includes('vannamei') ? 350
-        : (h.species || '').toLowerCase().includes('tiger') ? 600
-        : (h.species || '').toLowerCase().includes('crab') ? 500
-        : (h.species || '').toLowerCase().includes('pangasius') ? 95
-        : 160; // default fish price
-      return sum + (h.estimated_yield_kg * pricePerKg);
+      return sum + (h.estimated_yield_kg * getSpeciesPrice(h.species));
     }, 0);
 
     res.json({
@@ -1193,7 +1201,7 @@ router.get('/daily-workflow', authMiddleware, async (req, res) => {
       });
 
       // Sampling reminder (every 10 days)
-      if (doc > 0 && doc % 10 <= 1) {
+      if (doc > 0 && doc % SAMPLING_INTERVAL_DAYS <= 1) {
         const recentSample = await query(
           `SELECT COUNT(*) AS cnt FROM growth_samples WHERE pond_id = $1 AND sampled_at > NOW() - INTERVAL '8 days'`,
           [p.id]
