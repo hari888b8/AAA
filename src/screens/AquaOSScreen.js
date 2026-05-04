@@ -117,6 +117,11 @@ export function renderAquaOS(container) {
           <button role="tab" aria-selected="${tab==='predictions'}" class="tab-btn ${tab==='predictions'?'active':''}" data-tab="predictions">🔮 Predict</button>
           <button role="tab" aria-selected="${tab==='supply_market'}" class="tab-btn ${tab==='supply_market'?'active':''}" data-tab="supply_market">🏪 Supply Mkt</button>
           <button role="tab" aria-selected="${tab==='alert_engine'}" class="tab-btn ${tab==='alert_engine'?'active':''}" data-tab="alert_engine">🔔 Alerts</button>
+          <button role="tab" aria-selected="${tab==='fish_mkt'}" class="tab-btn ${tab==='fish_mkt'?'active':''}" data-tab="fish_mkt">🐟 Fish Mkt</button>
+          <button role="tab" aria-selected="${tab==='cold_chain_plus'}" class="tab-btn ${tab==='cold_chain_plus'?'active':''}" data-tab="cold_chain_plus">🧊 Cold Chain+</button>
+          <button role="tab" aria-selected="${tab==='traceability'}" class="tab-btn ${tab==='traceability'?'active':''}" data-tab="traceability">🔗 Trace</button>
+          <button role="tab" aria-selected="${tab==='pmmsy_dpr'}" class="tab-btn ${tab==='pmmsy_dpr'?'active':''}" data-tab="pmmsy_dpr">📄 PMMSY DPR</button>
+          <button role="tab" aria-selected="${tab==='supplier_hub'}" class="tab-btn ${tab==='supplier_hub'?'active':''}" data-tab="supplier_hub">🏭 Suppliers</button>
           <button role="tab" aria-selected="${tab==='analytics'}" class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📈 ${t('analytics')}</button>
           <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         `}
@@ -162,6 +167,11 @@ export function renderAquaOS(container) {
       case 'predictions': return renderPredictionsTab();
       case 'supply_market': return renderSupplyMarketTab();
       case 'alert_engine': return renderAlertEngineTab();
+      case 'fish_mkt': return renderFishMarketTab();
+      case 'cold_chain_plus': return renderColdChainPlusTab();
+      case 'traceability': return renderTraceabilityTab();
+      case 'pmmsy_dpr': return renderPMMSYDPRTab();
+      case 'supplier_hub': return renderSupplierHubTab();
       case 'settings': return renderSettings();
       default: return renderDashboard();
     }
@@ -2509,6 +2519,358 @@ export function renderAquaOS(container) {
         • Custom rules let you set your own thresholds<br>
         • Critical alerts = immediate attention needed<br>
         • No AI required — simple threshold calculations
+      </div>
+    </div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // AquaOS V6 TABS — Fish Marketplace, Cold Chain+, Traceability, PMMSY DPR, Supplier Hub
+  // ═══════════════════════════════════════════════════════════
+
+  function renderFishMarketTab() {
+    const sampleListings = [
+      { id:'fm1', species:'Vannamei Shrimp', size_category:'30 count', quality_grade:'A+', listing_type:'auction', price_per_kg:380, quantity_kg:2500, available_quantity_kg:2500, location:'Nellore, AP', harvest_date:'2026-05-10', status:'active', batch_code:'AQ-M3X7K9', farmer_name:'Ramesh Aqua Farm', bids_count:4 },
+      { id:'fm2', species:'Rohu', size_category:'800g-1kg', quality_grade:'A', listing_type:'fixed_price', price_per_kg:160, quantity_kg:3000, available_quantity_kg:3000, location:'Eluru, AP', harvest_date:'2026-05-08', status:'active', batch_code:'AQ-N4Y8L2', farmer_name:'Godavari Fish Farm', bids_count:0 },
+      { id:'fm3', species:'Pangasius', size_category:'1-1.5kg', quality_grade:'B', listing_type:'rfq', price_per_kg:95, quantity_kg:5000, available_quantity_kg:5000, location:'Vijayawada, AP', harvest_date:'2026-05-03', status:'active', batch_code:'AQ-P5Z9M3', farmer_name:'Delta Aquaculture', bids_count:7 },
+      { id:'fm4', species:'Black Tiger Shrimp', size_category:'20 count', quality_grade:'A+', listing_type:'auction', price_per_kg:650, quantity_kg:800, available_quantity_kg:800, location:'Kakinada, AP', harvest_date:'2026-05-12', status:'active', batch_code:'AQ-Q6A1N4', farmer_name:'Coastal Premium Aqua', bids_count:12 },
+      { id:'fm5', species:'Catla', size_category:'1-2kg', quality_grade:'A', listing_type:'fixed_price', price_per_kg:140, quantity_kg:2000, available_quantity_kg:1500, location:'Bhimavaram, AP', harvest_date:'2026-05-06', status:'active', batch_code:'AQ-R7B2O5', farmer_name:'Krishna Aqua', bids_count:2 },
+    ];
+    const buyerSegments = [
+      { segment: 'wholesaler', icon: '🏪', label: 'Wholesaler', desc: 'Bulk purchase, price-sensitive', count: 45 },
+      { segment: 'restaurant', icon: '🍽️', label: 'Restaurant/HoReCa', desc: 'Freshness, consistency', count: 28 },
+      { segment: 'exporter', icon: '✈️', label: 'Exporter', desc: 'HACCP/BRC compliant, traceable', count: 12 },
+      { segment: 'processor', icon: '🏭', label: 'Processor', desc: 'Contract farming, high volume', count: 18 },
+    ];
+    const typeIcons = { fixed_price: '🏷️', auction: '🔨', rfq: '📋' };
+    const typeLabels = { fixed_price: 'Fixed Price', auction: 'Auction', rfq: 'RFQ' };
+    const gradeColors = { 'A+': '#27ae60', 'A': '#2ecc71', 'B': '#f39c12', 'C': '#e67e22' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🐟 Fish Marketplace</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Auction · RFQ · Fixed Price — Direct farmer-to-buyer trading</p>
+
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">👥 Buyer Segments</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px">
+        ${buyerSegments.map(b => `
+          <div class="card" style="padding:10px;text-align:center">
+            <div style="font-size:24px">${b.icon}</div>
+            <div style="font-size:12px;font-weight:700;margin-top:4px">${b.label}</div>
+            <div style="font-size:10px;color:#666">${b.desc}</div>
+            <div style="font-size:11px;color:var(--primary);font-weight:600;margin-top:4px">${b.count} active</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">📦 Active Listings (${sampleListings.length})</div>
+      ${sampleListings.map(l => `
+        <div class="card" style="padding:12px;margin-bottom:8px;border-left:4px solid ${gradeColors[l.quality_grade] || '#ccc'}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700">${l.species} — ${l.size_category}</div>
+              <div style="font-size:11px;color:#555;margin-top:2px">${l.farmer_name} · ${l.location}</div>
+            </div>
+            <div style="text-align:right">
+              <span style="background:${gradeColors[l.quality_grade]};color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">Grade ${l.quality_grade}</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <span class="tag tag-blue">${typeIcons[l.listing_type]} ${typeLabels[l.listing_type]}</span>
+            <span class="tag" style="background:#f0f0f0">₹${l.price_per_kg}/kg</span>
+            <span class="tag" style="background:#e8f5e9">${l.quantity_kg.toLocaleString()} kg</span>
+            <span class="tag" style="background:#fff3e0">📋 ${l.batch_code}</span>
+            ${l.bids_count > 0 ? `<span class="tag" style="background:#e3f2fd">🔨 ${l.bids_count} bids</span>` : ''}
+          </div>
+          <div style="font-size:10px;color:#999;margin-top:6px">Harvest: ${l.harvest_date} · ${l.available_quantity_kg < l.quantity_kg ? `${l.available_quantity_kg}/${l.quantity_kg} kg left` : 'Full qty available'}</div>
+        </div>
+      `).join('')}
+
+      <button style="width:100%;padding:10px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px">+ Create New Listing</button>
+
+      <div style="background:#e8f5e9;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>📊 Quality Grading (BIS IS 4303):</strong> A+ (Premium, score ≥9) · A (Standard, ≥7) · B (Economy, ≥5) · C (Processing grade). Scored on freshness, size uniformity, appearance, odor, texture.
+      </div>
+    </div>`;
+  }
+
+  function renderColdChainPlusTab() {
+    const shipments = [
+      { id:'cs1', listing_species:'Vannamei Shrimp', provider:'Snowman Logistics', status:'in_transit', pickup:'Nellore, AP', delivery:'Hyderabad, TS', distance_km:456, temperature_c:2.8, vehicle:'Reefer Truck 5T', booked_at:'2026-05-03T10:00:00Z' },
+      { id:'cs2', listing_species:'Rohu', provider:'Tessol', status:'delivered', pickup:'Eluru, AP', delivery:'Bangalore, KA', distance_km:612, temperature_c:3.1, vehicle:'Reefer Van 2T', booked_at:'2026-05-01T08:00:00Z' },
+      { id:'cs3', listing_species:'Black Tiger', provider:'Gati KWE', status:'picked_up', pickup:'Kakinada, AP', delivery:'Chennai, TN', distance_km:580, temperature_c:1.5, vehicle:'Reefer Truck 10T', booked_at:'2026-05-04T06:00:00Z' },
+    ];
+    const providers = [
+      { name: 'Snowman Logistics', type: 'Cold Chain', city: 'Mumbai', rating: 4.6, deliveries: 12500, vehicles: 'Reefer Trucks, Vans' },
+      { name: 'ColdEX Logistics', type: 'Cold Chain', city: 'Delhi', rating: 4.4, deliveries: 8200, vehicles: 'Reefer Trucks, Containers' },
+      { name: 'Tessol', type: 'Cold Chain Tech', city: 'Mumbai', rating: 4.5, deliveries: 5600, vehicles: 'Phase-Change Containers' },
+      { name: 'Gati KWE', type: 'Express Cold', city: 'Hyderabad', rating: 4.3, deliveries: 15800, vehicles: 'Reefer Trucks, Vans' },
+      { name: 'Blue Star Cold Chain', type: 'Infrastructure', city: 'Mumbai', rating: 4.7, deliveries: 9400, vehicles: 'Cold Rooms, Trucks' },
+    ];
+    const statusColors = { requested:'#3498db', confirmed:'#9b59b6', picked_up:'#f39c12', in_transit:'#e67e22', delivered:'#27ae60', cancelled:'#e74c3c' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🧊 Cold Chain+ Logistics</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Temperature-monitored transport · Live tracking · Provider directory</p>
+
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">📦 Active Shipments</div>
+      ${shipments.map(s => `
+        <div class="card" style="padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700">${s.listing_species}</div>
+              <div style="font-size:11px;color:#555">${s.provider} · ${s.vehicle}</div>
+            </div>
+            <span style="background:${statusColors[s.status]};color:white;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase">${s.status.replace(/_/g,' ')}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:#555">
+            <div>📍 ${s.pickup} → ${s.delivery}</div>
+            <div>${s.distance_km} km</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <span class="tag" style="background:${s.temperature_c > 4 ? '#fdeaea' : '#e8f5e9'};color:${s.temperature_c > 4 ? '#e74c3c' : '#27ae60'}">🌡️ ${s.temperature_c}°C ${s.temperature_c > 4 ? '⚠️ ALERT' : '✓ OK'}</span>
+            <span class="tag" style="background:#f0f0f0">💰 Est. ₹${(s.distance_km * 15).toLocaleString()}</span>
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="font-size:12px;font-weight:700;margin:16px 0 8px">🚛 Logistics Providers</div>
+      ${providers.map(p => `
+        <div class="card" style="padding:10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:12px;font-weight:700">${p.name}</div>
+            <div style="font-size:10px;color:#555">${p.type} · ${p.city} · ${p.vehicles}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:12px;font-weight:700;color:#f39c12">⭐ ${p.rating}</div>
+            <div style="font-size:9px;color:#999">${p.deliveries.toLocaleString()} trips</div>
+          </div>
+        </div>
+      `).join('')}
+
+      <button style="width:100%;padding:10px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px">📦 Book New Shipment</button>
+
+      <div style="background:#ebf5fb;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>🌡️ Cold Chain Protocol:</strong> Max 4°C threshold · IoT temp sensors every 15 min · Automatic alerts on breach · ₹15/km estimated cost
+      </div>
+    </div>`;
+  }
+
+  function renderTraceabilityTab() {
+    const batches = [
+      { batch_code:'TR-M3X7K9A', species:'Vannamei Shrimp', quantity_kg:2500, harvest_date:'2026-05-10', harvest_location:'Nellore, AP', blockchain_hash:'a3f8c2d1e5b7...4f9a', nfdp_compliant:true, events_count:4 },
+      { batch_code:'TR-N4Y8L2B', species:'Rohu', quantity_kg:3000, harvest_date:'2026-05-08', harvest_location:'Eluru, AP', blockchain_hash:'b7d2e9f4a1c3...8e5b', nfdp_compliant:true, events_count:3 },
+      { batch_code:'TR-P5Z9M3C', species:'Pangasius', quantity_kg:5000, harvest_date:'2026-05-03', harvest_location:'Vijayawada, AP', blockchain_hash:'c1e4f8a2b6d9...2c7d', nfdp_compliant:false, events_count:5 },
+    ];
+    const sampleEvents = [
+      { event_type:'harvest', icon:'🎣', description:'Harvested from Pond A-3', location:'Nellore, AP', temperature_c:28.5, timestamp:'2026-05-10T05:30:00Z', verified:true },
+      { event_type:'processing', icon:'🔪', description:'Cleaned, sorted by size grade A+', location:'Nellore Processing Unit', temperature_c:4.0, timestamp:'2026-05-10T08:00:00Z', verified:true },
+      { event_type:'cold_storage', icon:'🧊', description:'Cold stored at 2°C', location:'Nellore Cold Storage', temperature_c:2.0, timestamp:'2026-05-10T09:30:00Z', verified:true },
+      { event_type:'transport', icon:'🚛', description:'Shipped via Snowman Logistics', location:'In Transit to Hyderabad', temperature_c:2.8, timestamp:'2026-05-10T14:00:00Z', verified:false },
+    ];
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🔗 Farm-to-Fork Traceability</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">QR codes · Blockchain hashes · Critical Tracking Events (CTEs)</p>
+
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">📦 Trace Batches</div>
+      ${batches.map(b => `
+        <div class="card" style="padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700">${b.species} — ${b.quantity_kg.toLocaleString()} kg</div>
+              <div style="font-size:11px;color:#555">${b.harvest_location} · ${b.harvest_date}</div>
+            </div>
+            <div style="text-align:right">
+              ${b.nfdp_compliant ? '<span style="background:#e8f5e9;color:#27ae60;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700">✓ NFDP</span>' : '<span style="background:#f5f5f5;color:#999;padding:2px 6px;border-radius:4px;font-size:9px">Pending</span>'}
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+            <span class="tag" style="background:#e3f2fd;font-family:monospace;font-size:10px">📋 ${b.batch_code}</span>
+            <span class="tag" style="background:#f3e5f5;font-family:monospace;font-size:10px">🔗 ${b.blockchain_hash}</span>
+            <span class="tag" style="background:#fff3e0">📍 ${b.events_count} CTEs</span>
+          </div>
+          <div style="margin-top:8px;text-align:center">
+            <div style="border:2px dashed #ccc;padding:12px;border-radius:8px;font-size:11px;color:#999">📱 QR Code — Scan to trace batch ${b.batch_code}</div>
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="font-size:12px;font-weight:700;margin:16px 0 8px">📍 Chain of Custody — ${batches[0]?.batch_code || ''}</div>
+      <div style="position:relative;padding-left:24px">
+        ${sampleEvents.map((e, i) => `
+          <div style="position:relative;padding-bottom:${i < sampleEvents.length-1 ? '20px' : '0'};margin-bottom:0">
+            ${i < sampleEvents.length-1 ? '<div style="position:absolute;left:-16px;top:20px;bottom:0;width:2px;background:#ddd"></div>' : ''}
+            <div style="position:absolute;left:-22px;top:2px;width:14px;height:14px;border-radius:50%;background:${e.verified ? '#27ae60' : '#f39c12'};display:flex;align-items:center;justify-content:center;font-size:8px;color:white">${e.verified ? '✓' : '?'}</div>
+            <div class="card" style="padding:10px;margin-bottom:0">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div>
+                  <div style="font-size:12px;font-weight:700">${e.icon} ${e.event_type.replace(/_/g,' ').toUpperCase()}</div>
+                  <div style="font-size:11px;color:#555">${e.description}</div>
+                  <div style="font-size:10px;color:#999;margin-top:2px">📍 ${e.location} · 🌡️ ${e.temperature_c}°C</div>
+                </div>
+                <div style="font-size:10px;color:#999;white-space:nowrap">${new Date(e.timestamp).toLocaleString()}</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <button style="width:100%;padding:10px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:14px">+ Create New Trace Batch</button>
+
+      <div style="background:#f3e5f5;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>🔗 Blockchain Immutability:</strong> Every CTE generates a SHA-256 hash. QR codes link to public trace view. DPDP Act 2023 compliant. NFDP interoperable.
+      </div>
+    </div>`;
+  }
+
+  function renderPMMSYDPRTab() {
+    const sampleApps = [
+      { id:'pm1', project_type:'new_pond', beneficiary_category:'general', total_project_cost:2500000, subsidy_pct:40, subsidy_amount:1000000, loan_amount:1000000, own_contribution:500000, bcr:1.8, irr:22.5, npv:850000, district:'Nellore', state:'Andhra Pradesh', status:'approved', land_area_acres:5 },
+      { id:'pm2', project_type:'ras', beneficiary_category:'sc_st', total_project_cost:5000000, subsidy_pct:60, subsidy_amount:3000000, loan_amount:1500000, own_contribution:500000, bcr:2.1, irr:28.3, npv:1500000, district:'East Godavari', state:'Andhra Pradesh', status:'under_review', land_area_acres:2 },
+      { id:'pm3', project_type:'biofloc', beneficiary_category:'women', total_project_cost:1500000, subsidy_pct:60, subsidy_amount:900000, loan_amount:400000, own_contribution:200000, bcr:1.6, irr:18.7, npv:420000, district:'Krishna', state:'Andhra Pradesh', status:'draft', land_area_acres:1 },
+    ];
+    const requiredDocs = [
+      { type:'aadhaar', label:'Aadhaar Card', icon:'🪪', uploaded:true, verified:true },
+      { type:'pan', label:'PAN Card', icon:'💳', uploaded:true, verified:true },
+      { type:'bank_passbook', label:'Bank Passbook', icon:'🏦', uploaded:true, verified:false },
+      { type:'land_deed', label:'Land Deed/Lease', icon:'📜', uploaded:true, verified:false },
+      { type:'caste_certificate', label:'Caste Certificate', icon:'📄', uploaded:false, verified:false },
+      { type:'quotations', label:'Equipment Quotations', icon:'📋', uploaded:false, verified:false },
+      { type:'site_photos', label:'Site Photographs', icon:'📷', uploaded:false, verified:false },
+      { type:'project_report', label:'Project Report', icon:'📊', uploaded:false, verified:false },
+    ];
+    const statusColors = { draft:'#3498db', documents_pending:'#f39c12', submitted:'#9b59b6', under_review:'#e67e22', approved:'#27ae60', rejected:'#e74c3c' };
+    const projectTypes = { new_pond:'New Pond', ras:'RAS Unit', cage_culture:'Cage Culture', biofloc:'Biofloc', hatchery:'Hatchery', cold_storage:'Cold Storage', processing_unit:'Processing Unit' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">📄 PMMSY DPR Builder</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Auto-subsidy calculation · Financial projections · Document upload</p>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+        <div class="card" style="padding:10px;text-align:center;background:linear-gradient(135deg,#e8f5e9,#c8e6c9)">
+          <div style="font-size:10px;color:#2e7d32;font-weight:600">General Category</div>
+          <div style="font-size:20px;font-weight:800;color:#1b5e20">40%</div>
+          <div style="font-size:9px;color:#388e3c">Subsidy Rate</div>
+        </div>
+        <div class="card" style="padding:10px;text-align:center;background:linear-gradient(135deg,#e3f2fd,#bbdefb)">
+          <div style="font-size:10px;color:#1565c0;font-weight:600">SC/ST Category</div>
+          <div style="font-size:20px;font-weight:800;color:#0d47a1">60%</div>
+          <div style="font-size:9px;color:#1976d2">Subsidy Rate</div>
+        </div>
+        <div class="card" style="padding:10px;text-align:center;background:linear-gradient(135deg,#fce4ec,#f8bbd0)">
+          <div style="font-size:10px;color:#c62828;font-weight:600">Women Category</div>
+          <div style="font-size:20px;font-weight:800;color:#b71c1c">60%</div>
+          <div style="font-size:9px;color:#d32f2f">Subsidy Rate</div>
+        </div>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">📋 My Applications (${sampleApps.length})</div>
+      ${sampleApps.map(a => `
+        <div class="card" style="padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700">${projectTypes[a.project_type] || a.project_type} — ${a.land_area_acres} acres</div>
+              <div style="font-size:11px;color:#555">${a.district}, ${a.state}</div>
+            </div>
+            <span style="background:${statusColors[a.status]};color:white;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase">${a.status.replace(/_/g,' ')}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;text-align:center">
+            <div style="background:#f8f9fa;padding:6px;border-radius:6px">
+              <div style="font-size:10px;color:#666">Project Cost</div>
+              <div style="font-size:12px;font-weight:700">₹${(a.total_project_cost/100000).toFixed(1)}L</div>
+            </div>
+            <div style="background:#e8f5e9;padding:6px;border-radius:6px">
+              <div style="font-size:10px;color:#666">Subsidy (${a.subsidy_pct}%)</div>
+              <div style="font-size:12px;font-weight:700;color:#27ae60">₹${(a.subsidy_amount/100000).toFixed(1)}L</div>
+            </div>
+            <div style="background:#fff3e0;padding:6px;border-radius:6px">
+              <div style="font-size:10px;color:#666">Loan</div>
+              <div style="font-size:12px;font-weight:700;color:#e67e22">₹${(a.loan_amount/100000).toFixed(1)}L</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;justify-content:center">
+            <span class="tag" style="background:#e3f2fd">BCR: ${a.bcr}</span>
+            <span class="tag" style="background:#f3e5f5">IRR: ${a.irr}%</span>
+            <span class="tag" style="background:#e8f5e9">NPV: ₹${(a.npv/100000).toFixed(1)}L</span>
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="font-size:12px;font-weight:700;margin:16px 0 8px">📎 Required Documents</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">
+        ${requiredDocs.map(d => `
+          <div class="card" style="padding:8px;display:flex;align-items:center;gap:8px;background:${d.verified ? '#e8f5e9' : d.uploaded ? '#fff3e0' : '#f5f5f5'}">
+            <span style="font-size:18px">${d.icon}</span>
+            <div style="flex:1">
+              <div style="font-size:11px;font-weight:600">${d.label}</div>
+              <div style="font-size:9px;color:${d.verified ? '#27ae60' : d.uploaded ? '#f39c12' : '#999'}">${d.verified ? '✓ Verified' : d.uploaded ? '⏳ Pending' : '○ Not uploaded'}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <button style="width:100%;padding:10px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:14px">+ New PMMSY Application</button>
+    </div>`;
+  }
+
+  function renderSupplierHubTab() {
+    const suppliers = [
+      { name:'Avanti Feeds Limited', category:'feed', city:'Hyderabad', state:'AP', specialization:'Shrimp & fish feed', verified:true, featured:true, rating:4.8, experience_years:30 },
+      { name:'CP Aquaculture (India)', category:'feed', city:'Chennai', state:'TN', specialization:'High-quality feed, technical support', verified:true, featured:true, rating:4.7, experience_years:40 },
+      { name:'Bangla Krishi Khamar', category:'hatchery', city:'Kolkata', state:'WB', specialization:'IMC, catfish, tilapia, Pangasius', verified:true, featured:false, rating:4.5, experience_years:15 },
+      { name:'MM Hatcheries', category:'hatchery', city:'Raipur', state:'CG', specialization:'Monosex Tilapia pioneer, Pangasius, IMC', verified:true, featured:true, rating:4.6, experience_years:20 },
+      { name:'SRR Aqua Suppliers LLP', category:'equipment', city:'Hyderabad', state:'TS', specialization:'Paddle wheel aerators, pan-India', verified:true, featured:false, rating:4.4, experience_years:12 },
+      { name:'TIL Biosciences', category:'medicine', city:'Vijayawada', state:'AP', specialization:'Probiotics, mineral mixes', verified:true, featured:true, rating:4.5, experience_years:18 },
+      { name:'Snowman Logistics', category:'cold_chain', city:'Mumbai', state:'MH', specialization:'Cold chain logistics leader', verified:true, featured:true, rating:4.6, experience_years:25 },
+      { name:'Growel Feeds Pvt. Ltd.', category:'feed', city:'Hyderabad', state:'AP', specialization:'Extruded floating fish feed', verified:true, featured:false, rating:4.3, experience_years:15 },
+      { name:'BlueVeta Biolabs', category:'medicine', city:'Kolkata', state:'WB', specialization:'Medicines, probiotics, supplements', verified:false, featured:false, rating:4.2, experience_years:8 },
+      { name:'Godrej Agrovet Limited', category:'feed', city:'Mumbai', state:'MH', specialization:'Diversified aquafeed', verified:true, featured:true, rating:4.7, experience_years:35 },
+      { name:'Tessol', category:'cold_chain', city:'Mumbai', state:'MH', specialization:'Phase-change cold chain tech', verified:true, featured:false, rating:4.4, experience_years:10 },
+      { name:'Keytone Life Sciences', category:'medicine', city:'Hyderabad', state:'TS', specialization:'Sustainable aqua medicines, herbal', verified:true, featured:false, rating:4.3, experience_years:12 },
+    ];
+    const catIcons = { hatchery:'🐟', feed:'🍽️', equipment:'⚙️', medicine:'💊', cold_chain:'🧊', online_platform:'🌐' };
+    const catLabels = { hatchery:'Hatchery', feed:'Feed', equipment:'Equipment', medicine:'Medicine', cold_chain:'Cold Chain', online_platform:'Online' };
+    const categories = ['all','hatchery','feed','equipment','medicine','cold_chain'];
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🏭 National Supplier Directory</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">27 verified suppliers · Hatcheries · Feed · Equipment · Medicine · Cold Chain</p>
+
+      <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px">
+        ${categories.map(c => `<button style="padding:5px 12px;border:1px solid ${c==='all'?'var(--primary)':'#ddd'};border-radius:16px;background:${c==='all'?'var(--primary)':'white'};color:${c==='all'?'white':'#333'};font-size:11px;cursor:pointer;white-space:nowrap;font-weight:${c==='all'?'600':'400'}">${c==='all'?'All':catIcons[c]+' '+catLabels[c]}</button>`).join('')}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr;gap:8px">
+        ${suppliers.map(s => `
+          <div class="card" style="padding:12px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div style="flex:1">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="font-size:18px">${catIcons[s.category] || '📦'}</span>
+                  <div>
+                    <div style="font-size:13px;font-weight:700">${s.name}</div>
+                    <div style="font-size:10px;color:#555">${s.city}, ${s.state} · ${s.experience_years} yrs exp</div>
+                  </div>
+                </div>
+                <div style="font-size:11px;color:#666;margin-top:4px">${s.specialization}</div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:12px;font-weight:700;color:#f39c12">⭐ ${s.rating}</div>
+                <div style="display:flex;gap:4px;margin-top:4px;justify-content:flex-end">
+                  ${s.verified ? '<span style="background:#e8f5e9;color:#27ae60;padding:1px 5px;border-radius:3px;font-size:8px;font-weight:700">✓ Verified</span>' : ''}
+                  ${s.featured ? '<span style="background:#fff3e0;color:#e67e22;padding:1px 5px;border-radius:3px;font-size:8px;font-weight:700">⭐ Featured</span>' : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="text-align:center;margin-top:12px">
+        <button style="padding:8px 24px;background:white;border:2px solid var(--primary);color:var(--primary);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Load More Suppliers →</button>
+      </div>
+
+      <div style="background:#e8eaf6;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>🏭 Supplier Categories:</strong> Hatcheries (seed suppliers) · Feed Manufacturers (Avanti, CP, Growel, Godrej, Sreema, Happy Feeds) · Equipment (aerators, pumps) · Medicine (probiotics, supplements) · Cold Chain (Snowman, Tessol, Gati)
       </div>
     </div>`;
   }
