@@ -122,6 +122,11 @@ export function renderAquaOS(container) {
           <button role="tab" aria-selected="${tab==='traceability'}" class="tab-btn ${tab==='traceability'?'active':''}" data-tab="traceability">🔗 Trace</button>
           <button role="tab" aria-selected="${tab==='pmmsy_dpr'}" class="tab-btn ${tab==='pmmsy_dpr'?'active':''}" data-tab="pmmsy_dpr">📄 PMMSY DPR</button>
           <button role="tab" aria-selected="${tab==='supplier_hub'}" class="tab-btn ${tab==='supplier_hub'?'active':''}" data-tab="supplier_hub">🏭 Suppliers</button>
+          <button role="tab" aria-selected="${tab==='reviews_perf'}" class="tab-btn ${tab==='reviews_perf'?'active':''}" data-tab="reviews_perf">⭐ Reviews</button>
+          <button role="tab" aria-selected="${tab==='logistics_plus'}" class="tab-btn ${tab==='logistics_plus'?'active':''}" data-tab="logistics_plus">🚚 Logistics+</button>
+          <button role="tab" aria-selected="${tab==='training_hub'}" class="tab-btn ${tab==='training_hub'?'active':''}" data-tab="training_hub">📚 Training</button>
+          <button role="tab" aria-selected="${tab==='disputes'}" class="tab-btn ${tab==='disputes'?'active':''}" data-tab="disputes">⚖️ Disputes</button>
+          <button role="tab" aria-selected="${tab==='trade_credit'}" class="tab-btn ${tab==='trade_credit'?'active':''}" data-tab="trade_credit">💳 Credit</button>
           <button role="tab" aria-selected="${tab==='analytics'}" class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📈 ${t('analytics')}</button>
           <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         `}
@@ -172,6 +177,11 @@ export function renderAquaOS(container) {
       case 'traceability': return renderTraceabilityTab();
       case 'pmmsy_dpr': return renderPMMSYDPRTab();
       case 'supplier_hub': return renderSupplierHubTab();
+      case 'reviews_perf': return renderReviewsTab();
+      case 'logistics_plus': return renderLogisticsPlusTab();
+      case 'training_hub': return renderTrainingHubTab();
+      case 'disputes': return renderDisputesTab();
+      case 'trade_credit': return renderTradeCreditTab();
       case 'settings': return renderSettings();
       default: return renderDashboard();
     }
@@ -2871,6 +2881,284 @@ export function renderAquaOS(container) {
 
       <div style="background:#e8eaf6;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
         <strong>🏭 Supplier Categories:</strong> Hatcheries (seed suppliers) · Feed Manufacturers (Avanti, CP, Growel, Godrej, Sreema, Happy Feeds) · Equipment (aerators, pumps) · Medicine (probiotics, supplements) · Cold Chain (Snowman, Tessol, Gati)
+      </div>
+    </div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // AquaOS V7 TABS: Reviews, Logistics+, Training Hub, Disputes, Trade Credit
+  // ═══════════════════════════════════════════════════════════
+
+  function renderReviewsTab() {
+    const reviews = [
+      { seller: 'Ramesh Aqua Farm', rating: 4.5, quality: 5, freshness: 5, packaging: 4, delivery: 4, text: 'Excellent shrimp quality, well-packed in ice. Delivery was on time.', date: '2026-05-01', buyer: 'Krishna Hotels', verified: true, helpful: 12 },
+      { seller: 'Delta Aquaculture', rating: 4.0, quality: 4, freshness: 4, packaging: 4, delivery: 4, text: 'Good Pangasius, consistent size. Would order again.', date: '2026-04-28', buyer: 'AP Seafood Exports', verified: true, helpful: 8 },
+      { seller: 'Godavari Fish Farm', rating: 4.8, quality: 5, freshness: 5, packaging: 5, delivery: 4, text: 'Premium Rohu, perfect for restaurant use. Farm-fresh quality.', date: '2026-04-25', buyer: 'Coastal Kitchen', verified: true, helpful: 15 },
+      { seller: 'Krishna Aqua', rating: 3.5, quality: 4, freshness: 3, packaging: 3, delivery: 4, text: 'Decent quality but some size variation. Packaging could improve.', date: '2026-04-22', buyer: 'Hyderabad Fish Market', verified: true, helpful: 5 },
+    ];
+    const topSellers = [
+      { name: 'Ramesh Aqua Farm', badge: 'gold', rating: 4.7, orders: 156, on_time: 98, accuracy: 97 },
+      { name: 'Godavari Fish Farm', badge: 'gold', rating: 4.8, orders: 142, on_time: 99, accuracy: 99 },
+      { name: 'Coastal Premium Aqua', badge: 'silver', rating: 4.6, orders: 89, on_time: 95, accuracy: 96 },
+      { name: 'Delta Aquaculture', badge: 'silver', rating: 4.3, orders: 210, on_time: 93, accuracy: 94 },
+    ];
+    const badgeColors = { platinum: '#8e24aa', gold: '#f9a825', silver: '#78909c', bronze: '#8d6e63', new: '#90a4ae' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">⭐ Reviews & Performance</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Verified purchase reviews · Seller performance metrics · Trust badges</p>
+
+      <div style="font-weight:700;font-size:12px;margin-bottom:8px">🏆 Top Performers</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        ${topSellers.map(s => `
+          <div class="card" style="padding:10px;text-align:center">
+            <div style="font-size:11px;font-weight:700">${s.name}</div>
+            <div style="margin:4px 0"><span style="background:${badgeColors[s.badge]};color:white;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700;text-transform:uppercase">${s.badge}</span></div>
+            <div style="font-size:18px;font-weight:800;color:#f39c12">⭐ ${s.rating}</div>
+            <div style="font-size:9px;color:#666;margin-top:2px">${s.orders} orders · ${s.on_time}% on-time · ${s.accuracy}% accurate</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="font-weight:700;font-size:12px;margin-bottom:8px">📝 Recent Reviews</div>
+      ${reviews.map(r => `
+        <div class="card" style="padding:10px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-size:12px;font-weight:700">${r.seller}</div>
+            <div style="font-size:14px;font-weight:800;color:#f39c12">⭐ ${r.rating}</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:6px;font-size:9px;color:#555">
+            <span>Quality: ${'★'.repeat(r.quality)}${'☆'.repeat(5-r.quality)}</span>
+            <span>Fresh: ${'★'.repeat(r.freshness)}${'☆'.repeat(5-r.freshness)}</span>
+            <span>Pack: ${'★'.repeat(r.packaging)}${'☆'.repeat(5-r.packaging)}</span>
+          </div>
+          <div style="font-size:11px;color:#333;margin-bottom:4px">"${r.text}"</div>
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:#999">
+            <span>By ${r.buyer} ${r.verified?'✓ Verified Purchase':''}</span>
+            <span>👍 ${r.helpful} helpful · ${r.date}</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  function renderLogisticsPlusTab() {
+    const providers = [
+      { name: 'Snowman Logistics', type: 'Integrated', coverage: 'Pan-India', iot: true, cold: true, rating: 4.7, deliveries: 15000, price: '₹18.5/km' },
+      { name: 'Gati Ltd.', type: 'Integrated', coverage: 'Pan-India', iot: true, cold: true, rating: 4.5, deliveries: 12000, price: '₹15/km' },
+      { name: 'Tessol', type: 'Reefer Transport', coverage: 'MH/KA/TN/AP/TS', iot: true, cold: true, rating: 4.4, deliveries: 3500, price: '₹12/km' },
+      { name: 'FreshCatch Logistics', type: 'Farm Pickup', coverage: 'AP/TS/TN', iot: false, cold: true, rating: 4.1, deliveries: 2800, price: '₹10/km' },
+      { name: 'SeaLink Cold Chain', type: 'Last Mile', coverage: 'AP/TS/KA/TN', iot: true, cold: true, rating: 4.2, deliveries: 4200, price: '₹14/km' },
+    ];
+    const bookings = [
+      { id: 'BK001', provider: 'Snowman Logistics', status: 'in_transit', from: 'Nellore, AP', to: 'Hyderabad, TS', temp: '1.2°C ✓', distance: '456 km', cost: '₹8,436' },
+      { id: 'BK002', provider: 'Tessol', status: 'delivered', from: 'Bhimavaram, AP', to: 'Bangalore, KA', temp: '0.8°C ✓', distance: '620 km', cost: '₹7,440' },
+      { id: 'BK003', provider: 'FreshCatch', status: 'pickup_scheduled', from: 'Eluru, AP', to: 'Vijayawada, AP', temp: '--', distance: '58 km', cost: '₹580' },
+    ];
+    const statusColors = { requested:'#90a4ae', confirmed:'#42a5f5', pickup_scheduled:'#ab47bc', in_transit:'#ff9800', delivered:'#4caf50', cancelled:'#ef5350' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🚚 Logistics+ (Cold Chain Integrated)</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Book transport · IoT temp monitoring · Route optimization · Real-time GPS</p>
+
+      <div style="font-weight:700;font-size:12px;margin-bottom:8px">📦 My Bookings</div>
+      ${bookings.map(b => `
+        <div class="card" style="padding:10px;margin-bottom:8px;border-left:4px solid ${statusColors[b.status]}">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:12px;font-weight:700">${b.provider} · ${b.id}</div>
+              <div style="font-size:10px;color:#555">${b.from} → ${b.to}</div>
+            </div>
+            <span style="background:${statusColors[b.status]};color:white;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:600">${b.status.replace(/_/g,' ')}</span>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:#555">
+            <span>🌡️ ${b.temp}</span><span>📏 ${b.distance}</span><span>💰 ${b.cost}</span>
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="font-weight:700;font-size:12px;margin:14px 0 8px">🚛 Available Providers</div>
+      ${providers.map(p => `
+        <div class="card" style="padding:10px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:12px;font-weight:700">${p.name}</div>
+              <div style="font-size:10px;color:#555">${p.type} · ${p.coverage} · ${p.price}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:12px;font-weight:700;color:#f39c12">⭐ ${p.rating}</div>
+              <div style="display:flex;gap:4px;justify-content:flex-end;margin-top:2px">
+                ${p.cold?'<span style="background:#e3f2fd;color:#1565c0;padding:1px 4px;border-radius:3px;font-size:8px">❄️</span>':''}
+                ${p.iot?'<span style="background:#e8f5e9;color:#2e7d32;padding:1px 4px;border-radius:3px;font-size:8px">📡IoT</span>':''}
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+
+      <button class="btn-primary" style="width:100%;margin-top:10px;padding:10px;font-size:13px" onclick="showToast('Opening booking form...')">📦 Book New Shipment</button>
+
+      <div style="background:#e3f2fd;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>🧊 Cold Chain Protocol:</strong> Target 0-4°C · IoT sensors every 5 min · Auto-alert if temp > 4°C · GPS route tracking · Estimated ₹15/km avg cost
+      </div>
+    </div>`;
+  }
+
+  function renderTrainingHubTab() {
+    const modules = [
+      { title: 'Pond Site Selection & Design', category: 'pond_preparation', difficulty: 'beginner', format: 'guide', duration: 45, institution: 'ICAR-CIFA', views: 4500, rating: 4.6, language: 'EN' },
+      { title: 'Water Quality Management', category: 'water_quality', difficulty: 'beginner', format: 'video', duration: 30, institution: 'ICAR-CIFA', views: 6200, rating: 4.8, language: 'EN' },
+      { title: 'Feed Management & FCR', category: 'feed_management', difficulty: 'intermediate', format: 'video', duration: 40, institution: 'ICAR-CIFA', views: 5100, rating: 4.7, language: 'EN' },
+      { title: 'Fish Disease Prevention', category: 'health_biosecurity', difficulty: 'intermediate', format: 'guide', duration: 50, institution: 'ICAR-CIFA', views: 4800, rating: 4.5, language: 'EN' },
+      { title: 'Harvesting & Post-Harvest', category: 'harvest_handling', difficulty: 'beginner', format: 'video', duration: 35, institution: 'ASCI', views: 3900, rating: 4.4, language: 'EN' },
+      { title: 'PMMSY Application Guide', category: 'government_schemes', difficulty: 'beginner', format: 'guide', duration: 25, institution: 'DoF India', views: 7800, rating: 4.3, language: 'EN' },
+      { title: 'Biofloc Technology', category: 'technology', difficulty: 'intermediate', format: 'video', duration: 55, institution: 'ICAR-CIFA', views: 3200, rating: 4.5, language: 'EN' },
+      { title: 'మత్స్య సంపద: చెరువు నిర్వహణ', category: 'pond_preparation', difficulty: 'beginner', format: 'video', duration: 30, institution: 'ICAR-CIFA', views: 2100, rating: 4.4, language: 'TE' },
+      { title: 'Good Aquaculture Practices', category: 'health_biosecurity', difficulty: 'beginner', format: 'guide', duration: 40, institution: 'NACA/FAO', views: 2900, rating: 4.6, language: 'EN' },
+    ];
+    const categories = ['All','pond_preparation','water_quality','feed_management','health_biosecurity','harvest_handling','technology','government_schemes'];
+    const catLabels = { pond_preparation:'Pond Prep', water_quality:'Water', feed_management:'Feed', health_biosecurity:'Health', harvest_handling:'Harvest', technology:'Tech', government_schemes:'Schemes', marketing:'Marketing' };
+    const diffColors = { beginner:'#4caf50', intermediate:'#ff9800', advanced:'#f44336' };
+    const formatIcons = { video:'🎬', guide:'📖', article:'📄', quiz:'❓', infographic:'📊', interactive:'🎮' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">📚 Training & Knowledge Hub</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">ICAR-CIFA · ASCI · Multi-language · Offline-ready · GAqP/BMPs compliant</p>
+
+      <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px">
+        ${categories.map(c => `<button style="padding:4px 10px;border:1px solid ${c==='All'?'var(--primary)':'#ddd'};border-radius:14px;background:${c==='All'?'var(--primary)':'white'};color:${c==='All'?'white':'#333'};font-size:10px;cursor:pointer;white-space:nowrap">${c==='All'?'All':catLabels[c]||c}</button>`).join('')}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr;gap:8px">
+        ${modules.map(m => `
+          <div class="card" style="padding:10px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div style="flex:1">
+                <div style="font-size:12px;font-weight:700">${formatIcons[m.format]} ${m.title}</div>
+                <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+                  <span style="background:${diffColors[m.difficulty]};color:white;padding:1px 6px;border-radius:8px;font-size:8px;font-weight:600">${m.difficulty}</span>
+                  <span style="background:#f5f5f5;padding:1px 6px;border-radius:8px;font-size:8px">${m.institution}</span>
+                  <span style="background:#e3f2fd;padding:1px 6px;border-radius:8px;font-size:8px">${m.language}</span>
+                  <span style="font-size:9px;color:#666">⏱️ ${m.duration}min</span>
+                </div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:11px;color:#f39c12;font-weight:700">⭐ ${m.rating}</div>
+                <div style="font-size:9px;color:#999">${m.views.toLocaleString()} views</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="background:#e8f5e9;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>📱 Features:</strong> Offline download · SMS/IVRS alerts · Vernacular languages (Telugu, Hindi, Tamil) · Certificate on completion · Expert Q&A connect
+      </div>
+    </div>`;
+  }
+
+  function renderDisputesTab() {
+    const disputes = [
+      { id: 'DSP-001', title: 'Undersized shrimp delivered', type: 'quality', severity: 'medium', stage: 'direct_communication', filed: '2026-05-01', against: 'Krishna Aqua', status_color: '#ff9800' },
+      { id: 'DSP-002', title: 'Late delivery — 2 days', type: 'delivery_delay', severity: 'low', stage: 'resolved', filed: '2026-04-20', against: 'Delta Aquaculture', status_color: '#4caf50', outcome: 'credit_note' },
+      { id: 'DSP-003', title: 'Payment not received', type: 'payment', severity: 'high', stage: 'platform_mediation', filed: '2026-04-28', against: 'AP Seafood Exports', status_color: '#f44336' },
+    ];
+    const stageLabels = { direct_communication: '💬 Direct Chat', platform_mediation: '⚖️ Mediation', arbitration: '🏛️ Arbitration', resolved: '✅ Resolved', closed: '🔒 Closed' };
+    const typeIcons = { quality:'🐟', quantity:'📦', delivery_delay:'🕐', payment:'💰', fraud:'🚨', damaged:'💥', wrong_item:'❌', other:'❓' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">⚖️ Online Dispute Resolution (ODR)</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">3-tier resolution: Direct Communication → Platform Mediation → Arbitration</p>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+        <div class="card" style="padding:8px;text-align:center;background:#fff3e0">
+          <div style="font-size:20px;font-weight:800;color:#e65100">1</div>
+          <div style="font-size:9px;font-weight:600">Active</div>
+        </div>
+        <div class="card" style="padding:8px;text-align:center;background:#e3f2fd">
+          <div style="font-size:20px;font-weight:800;color:#1565c0">1</div>
+          <div style="font-size:9px;font-weight:600">In Mediation</div>
+        </div>
+        <div class="card" style="padding:8px;text-align:center;background:#e8f5e9">
+          <div style="font-size:20px;font-weight:800;color:#2e7d32">1</div>
+          <div style="font-size:9px;font-weight:600">Resolved</div>
+        </div>
+      </div>
+
+      <div style="font-weight:700;font-size:12px;margin-bottom:8px">📋 My Disputes</div>
+      ${disputes.map(d => `
+        <div class="card" style="padding:10px;margin-bottom:8px;border-left:4px solid ${d.status_color}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div style="font-size:12px;font-weight:700">${typeIcons[d.type]} ${d.title}</div>
+            <span style="font-size:9px;color:${d.status_color};font-weight:600">${d.id}</span>
+          </div>
+          <div style="font-size:10px;color:#555;margin-bottom:4px">Against: ${d.against} · Filed: ${d.filed}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="background:#f5f5f5;padding:2px 8px;border-radius:10px;font-size:9px">${stageLabels[d.stage]}</span>
+            ${d.outcome ? `<span style="font-size:9px;color:#4caf50">Outcome: ${d.outcome.replace(/_/g,' ')}</span>` : ''}
+            ${d.stage==='direct_communication'?'<button style="font-size:9px;padding:3px 8px;background:#1976d2;color:white;border:none;border-radius:4px;cursor:pointer">Escalate ↑</button>':''}
+          </div>
+        </div>
+      `).join('')}
+
+      <button class="btn-primary" style="width:100%;margin-top:10px;padding:10px;font-size:13px" onclick="showToast('Opening dispute form...')">📝 File New Dispute</button>
+
+      <div style="background:#fce4ec;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>⚖️ ODR Process:</strong> Step 1: Direct communication (3 days) → Step 2: Platform mediation (7 days) → Step 3: Arbitration (final binding decision). Evidence including photos and documents required.
+      </div>
+    </div>`;
+  }
+
+  function renderTradeCreditTab() {
+    const credit = { limit: 500000, available: 320000, used: 180000, net_terms: 30, score: 72, risk: 'low', badge: 'silver', status: 'active' };
+    const invoices = [
+      { number: 'INV-Q7A3B2', seller: 'Ramesh Aqua Farm', amount: 95000, due: '2026-05-20', status: 'pending', days_left: 16 },
+      { number: 'INV-P5X9K1', seller: 'Delta Aquaculture', amount: 47500, due: '2026-05-10', status: 'pending', days_left: 6 },
+      { number: 'INV-M2N8Y4', seller: 'Krishna Aqua', amount: 37500, due: '2026-04-25', status: 'paid', days_left: 0 },
+    ];
+    const invoiceStatusColors = { pending: '#ff9800', paid: '#4caf50', overdue: '#f44336', partially_paid: '#2196f3' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">💳 Trade Credit & Net Terms</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Buy now, pay later · Net 30/60/90 terms · Auto credit scoring</p>
+
+      <div class="card" style="padding:14px;background:linear-gradient(135deg,#1a237e,#283593);color:white;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:11px;opacity:0.8">Credit Account · ${credit.status.toUpperCase()}</div>
+          <span style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700">🏅 ${credit.badge.toUpperCase()}</span>
+        </div>
+        <div style="font-size:24px;font-weight:800">₹${(credit.available/1000).toFixed(0)}K <span style="font-size:12px;font-weight:400;opacity:0.7">available</span></div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;opacity:0.8">
+          <span>Limit: ₹${(credit.limit/100000).toFixed(1)}L</span>
+          <span>Used: ₹${(credit.used/1000).toFixed(0)}K</span>
+          <span>Net ${credit.net_terms} days</span>
+        </div>
+        <div style="height:6px;background:rgba(255,255,255,0.2);border-radius:3px;margin-top:8px;overflow:hidden">
+          <div style="height:100%;width:${(credit.used/credit.limit*100)}%;background:#4caf50;border-radius:3px"></div>
+        </div>
+        <div style="font-size:9px;margin-top:4px;opacity:0.7">Credit Score: ${credit.score}/100 · Risk: ${credit.risk}</div>
+      </div>
+
+      <div style="font-weight:700;font-size:12px;margin-bottom:8px">📄 Outstanding Invoices</div>
+      ${invoices.map(i => `
+        <div class="card" style="padding:10px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:12px;font-weight:700">${i.number}</div>
+              <div style="font-size:10px;color:#555">${i.seller} · Due: ${i.due}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:13px;font-weight:700">₹${i.amount.toLocaleString()}</div>
+              <span style="color:${invoiceStatusColors[i.status]};font-size:9px;font-weight:600">${i.status === 'pending' ? `⏳ ${i.days_left} days left` : '✓ Paid'}</span>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+
+      <button class="btn-primary" style="width:100%;margin-top:10px;padding:10px;font-size:13px" onclick="showToast('Applying for credit increase...')">📈 Request Credit Increase</button>
+
+      <div style="background:#e8eaf6;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>💳 How it works:</strong> Apply once → Auto credit check → Get approved limit → Buy on Net 30/60/90 terms → Pay by due date → Credit score improves → Higher limits unlocked
       </div>
     </div>`;
   }

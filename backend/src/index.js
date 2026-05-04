@@ -97,6 +97,8 @@ const aquaosV4Router = require('./routes/aquaos-v4');
 const aquaosV5Router = require('./routes/aquaos-v5');
 // Phase 10 — AquaOS V6 Fish Marketplace + Cold Chain + Traceability + PMMSY DPR + Supplier Directory
 const aquaosV6Router = require('./routes/aquaos-v6');
+// Phase 11 — AquaOS V7 Reviews + Logistics+ + Training + ODR + Trade Credit + VMS
+const aquaosV7Router = require('./routes/aquaos-v7');
 
 const app = express();
 const server = http.createServer(app);
@@ -199,6 +201,7 @@ app.use('/api/aquaos-v3', aquaosV3Router);
 app.use('/api/aquaos-v4', aquaosV4Router);
 app.use('/api/aquaos-v5', aquaosV5Router);
 app.use('/api/aquaos-v6', aquaosV6Router);
+app.use('/api/aquaos-v7', aquaosV7Router);
 app.use('/api/farmerconnect', farmerconnectRouter);
 app.use('/api/kisanconnect', kisanconnectRouter);
 app.use('/api/intelligence', intelligenceRouter);
@@ -297,6 +300,8 @@ async function start() {
     await migrateV10ROS();
     const { migrateV15AquaOSV6 } = require('./db/migrate-v15-aquaos-v6');
     await migrateV15AquaOSV6();
+    const { migrateV16AquaOSV7 } = require('./db/migrate-v16-aquaos-v7');
+    await migrateV16AquaOSV7();
     logger.info('Database migrations applied');
 
     // Recover any pending jobs from previous crash
