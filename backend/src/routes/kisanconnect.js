@@ -1080,4 +1080,202 @@ router.patch('/bookings/:id/status', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════════
+// RURAL SERVICES MARKETPLACE
+// ═══════════════════════════════════════════════════════════════
+
+// GET /api/kisanconnect/services — browse service listings
+router.get('/services', optionalAuth, async (req, res) => {
+  try {
+    const { service_type, district_id, search, limit = 20, offset = 0 } = req.query;
+    let conditions = [`sl.is_available = true`];
+    let params = [];
+    let i = 1;
+
+    if (service_type) { conditions.push(`sl.service_type = $${i++}`); params.push(service_type); }
+    if (district_id) { conditions.push(`sl.district_id = $${i++}`); params.push(district_id); }
+    if (search) { conditions.push(`(sl.title ILIKE $${i} OR sl.description ILIKE $${i})`); params.push(`%${search}%`); i++; }
+    params.push(parseInt(limit), parseInt(offset));
+
+    const result = await query(`
+      SELECT sl.*, d.name AS district_name, u.name AS provider_name
+      FROM service_listings sl
+      LEFT JOIN districts d ON d.id = sl.district_id
+      JOIN users u ON u.id = sl.provider_id
+      WHERE ${conditions.join(' AND ')}
+      ORDER BY sl.rating DESC, sl.total_bookings DESC
+      LIMIT $${i++} OFFSET $${i++}
+    `, params);
+    res.json({ services: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/kisanconnect/services — create service listing
+router.post('/services', authMiddleware, async (req, res) => {
+  try {
+    const { service_type, title, description, base_rate, rate_unit, location_label, district_id, availability, photos } = req.body;
+    if (!service_type || !title) return res.status(400).json({ error: 'service_type and title required' });
+
+    const SERVICE_TYPES = ['plumber','electrician','veterinary','tractor_repair','well_boring','solar_installation','labour'];
+    if (!SERVICE_TYPES.includes(service_type)) return res.status(400).json({ error: `service_type must be one of: ${SERVICE_TYPES.join(', ')}` });
+
+    const result = await query(`
+      INSERT INTO service_listings (id, provider_id, service_type, title, description, base_rate, rate_unit, location_label, district_id, availability, photos)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *
+    `, [uuidv4(), req.user.id, service_type, title, description, base_rate, rate_unit || 'per_day', location_label, district_id, availability || [], photos || []]);
+
+    res.status(201).json({ service: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/kisanconnect/services/:id — service detail
+router.get('/services/:id', optionalAuth, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT sl.*, d.name AS district_name, u.name AS provider_name, u.phone AS provider_phone
+      FROM service_listings sl
+      LEFT JOIN districts d ON d.id = sl.district_id
+      JOIN users u ON u.id = sl.provider_id
+      WHERE sl.id = $1
+    `, [req.params.id]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Service not found' });
+    res.json({ service: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/kisanconnect/services/:id/book — book a service
+router.post('/services/:id/book', authMiddleware, async (req, res) => {
+  try {
+    const { date, time_slot, address, notes } = req.body;
+    if (!date) return res.status(400).json({ error: 'date required' });
+
+    const svc = await query(`SELECT * FROM service_listings WHERE id=$1 AND is_available=true`, [req.params.id]);
+    if (!svc.rows.length) return res.status(404).json({ error: 'Service not found or unavailable' });
+    if (svc.rows[0].provider_id === req.user.id) return res.status(400).json({ error: 'Cannot book your own service' });
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const result = await query(`
+      INSERT INTO service_bookings (id, service_id, customer_id, date, time_slot, address, notes, otp_code)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *
+    `, [uuidv4(), req.params.id, req.user.id, date, time_slot, address, notes, otpCode]);
+
+    if (createNotification) {
+      await createNotification(
+        svc.rows[0].provider_id, 'service_booking',
+        '📋 New Service Booking',
+        `New booking request for "${svc.rows[0].title}" on ${date}`,
+        { booking_id: result.rows[0].id, service_id: req.params.id }
+      );
+    }
+
+    res.status(201).json({ booking: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/kisanconnect/service-bookings/:id/status — update booking status
+router.patch('/service-bookings/:id/status', authMiddleware, async (req, res) => {
+  try {
+    const { status, otp_code } = req.body;
+    const VALID_STATUSES = ['requested','confirmed','in_progress','completed','cancelled'];
+    if (!VALID_STATUSES.includes(status)) return res.status(400).json({ error: `status must be one of: ${VALID_STATUSES.join(', ')}` });
+
+    const booking = await query(`
+      SELECT sb.*, sl.provider_id, sl.title AS service_title
+      FROM service_bookings sb JOIN service_listings sl ON sl.id = sb.service_id
+      WHERE sb.id = $1
+    `, [req.params.id]);
+    if (!booking.rows.length) return res.status(404).json({ error: 'Booking not found' });
+    const b = booking.rows[0];
+
+    // Authorization: provider controls confirmed/in_progress, customer controls cancelled
+    const isProvider = b.provider_id === req.user.id;
+    const isCustomer = b.customer_id === req.user.id;
+    if (!isProvider && !isCustomer) return res.status(403).json({ error: 'Not authorized' });
+
+    // OTP verification for completion
+    if (status === 'completed') {
+      if (!isProvider) return res.status(403).json({ error: 'Only provider can mark complete' });
+      if (!otp_code || otp_code !== b.otp_code) return res.status(400).json({ error: 'Invalid OTP' });
+    }
+    if (status === 'confirmed' || status === 'in_progress') {
+      if (!isProvider) return res.status(403).json({ error: 'Only provider can confirm or start' });
+    }
+
+    const completedAt = status === 'completed' ? new Date().toISOString() : null;
+    const result = await query(`
+      UPDATE service_bookings SET status=$1, completed_at=COALESCE($2::timestamptz, completed_at), updated_at=NOW()
+      WHERE id=$3 RETURNING *
+    `, [status, completedAt, req.params.id]);
+
+    // Update total_bookings on service when completed
+    if (status === 'completed') {
+      await query(`UPDATE service_listings SET total_bookings=total_bookings+1 WHERE id=$1`, [b.service_id]);
+    }
+
+    res.json({ booking: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/kisanconnect/service-bookings/:id/rate — rate completed service
+router.post('/service-bookings/:id/rate', authMiddleware, async (req, res) => {
+  try {
+    const { rating, review } = req.body;
+    if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error: 'rating must be 1-5' });
+
+    const booking = await query(`SELECT * FROM service_bookings WHERE id=$1 AND customer_id=$2`, [req.params.id, req.user.id]);
+    if (!booking.rows.length) return res.status(404).json({ error: 'Booking not found' });
+    if (booking.rows[0].status !== 'completed') return res.status(400).json({ error: 'Can only rate completed bookings' });
+
+    await query(`UPDATE service_bookings SET customer_rating=$1, customer_review=$2, status='rated', updated_at=NOW() WHERE id=$3`,
+      [rating, review, req.params.id]);
+
+    // Recompute service average rating
+    const avgResult = await query(`
+      SELECT AVG(customer_rating) AS avg_rating FROM service_bookings
+      WHERE service_id=$1 AND customer_rating IS NOT NULL
+    `, [booking.rows[0].service_id]);
+    const newAvg = parseFloat(avgResult.rows[0].avg_rating) || 0;
+    await query(`UPDATE service_listings SET rating=$1 WHERE id=$2`, [newAvg.toFixed(2), booking.rows[0].service_id]);
+
+    res.json({ message: 'Rated successfully', new_rating: newAvg.toFixed(2) });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/kisanconnect/my-services — provider's service listings + bookings
+router.get('/my-services', authMiddleware, async (req, res) => {
+  try {
+    const services = await query(`SELECT * FROM service_listings WHERE provider_id=$1 ORDER BY created_at DESC`, [req.user.id]);
+    const serviceIds = services.rows.map(s => s.id);
+    let bookings = [];
+    if (serviceIds.length) {
+      const bResult = await query(`
+        SELECT sb.*, sl.title AS service_title, u.name AS customer_name
+        FROM service_bookings sb
+        JOIN service_listings sl ON sl.id = sb.service_id
+        JOIN users u ON u.id = sb.customer_id
+        WHERE sb.service_id = ANY($1::uuid[])
+        ORDER BY sb.created_at DESC
+      `, [serviceIds]);
+      bookings = bResult.rows;
+    }
+    res.json({ services: services.rows, bookings });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/kisanconnect/service-bookings — customer's bookings
+router.get('/service-bookings', authMiddleware, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT sb.*, sl.title AS service_title, sl.service_type, sl.base_rate, sl.rate_unit,
+             u.name AS provider_name
+      FROM service_bookings sb
+      JOIN service_listings sl ON sl.id = sb.service_id
+      JOIN users u ON u.id = sl.provider_id
+      WHERE sb.customer_id = $1
+      ORDER BY sb.created_at DESC
+    `, [req.user.id]);
+    res.json({ bookings: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

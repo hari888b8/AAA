@@ -1155,35 +1155,60 @@ export function renderKisan(container) {
         <div>👤 ${sv.provider} · 📍 ${sv.location}</div>
         <div>💰 ${sv.rate} · ⭐ ${sv.rating}</div>
       </div>
-      <div class="form-group"><label>Farm Location</label><input class="form-input" id="svcLoc" placeholder="Village, District"></div>
+      <div class="form-group"><label>Farm Location / Address</label><input class="form-input" id="svcLoc" placeholder="Village, District"></div>
       ${sv.min_acres?`<div class="form-group"><label>Acres (min ${sv.min_acres})</label><input class="form-input" id="svcAcres" type="number" min="${sv.min_acres}" placeholder="${sv.min_acres}"></div>`:''}
       <div class="form-group"><label>Preferred Date</label><input class="form-input" id="svcDate" type="date" min="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="form-group"><label>Time Slot</label><select class="form-input" id="svcTime"><option value="morning">Morning (6am–12pm)</option><option value="afternoon">Afternoon (12pm–5pm)</option><option value="evening">Evening (5pm–8pm)</option></select></div>
       <div class="form-group"><label>Notes</label><textarea class="form-input" id="svcNotes" placeholder="Crop details, special requirements…" style="height:80px"></textarea></div>
       <button class="btn btn-primary" id="confirmSvc">Confirm Booking Request</button>`);
-    document.querySelector('#confirmSvc')?.addEventListener('click',()=>{
-      const loc=document.querySelector('#svcLoc')?.value?.trim();
-      if(!loc){showToast('Please enter your farm location','error');return;}
-      api.post('/kisanconnect/services/book',{service_id:svid,location:loc,acres:document.querySelector('#svcAcres')?.value,date:document.querySelector('#svcDate')?.value,notes:document.querySelector('#svcNotes')?.value}).catch(()=>null);
-      showToast('Booking request sent! Provider will contact you shortly.','success');
-      closeModal();
+    document.querySelector('#confirmSvc')?.addEventListener('click', async () => {
+      const loc = document.querySelector('#svcLoc')?.value?.trim();
+      const date = document.querySelector('#svcDate')?.value;
+      if (!loc) { showToast('Please enter your farm location','error'); return; }
+      if (!date) { showToast('Please select a date','error'); return; }
+      try {
+        await api.post(`/kisanconnect/services/${svid}/book`, {
+          date,
+          time_slot: document.querySelector('#svcTime')?.value,
+          address: loc,
+          notes: document.querySelector('#svcNotes')?.value,
+        });
+        showToast('Booking request sent! Provider will confirm shortly.','success');
+        closeModal();
+      } catch(e) {
+        showToast(e.message || 'Booking failed','error');
+      }
     });
   }
 
   function showOfferService() {
     showModal(`<div class="modal-handle"></div>
       <h3>Offer Your Service</h3>
-      <div class="form-group"><label>Service Type</label><select class="form-input" id="svType"><option>Crop Spraying</option><option>Plowing / Tillage</option><option>Combine Harvesting</option><option>Transplanting</option><option>Soil Testing</option><option>Farm Consultancy</option><option>Drone Spraying</option><option>Other</option></select></div>
-      <div class="form-group"><label>Service Name</label><input class="form-input" id="svName" placeholder="e.g. Paddy Transplanting Labour"></div>
-      <div class="form-group"><label>Rate</label><input class="form-input" id="svRate" placeholder="e.g. ₹1,200/acre or ₹500/day"></div>
-      <div class="form-group"><label>Coverage Area</label><input class="form-input" id="svArea" placeholder="Districts / Mandals covered"></div>
-      <div class="form-group"><label>Contact Number</label><input class="form-input" id="svPhone" type="tel" placeholder="10-digit mobile"></div>
+      <div class="form-group"><label>Service Type</label><select class="form-input" id="svType"><option value="labour">👷 Farm Labour</option><option value="plumber">🔧 Plumber</option><option value="electrician">💡 Electrician</option><option value="veterinary">🐄 Veterinary</option><option value="tractor_repair">🚜 Tractor Repair</option><option value="well_boring">💧 Well Boring</option><option value="solar_installation">☀️ Solar Installation</option></select></div>
+      <div class="form-group"><label>Service Title</label><input class="form-input" id="svName" placeholder="e.g. Paddy Transplanting Labour"></div>
+      <div class="form-group"><label>Description</label><textarea class="form-input" id="svDesc" rows="2" placeholder="What you offer, experience, equipment…"></textarea></div>
+      <div class="form-group"><label>Base Rate (₹)</label><input class="form-input" type="number" id="svRate" placeholder="e.g. 1200"></div>
+      <div class="form-group"><label>Rate Unit</label><select class="form-input" id="svRateUnit"><option value="per_day">Per Day</option><option value="per_acre">Per Acre</option><option value="per_hour">Per Hour</option><option value="per_job">Per Job</option></select></div>
+      <div class="form-group"><label>Location</label><input class="form-input" id="svArea" placeholder="Village, District, AP"></div>
       <button class="btn btn-primary" id="submitSvc">Submit Listing</button>`);
-    document.querySelector('#submitSvc')?.addEventListener('click',()=>{
-      const name=document.querySelector('#svName')?.value?.trim();
-      if(!name){showToast('Please fill service name','error');return;}
-      api.post('/kisanconnect/services',{type:document.querySelector('#svType')?.value,name,rate:document.querySelector('#svRate')?.value,area:document.querySelector('#svArea')?.value,phone:document.querySelector('#svPhone')?.value}).catch(()=>null);
-      showToast('Service listed successfully!','success');
-      closeModal();
+    document.querySelector('#submitSvc')?.addEventListener('click', async () => {
+      const title = document.querySelector('#svName')?.value?.trim();
+      const service_type = document.querySelector('#svType')?.value;
+      if (!title) { showToast('Please fill service title','error'); return; }
+      try {
+        await api.post('/kisanconnect/services', {
+          service_type,
+          title,
+          description: document.querySelector('#svDesc')?.value,
+          base_rate: Number(document.querySelector('#svRate')?.value) || null,
+          rate_unit: document.querySelector('#svRateUnit')?.value,
+          location_label: document.querySelector('#svArea')?.value,
+        });
+        showToast('Service listed successfully!','success');
+        closeModal();
+      } catch(e) {
+        showToast(e.message || 'Failed to list service','error');
+      }
     });
   }
 

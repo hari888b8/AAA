@@ -337,6 +337,7 @@ export function renderAgriFlow(container) {
               <div style="text-align:right;flex-shrink:0">
                 <div style="font-weight:800;font-size:15px;color:#E65100">₹${Number(l.price_per_kg||0).toFixed(0)}/kg</div>
                 <button class="bid-btn" data-lid="${l.id}" style="margin-top:5px;padding:6px 10px;background:#1B5E20;color:white;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">🤝 Bid</button>
+                <button class="offer-btn" data-lid="${l.id}" style="margin-top:4px;padding:6px 10px;background:#6A1B9A;color:white;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">💰 Offer</button>
                 <button class="inq-btn" data-lid="${l.id}" style="margin-top:4px;padding:6px 10px;background:#E65100;color:white;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">Inquire</button>
                 <button class="watch-btn" data-lid="${l.id}" style="margin-top:4px;display:block;width:100%;padding:4px 6px;background:#F5F5F5;border:none;border-radius:6px;font-size:10px;cursor:pointer">${watchlist.some(w=>w.listing_id==l.id)?'⭐ Watching':'☆ Watch'}</button>
               </div>
@@ -579,6 +580,7 @@ export function renderAgriFlow(container) {
     container.querySelectorAll('[data-crop]').forEach(b => b.addEventListener('click', () => { filterCrop = b.dataset.crop; render(); }));
     container.querySelectorAll('.inq-btn').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); showSendInquiry(b.dataset.lid); }));
     container.querySelectorAll('.bid-btn').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); showPlaceBid(b.dataset.lid); }));
+    container.querySelectorAll('.offer-btn').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); showMakeOffer(b.dataset.lid); }));
     container.querySelectorAll('.watch-btn').forEach(b => b.addEventListener('click', async e => {
       e.stopPropagation();
       const l = listings.find(x=>x.id==b.dataset.lid);
@@ -766,6 +768,34 @@ export function renderAgriFlow(container) {
           delivery_address: document.querySelector('#bidAddr')?.value || ''
         });
         showToast('Bid placed! Seller will review.','success');
+        closeModal();
+      } catch(e) { showToast(e.message,'error'); }
+    });
+  }
+
+  function showMakeOffer(lid) {
+    const l = listings.find(x=>x.id==lid);
+    if (!l) return;
+    showModal(`<div class="modal-handle"></div><h3>💰 Make Offer — ${l.crop_name||'Crop'}</h3>
+      <div style="background:#EDE7F6;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px">
+        ${l.crop_name||'Crop'} · ${l.district_name||l.location_label||'District'} · ${Number(l.quantity_kg||0).toLocaleString()} kg @ ₹${l.price_per_kg||'—'}/kg
+      </div>
+      <div class="form-group"><label>Your offered price (₹/kg)</label><input class="form-input" type="number" id="offerPrice" placeholder="${l.price_per_kg||''}" step="0.5"></div>
+      <div class="form-group"><label>Quantity (kg)</label><input class="form-input" type="number" id="offerQty" placeholder="${l.quantity_kg||500}"></div>
+      <div class="form-group"><label>Message to seller</label><textarea class="form-input" id="offerMsg" rows="2" placeholder="e.g. Can deliver in 3 days, immediate payment…"></textarea></div>
+      <button id="submitOffer" style="width:100%;padding:12px;background:#6A1B9A;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Send Offer</button>
+      <div style="font-size:10px;color:#757575;text-align:center;margin-top:6px">Seller can accept, reject, or counter your offer</div>`);
+    document.querySelector('#submitOffer')?.addEventListener('click', async () => {
+      const price = document.querySelector('#offerPrice').value;
+      const qty = document.querySelector('#offerQty').value;
+      if (!price || !qty) { showToast('Enter price and quantity','error'); return; }
+      try {
+        await api.post(`/agriflow/listings/${l.id}/offers`, {
+          offered_price: Number(price),
+          quantity_kg: Number(qty),
+          message: document.querySelector('#offerMsg')?.value,
+        });
+        showToast('Offer sent! Seller will review.','success');
         closeModal();
       } catch(e) { showToast(e.message,'error'); }
     });
