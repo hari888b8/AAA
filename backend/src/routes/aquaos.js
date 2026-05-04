@@ -360,13 +360,24 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
       };
     });
 
+    // Revenue estimate based on species market prices
+    const revenueEstimate = harvestEstimates.reduce((sum, h) => {
+      const pricePerKg = (h.species || '').toLowerCase().includes('vannamei') ? 350
+        : (h.species || '').toLowerCase().includes('tiger') ? 600
+        : (h.species || '').toLowerCase().includes('crab') ? 500
+        : (h.species || '').toLowerCase().includes('pangasius') ? 95
+        : 160; // default fish price
+      return sum + (h.estimated_yield_kg * pricePerKg);
+    }, 0);
+
     res.json({
       dashboard: {
         ponds: pondStats.rows[0],
         active_crops: harvestEstimates,
         feed_30d: feedSummary.rows[0],
         mortality_30d: mortSummary.rows[0],
-        total_expected_yield_kg: harvestEstimates.reduce((s, h) => s + h.estimated_yield_kg, 0)
+        total_expected_yield_kg: harvestEstimates.reduce((s, h) => s + h.estimated_yield_kg, 0),
+        revenue_estimate: Math.round(revenueEstimate)
       }
     });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -1123,6 +1134,90 @@ router.post('/ponds/:id/iot-readings', authMiddleware, async (req, res) => {
       }
     }
     res.status(201).json({ readings: inserted });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ════════════════════════════════════════════════════════════════
+// DAILY WORKFLOW CHECKLIST
+// ════════════════════════════════════════════════════════════════
+
+// GET /api/aquaos/daily-workflow — today's tasks for the farmer
+router.get('/daily-workflow', authMiddleware, async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const ponds = await query(`
+      SELECT p.id, p.pond_code, p.species, p.status,
+             EXTRACT(EPOCH FROM (NOW() - p.stocking_date))/86400 AS doc
+      FROM ponds p WHERE p.farmer_id = $1 AND p.status = 'active'
+      ORDER BY p.pond_code
+    `, [req.user.id]);
+
+    const checklist = [];
+    for (const p of ponds.rows) {
+      const doc = Math.round(Number(p.doc) || 0);
+
+      // Check if water quality logged today
+      const waterToday = await query(
+        `SELECT COUNT(*) AS cnt FROM water_logs WHERE pond_id = $1 AND logged_at::date = $2`,
+        [p.id, today]
+      );
+      checklist.push({
+        pond_id: p.id, pond_code: p.pond_code, task: 'water_quality',
+        title: `Record water parameters — ${p.pond_code}`,
+        description: 'Log pH, dissolved oxygen, temperature, salinity, ammonia',
+        time_of_day: 'morning', done: Number(waterToday.rows[0].cnt) > 0
+      });
+
+      // Check if feed logged today
+      const feedToday = await query(
+        `SELECT COUNT(*) AS cnt FROM feed_logs WHERE pond_id = $1 AND logged_at::date = $2`,
+        [p.id, today]
+      );
+      checklist.push({
+        pond_id: p.id, pond_code: p.pond_code, task: 'feed',
+        title: `Record feed — ${p.pond_code}`,
+        description: 'Log feed brand, quantity, and type',
+        time_of_day: 'afternoon', done: Number(feedToday.rows[0].cnt) > 0
+      });
+
+      // Check if mortality logged today (optional)
+      const mortToday = await query(
+        `SELECT COUNT(*) AS cnt FROM mortality_logs WHERE pond_id = $1 AND logged_at::date = $2`,
+        [p.id, today]
+      );
+      checklist.push({
+        pond_id: p.id, pond_code: p.pond_code, task: 'mortality',
+        title: `Update mortality — ${p.pond_code}`,
+        description: 'Record any mortality count (enter 0 if none)',
+        time_of_day: 'evening', done: Number(mortToday.rows[0].cnt) > 0
+      });
+
+      // Sampling reminder (every 10 days)
+      if (doc > 0 && doc % 10 <= 1) {
+        const recentSample = await query(
+          `SELECT COUNT(*) AS cnt FROM growth_samples WHERE pond_id = $1 AND sampled_at > NOW() - INTERVAL '8 days'`,
+          [p.id]
+        );
+        checklist.push({
+          pond_id: p.id, pond_code: p.pond_code, task: 'sampling',
+          title: `🔬 Growth sampling due — ${p.pond_code}`,
+          description: `Day ${doc}: Check average weight of ${p.species}`,
+          time_of_day: 'any', done: Number(recentSample.rows[0].cnt) > 0
+        });
+      }
+    }
+
+    const totalTasks = checklist.length;
+    const completedTasks = checklist.filter(c => c.done).length;
+
+    res.json({
+      date: today,
+      active_ponds: ponds.rows.length,
+      total_tasks: totalTasks,
+      completed_tasks: completedTasks,
+      completion_pct: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 100,
+      checklist
+    });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

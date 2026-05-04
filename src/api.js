@@ -74,6 +74,7 @@ class ApiClient {
   // AquaOS — Dashboard & Advisory
   getAquaDashboard() { return this.get('/aquaos/dashboard'); }
   getAquaAdvisory() { return this.get('/aquaos/advisory'); }
+  getAquaDailyWorkflow() { return this.get('/aquaos/daily-workflow'); }
 
   // AquaOS — Offers
   getAquaOffers(params = '') { return this.get(`/aquaos/offers${params}`); }

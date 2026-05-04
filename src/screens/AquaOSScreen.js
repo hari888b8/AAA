@@ -11,6 +11,7 @@ export function renderAquaOS(container) {
   let dashboard = null, ponds = [], advisoryData = [], harvestListings = [], stats = {};
   let aquaProducts = [], aquaPrices = [], offers = [], myListings = [];
   let farms = [], conversations = [], myProducts = [], communityPosts = [];
+  let workflowData = null;
   let buyerFilters = { species: '', district: '', harvest_days: 30, min_qty: 0 };
   let savedSearches = [], subscription = null, priceAlerts = [], kycDocs = null;
   let notifPrefs = null, privacySettings = null, referralInfo = null;
@@ -18,9 +19,10 @@ export function renderAquaOS(container) {
   let loading = true;
 
   const i18n = {
-    en: { farm_os: 'Farm OS', advisory: 'Advisory', harvest_mkt: 'Harvest Marketplace', input_mkt: 'Input Marketplace', dashboard: 'Dashboard', ponds: 'Ponds', feed: 'Feed', market: 'Market', shop: 'Inputs', community: 'Community', analytics: 'Analytics', my_products: 'My Products', leads: 'Leads', prices: 'Prices', supply: 'Supply', my_offers: 'My Offers', chats: 'Chats', settings: 'Settings', farms: 'Farms' },
-    te: { farm_os: 'వ్యవసాయ OS', advisory: 'సూచనలు', harvest_mkt: 'పంట మార్కెట్', input_mkt: 'ఇన్పుట్ మార్కెట్', dashboard: 'డ్యాష్బోర్డ్', ponds: 'చెరువులు', feed: 'ఆహారం', market: 'మార్కెట్', shop: 'షాప్', community: 'సమాజం', analytics: 'విశ్లేషణ', my_products: 'నా ఉత్పత్తులు', leads: 'లీడ్లు', prices: 'ధరలు', supply: 'సరఫరా', my_offers: 'నా ఆఫర్లు', chats: 'చాట్లు', settings: 'సెట్టింగ్లు', farms: 'ఫారమ్లు' },
-    hi: { farm_os: 'फार्म OS', advisory: 'सलाह', harvest_mkt: 'कटाई बाज़ार', input_mkt: 'इनपुट बाज़ार', dashboard: 'डैशबोर्ड', ponds: 'तालाब', feed: 'चारा', market: 'बाज़ार', shop: 'दुकान', community: 'समुदाय', analytics: 'विश्लेषण', my_products: 'मेरे उत्पाद', leads: 'लीड', prices: 'भाव', supply: 'आपूर्ति', my_offers: 'मेरे ऑफर', chats: 'बातचीत', settings: 'सेटिंग', farms: 'फार्म' },
+    en: { farm_os: 'Farm OS', advisory: 'Advisory', harvest_mkt: 'Harvest Marketplace', input_mkt: 'Input Marketplace', dashboard: 'Dashboard', ponds: 'Ponds', feed: 'Feed', market: 'Market', shop: 'Inputs', community: 'Community', analytics: 'Analytics', my_products: 'My Products', leads: 'Leads', prices: 'Prices', supply: 'Supply', my_offers: 'My Offers', chats: 'Chats', settings: 'Settings', farms: 'Farms', daily: 'Daily' },
+    te: { farm_os: 'వ్యవసాయ OS', advisory: 'సూచనలు', harvest_mkt: 'పంట మార్కెట్', input_mkt: 'ఇన్పుట్ మార్కెట్', dashboard: 'డ్యాష్బోర్డ్', ponds: 'చెరువులు', feed: 'ఆహారం', market: 'మార్కెట్', shop: 'షాప్', community: 'సమాజం', analytics: 'విశ్లేషణ', my_products: 'నా ఉత్పత్తులు', leads: 'లీడ్లు', prices: 'ధరలు', supply: 'సరఫరా', my_offers: 'నా ఆఫర్లు', chats: 'చాట్లు', settings: 'సెట్టింగ్లు', farms: 'ఫారమ్లు', daily: 'రోజువారీ' },
+    hi: { farm_os: 'फार्म OS', advisory: 'सलाह', harvest_mkt: 'कटाई बाज़ार', input_mkt: 'इनपुट बाज़ार', dashboard: 'डैशबोर्ड', ponds: 'तालाब', feed: 'चारा', market: 'बाज़ार', shop: 'दुकान', community: 'समुदाय', analytics: 'विश्लेषण', my_products: 'मेरे उत्पाद', leads: 'लीड', prices: 'भाव', supply: 'आपूर्ति', my_offers: 'मेरे ऑफर', chats: 'बातचीत', settings: 'सेटिंग', farms: 'फार्म', daily: 'दैनिक' },
+    ta: { farm_os: 'பண்ணை OS', advisory: 'ஆலோசனை', harvest_mkt: 'அறுவடை சந்தை', input_mkt: 'உள்ளீடு சந்தை', dashboard: 'டாஷ்போர்டு', ponds: 'குளங்கள்', feed: 'தீவனம்', market: 'சந்தை', shop: 'கடை', community: 'சமூகம்', analytics: 'பகுப்பாய்வு', my_products: 'என் பொருட்கள்', leads: 'வழிகாட்டி', prices: 'விலைகள்', supply: 'வழங்கல்', my_offers: 'என் சலுகைகள்', chats: 'அரட்டை', settings: 'அமைப்புகள்', farms: 'பண்ணைகள்', daily: 'தினசரி' },
   };
   const t = (k) => (i18n[lang] || i18n.en)[k] || k;
 
@@ -66,7 +68,7 @@ export function renderAquaOS(container) {
             <div style="font-size:11px;opacity:0.85">${subtitle}</div>
           </div>
           <div style="display:flex;gap:4px">
-            ${['en','te','hi'].map(l => `<button class="lang-btn" data-lang="${l}" style="background:${lang===l?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.1)'};border:none;border-radius:4px;color:white;padding:3px 6px;font-size:10px;cursor:pointer;font-weight:${lang===l?'700':'400'}">${l.toUpperCase()}</button>`).join('')}
+            ${['en','te','ta','hi'].map(l => `<button class="lang-btn" data-lang="${l}" style="background:${lang===l?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.1)'};border:none;border-radius:4px;color:white;padding:3px 6px;font-size:10px;cursor:pointer;font-weight:${lang===l?'700':'400'}">${l.toUpperCase()}</button>`).join('')}
           </div>
         </div>
       </div>
@@ -88,6 +90,7 @@ export function renderAquaOS(container) {
           <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         ` : `
           <button role="tab" aria-selected="${tab==='dashboard'}" class="tab-btn ${tab==='dashboard'?'active':''}" data-tab="dashboard">📊 ${t('dashboard')}</button>
+          <button role="tab" aria-selected="${tab==='daily'}" class="tab-btn ${tab==='daily'?'active':''}" data-tab="daily">📝 ${t('daily')}</button>
           <button role="tab" aria-selected="${tab==='farms'}" class="tab-btn ${tab==='farms'?'active':''}" data-tab="farms">🏡 ${t('farms')}</button>
           <button role="tab" aria-selected="${tab==='ponds'}" class="tab-btn ${tab==='ponds'?'active':''}" data-tab="ponds">🐟 ${t('ponds')}</button>
           <button role="tab" aria-selected="${tab==='units'}" class="tab-btn ${tab==='units'?'active':''}" data-tab="units">🏗️ Units</button>
@@ -122,6 +125,7 @@ export function renderAquaOS(container) {
   function renderTab() {
     switch(tab) {
       case 'dashboard': return renderDashboard();
+      case 'daily': return renderDailyWorkflow();
       case 'farms': return renderFarms();
       case 'ponds': return renderPonds();
       case 'sensors': return renderIoTSensors();
@@ -168,6 +172,7 @@ export function renderAquaOS(container) {
         <div class="stat-card"><div class="stat-icon">🏊</div><div class="stat-value">${pondStats.active_ponds || 0}</div><div class="stat-label">Active Ponds</div></div>
         <div class="stat-card"><div class="stat-icon">📐</div><div class="stat-value">${Number(pondStats.total_area || 0).toFixed(1)}</div><div class="stat-label">Total Acres</div></div>
         <div class="stat-card"><div class="stat-icon">📈</div><div class="stat-value">${Number(pondStats.avg_survival || 0).toFixed(0)}%</div><div class="stat-label">Avg Survival</div></div>
+        ${d.revenue_estimate ? `<div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value">₹${(d.revenue_estimate / 100000).toFixed(1)}L</div><div class="stat-label">Revenue Est.</div></div>` : ''}
       </div>
 
       ${crops.length > 0 ? `
@@ -224,6 +229,54 @@ export function renderAquaOS(container) {
           <div class="fw-700" style="font-size:18px;color:${pondStats.avg_do < 4 ? '#F44336' : 'var(--success)'}">${pondStats.avg_do || '--'} mg/L</div>
         </div>
       </div>
+    </div>`;
+  }
+
+  // DAILY WORKFLOW CHECKLIST
+  function renderDailyWorkflow() {
+    const wf = workflowData || {};
+    const items = wf.checklist || [];
+    const morningTasks = items.filter(i => i.time_of_day === 'morning');
+    const afternoonTasks = items.filter(i => i.time_of_day === 'afternoon');
+    const eveningTasks = items.filter(i => i.time_of_day === 'evening');
+    const otherTasks = items.filter(i => i.time_of_day === 'any');
+
+    const renderTaskGroup = (title, emoji, tasks) => tasks.length === 0 ? '' : `
+      <div class="card" style="padding:12px;margin-bottom:10px">
+        <div class="fw-700" style="margin-bottom:8px">${emoji} ${title}</div>
+        ${tasks.map(t => `
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div style="width:24px;height:24px;border-radius:50%;background:${t.done ? 'var(--success)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:13px">${t.done ? '✅' : '⬜'}</div>
+            <div style="flex:1">
+              <div class="fw-600" style="font-size:13px;${t.done ? 'text-decoration:line-through;opacity:0.6' : ''}">${t.title}</div>
+              <div class="text-muted" style="font-size:11px">${t.description}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    return `<div class="section" style="padding-top:8px">
+      <div class="card" style="padding:14px;margin-bottom:12px;background:linear-gradient(135deg,#2f80ed 0%,#00c9a7 100%);color:white">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="fw-700" style="font-size:16px">📝 Today's Workflow</div>
+            <div style="font-size:12px;opacity:0.9">${wf.date || new Date().toISOString().split('T')[0]} · ${wf.active_ponds || 0} active ponds</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:28px;font-weight:800">${wf.completion_pct || 0}%</div>
+            <div style="font-size:10px;opacity:0.8">${wf.completed_tasks || 0}/${wf.total_tasks || 0} done</div>
+          </div>
+        </div>
+        <div style="height:6px;background:rgba(255,255,255,0.25);border-radius:3px;margin-top:8px;overflow:hidden">
+          <div style="height:100%;width:${wf.completion_pct || 0}%;background:white;border-radius:3px;transition:width 0.5s"></div>
+        </div>
+      </div>
+      ${renderTaskGroup('Morning — Water Quality', '🌅', morningTasks)}
+      ${renderTaskGroup('Afternoon — Feeding', '☀️', afternoonTasks)}
+      ${renderTaskGroup('Evening — Mortality Check', '🌇', eveningTasks)}
+      ${renderTaskGroup('Periodic — Growth Sampling', '🔬', otherTasks)}
+      ${items.length === 0 ? '<div class="empty-state"><div class="es-icon">📝</div><div class="es-title">No active ponds</div><div class="es-text">Add ponds and start crop cycles to see your daily checklist</div></div>' : ''}
     </div>`;
   }
 
@@ -2211,7 +2264,7 @@ export function renderAquaOS(container) {
         savedSearches = searches.searches || [];
         subscription = subR.subscription;
       } else {
-        const [db, p, adv, hl, ml, pr, of, prod, fm, conv, cp] = await Promise.all([
+        const [db, p, adv, hl, ml, pr, of, prod, fm, conv, cp, wf] = await Promise.all([
           api.getAquaDashboard().catch(() => ({})),
           api.getPonds().catch(() => ({ ponds: [] })),
           api.getAquaAdvisory().catch(() => ({ recommendations: [], system_advisories: [] })),
@@ -2223,6 +2276,7 @@ export function renderAquaOS(container) {
           api.getAquaFarms().catch(() => ({ farms: [] })),
           api.getAquaConversations().catch(() => ({ conversations: [] })),
           api.getPosts('?category=aqua&limit=20').catch(() => ({ posts: [] })),
+          api.getAquaDailyWorkflow().catch(() => null),
         ]);
         dashboard = db.dashboard || db || null;
         ponds = p.ponds || p || [];
@@ -2235,6 +2289,7 @@ export function renderAquaOS(container) {
         farms = fm.farms || [];
         conversations = conv.conversations || [];
         communityPosts = cp.posts || cp || [];
+        workflowData = wf;
       }
     } catch(e) { console.error('AquaOS load:', e); }
     // Fallback to sample data for new users
