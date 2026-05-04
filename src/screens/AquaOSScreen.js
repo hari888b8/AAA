@@ -11,6 +11,7 @@ export function renderAquaOS(container) {
   let dashboard = null, ponds = [], advisoryData = [], harvestListings = [], stats = {};
   let aquaProducts = [], aquaPrices = [], offers = [], myListings = [];
   let farms = [], conversations = [], myProducts = [], communityPosts = [];
+  let workflowData = null;
   let buyerFilters = { species: '', district: '', harvest_days: 30, min_qty: 0 };
   let savedSearches = [], subscription = null, priceAlerts = [], kycDocs = null;
   let notifPrefs = null, privacySettings = null, referralInfo = null;
@@ -18,9 +19,10 @@ export function renderAquaOS(container) {
   let loading = true;
 
   const i18n = {
-    en: { farm_os: 'Farm OS', advisory: 'Advisory', harvest_mkt: 'Harvest Marketplace', input_mkt: 'Input Marketplace', dashboard: 'Dashboard', ponds: 'Ponds', feed: 'Feed', market: 'Market', shop: 'Inputs', community: 'Community', analytics: 'Analytics', my_products: 'My Products', leads: 'Leads', prices: 'Prices', supply: 'Supply', my_offers: 'My Offers', chats: 'Chats', settings: 'Settings', farms: 'Farms' },
-    te: { farm_os: 'వ్యవసాయ OS', advisory: 'సూచనలు', harvest_mkt: 'పంట మార్కెట్', input_mkt: 'ఇన్పుట్ మార్కెట్', dashboard: 'డ్యాష్బోర్డ్', ponds: 'చెరువులు', feed: 'ఆహారం', market: 'మార్కెట్', shop: 'షాప్', community: 'సమాజం', analytics: 'విశ్లేషణ', my_products: 'నా ఉత్పత్తులు', leads: 'లీడ్లు', prices: 'ధరలు', supply: 'సరఫరా', my_offers: 'నా ఆఫర్లు', chats: 'చాట్లు', settings: 'సెట్టింగ్లు', farms: 'ఫారమ్లు' },
-    hi: { farm_os: 'फार्म OS', advisory: 'सलाह', harvest_mkt: 'कटाई बाज़ार', input_mkt: 'इनपुट बाज़ार', dashboard: 'डैशबोर्ड', ponds: 'तालाब', feed: 'चारा', market: 'बाज़ार', shop: 'दुकान', community: 'समुदाय', analytics: 'विश्लेषण', my_products: 'मेरे उत्पाद', leads: 'लीड', prices: 'भाव', supply: 'आपूर्ति', my_offers: 'मेरे ऑफर', chats: 'बातचीत', settings: 'सेटिंग', farms: 'फार्म' },
+    en: { farm_os: 'Farm OS', advisory: 'Advisory', harvest_mkt: 'Harvest Marketplace', input_mkt: 'Input Marketplace', dashboard: 'Dashboard', ponds: 'Ponds', feed: 'Feed', market: 'Market', shop: 'Inputs', community: 'Community', analytics: 'Analytics', my_products: 'My Products', leads: 'Leads', prices: 'Prices', supply: 'Supply', my_offers: 'My Offers', chats: 'Chats', settings: 'Settings', farms: 'Farms', daily: 'Daily' },
+    te: { farm_os: 'వ్యవసాయ OS', advisory: 'సూచనలు', harvest_mkt: 'పంట మార్కెట్', input_mkt: 'ఇన్పుట్ మార్కెట్', dashboard: 'డ్యాష్బోర్డ్', ponds: 'చెరువులు', feed: 'ఆహారం', market: 'మార్కెట్', shop: 'షాప్', community: 'సమాజం', analytics: 'విశ్లేషణ', my_products: 'నా ఉత్పత్తులు', leads: 'లీడ్లు', prices: 'ధరలు', supply: 'సరఫరా', my_offers: 'నా ఆఫర్లు', chats: 'చాట్లు', settings: 'సెట్టింగ్లు', farms: 'ఫారమ్లు', daily: 'రోజువారీ' },
+    hi: { farm_os: 'फार्म OS', advisory: 'सलाह', harvest_mkt: 'कटाई बाज़ार', input_mkt: 'इनपुट बाज़ार', dashboard: 'डैशबोर्ड', ponds: 'तालाब', feed: 'चारा', market: 'बाज़ार', shop: 'दुकान', community: 'समुदाय', analytics: 'विश्लेषण', my_products: 'मेरे उत्पाद', leads: 'लीड', prices: 'भाव', supply: 'आपूर्ति', my_offers: 'मेरे ऑफर', chats: 'बातचीत', settings: 'सेटिंग', farms: 'फार्म', daily: 'दैनिक' },
+    ta: { farm_os: 'பண்ணை OS', advisory: 'ஆலோசனை', harvest_mkt: 'அறுவடை சந்தை', input_mkt: 'உள்ளீடு சந்தை', dashboard: 'டாஷ்போர்டு', ponds: 'குளங்கள்', feed: 'தீவனம்', market: 'சந்தை', shop: 'கடை', community: 'சமூகம்', analytics: 'பகுப்பாய்வு', my_products: 'என் பொருட்கள்', leads: 'வழிகாட்டி', prices: 'விலைகள்', supply: 'வழங்கல்', my_offers: 'என் சலுகைகள்', chats: 'அரட்டை', settings: 'அமைப்புகள்', farms: 'பண்ணைகள்', daily: 'தினசரி' },
   };
   const t = (k) => (i18n[lang] || i18n.en)[k] || k;
 
@@ -66,7 +68,7 @@ export function renderAquaOS(container) {
             <div style="font-size:11px;opacity:0.85">${subtitle}</div>
           </div>
           <div style="display:flex;gap:4px">
-            ${['en','te','hi'].map(l => `<button class="lang-btn" data-lang="${l}" style="background:${lang===l?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.1)'};border:none;border-radius:4px;color:white;padding:3px 6px;font-size:10px;cursor:pointer;font-weight:${lang===l?'700':'400'}">${l.toUpperCase()}</button>`).join('')}
+            ${['en','te','ta','hi'].map(l => `<button class="lang-btn" data-lang="${l}" style="background:${lang===l?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.1)'};border:none;border-radius:4px;color:white;padding:3px 6px;font-size:10px;cursor:pointer;font-weight:${lang===l?'700':'400'}">${l.toUpperCase()}</button>`).join('')}
           </div>
         </div>
       </div>
@@ -78,24 +80,62 @@ export function renderAquaOS(container) {
           <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         ` : isBuyer ? `
           <button role="tab" aria-selected="${tab==='marketplace'}" class="tab-btn ${tab==='marketplace'?'active':''}" data-tab="marketplace">🛒 ${t('harvest_mkt').split(' ')[0]}</button>
+          <button role="tab" aria-selected="${tab==='rfq'}" class="tab-btn ${tab==='rfq'?'active':''}" data-tab="rfq">📋 RFQ</button>
           <button role="tab" aria-selected="${tab==='saved'}" class="tab-btn ${tab==='saved'?'active':''}" data-tab="saved">🔖 Saved</button>
           <button role="tab" aria-selected="${tab==='prices'}" class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 ${t('prices')}</button>
           <button role="tab" aria-selected="${tab==='supply'}" class="tab-btn ${tab==='supply'?'active':''}" data-tab="supply">📊 ${t('supply')}</button>
+          <button role="tab" aria-selected="${tab==='escrow'}" class="tab-btn ${tab==='escrow'?'active':''}" data-tab="escrow">🔒 Escrow</button>
           <button role="tab" aria-selected="${tab==='myoffers'}" class="tab-btn ${tab==='myoffers'?'active':''}" data-tab="myoffers">📋 ${t('my_offers')}</button>
           <button role="tab" aria-selected="${tab==='chats'}" class="tab-btn ${tab==='chats'?'active':''}" data-tab="chats">💬 ${t('chats')}</button>
           <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         ` : `
           <button role="tab" aria-selected="${tab==='dashboard'}" class="tab-btn ${tab==='dashboard'?'active':''}" data-tab="dashboard">📊 ${t('dashboard')}</button>
+          <button role="tab" aria-selected="${tab==='daily'}" class="tab-btn ${tab==='daily'?'active':''}" data-tab="daily">📝 ${t('daily')}</button>
           <button role="tab" aria-selected="${tab==='farms'}" class="tab-btn ${tab==='farms'?'active':''}" data-tab="farms">🏡 ${t('farms')}</button>
           <button role="tab" aria-selected="${tab==='ponds'}" class="tab-btn ${tab==='ponds'?'active':''}" data-tab="ponds">🐟 ${t('ponds')}</button>
-          <button role="tab" aria-selected="${tab==='sensors'}" class="tab-btn ${tab==='sensors'?'active':''}" data-tab="sensors">🌡️ IoT Sensors</button>
+          <button role="tab" aria-selected="${tab==='units'}" class="tab-btn ${tab==='units'?'active':''}" data-tab="units">🏗️ Units</button>
+          <button role="tab" aria-selected="${tab==='sensors'}" class="tab-btn ${tab==='sensors'?'active':''}" data-tab="sensors">🌡️ IoT</button>
           <button role="tab" aria-selected="${tab==='feed'}" class="tab-btn ${tab==='feed'?'active':''}" data-tab="feed">🍽️ ${t('feed')}</button>
           <button role="tab" aria-selected="${tab==='advisory'}" class="tab-btn ${tab==='advisory'?'active':''}" data-tab="advisory">🧠 ${t('advisory')}</button>
+          <button role="tab" aria-selected="${tab==='harvest_opt'}" class="tab-btn ${tab==='harvest_opt'?'active':''}" data-tab="harvest_opt">🎯 Harvest</button>
           <button role="tab" aria-selected="${tab==='marketplace'}" class="tab-btn ${tab==='marketplace'?'active':''}" data-tab="marketplace">🛒 ${t('market')}</button>
           <button role="tab" aria-selected="${tab==='chats'}" class="tab-btn ${tab==='chats'?'active':''}" data-tab="chats">💬 ${t('chats')}</button>
           <button role="tab" aria-selected="${tab==='shop'}" class="tab-btn ${tab==='shop'?'active':''}" data-tab="shop">🛍️ ${t('shop')}</button>
           <button role="tab" aria-selected="${tab==='prices'}" class="tab-btn ${tab==='prices'?'active':''}" data-tab="prices">💰 ${t('prices')}</button>
+          <button role="tab" aria-selected="${tab==='finance'}" class="tab-btn ${tab==='finance'?'active':''}" data-tab="finance">💵 Finance</button>
+          <button role="tab" aria-selected="${tab==='disease'}" class="tab-btn ${tab==='disease'?'active':''}" data-tab="disease">🦠 Disease</button>
+          <button role="tab" aria-selected="${tab==='auctions'}" class="tab-btn ${tab==='auctions'?'active':''}" data-tab="auctions">🔨 Auctions</button>
+          <button role="tab" aria-selected="${tab==='logistics'}" class="tab-btn ${tab==='logistics'?'active':''}" data-tab="logistics">🚛 Cold Chain</button>
+          <button role="tab" aria-selected="${tab==='training'}" class="tab-btn ${tab==='training'?'active':''}" data-tab="training">📚 Training</button>
+          <button role="tab" aria-selected="${tab==='schemes'}" class="tab-btn ${tab==='schemes'?'active':''}" data-tab="schemes">🏛️ Schemes</button>
+          <button role="tab" aria-selected="${tab==='rfq'}" class="tab-btn ${tab==='rfq'?'active':''}" data-tab="rfq">📋 RFQ</button>
+          <button role="tab" aria-selected="${tab==='forecast'}" class="tab-btn ${tab==='forecast'?'active':''}" data-tab="forecast">📈 Forecast</button>
+          <button role="tab" aria-selected="${tab==='escrow'}" class="tab-btn ${tab==='escrow'?'active':''}" data-tab="escrow">🔒 Payments</button>
           <button role="tab" aria-selected="${tab==='community'}" class="tab-btn ${tab==='community'?'active':''}" data-tab="community">🌐 ${t('community')}</button>
+          <button role="tab" aria-selected="${tab==='peracre'}" class="tab-btn ${tab==='peracre'?'active':''}" data-tab="peracre">📐 Per Acre</button>
+          <button role="tab" aria-selected="${tab==='kpi_engine'}" class="tab-btn ${tab==='kpi_engine'?'active':''}" data-tab="kpi_engine">📊 KPIs</button>
+          <button role="tab" aria-selected="${tab==='predictions'}" class="tab-btn ${tab==='predictions'?'active':''}" data-tab="predictions">🔮 Predict</button>
+          <button role="tab" aria-selected="${tab==='supply_market'}" class="tab-btn ${tab==='supply_market'?'active':''}" data-tab="supply_market">🏪 Supply Mkt</button>
+          <button role="tab" aria-selected="${tab==='alert_engine'}" class="tab-btn ${tab==='alert_engine'?'active':''}" data-tab="alert_engine">🔔 Alerts</button>
+          <button role="tab" aria-selected="${tab==='fish_mkt'}" class="tab-btn ${tab==='fish_mkt'?'active':''}" data-tab="fish_mkt">🐟 Fish Mkt</button>
+          <button role="tab" aria-selected="${tab==='cold_chain_plus'}" class="tab-btn ${tab==='cold_chain_plus'?'active':''}" data-tab="cold_chain_plus">🧊 Cold Chain+</button>
+          <button role="tab" aria-selected="${tab==='traceability'}" class="tab-btn ${tab==='traceability'?'active':''}" data-tab="traceability">🔗 Trace</button>
+          <button role="tab" aria-selected="${tab==='pmmsy_dpr'}" class="tab-btn ${tab==='pmmsy_dpr'?'active':''}" data-tab="pmmsy_dpr">📄 PMMSY DPR</button>
+          <button role="tab" aria-selected="${tab==='supplier_hub'}" class="tab-btn ${tab==='supplier_hub'?'active':''}" data-tab="supplier_hub">🏭 Suppliers</button>
+          <button role="tab" aria-selected="${tab==='reviews_perf'}" class="tab-btn ${tab==='reviews_perf'?'active':''}" data-tab="reviews_perf">⭐ Reviews</button>
+          <button role="tab" aria-selected="${tab==='logistics_plus'}" class="tab-btn ${tab==='logistics_plus'?'active':''}" data-tab="logistics_plus">🚚 Logistics+</button>
+          <button role="tab" aria-selected="${tab==='training_hub'}" class="tab-btn ${tab==='training_hub'?'active':''}" data-tab="training_hub">📚 Training</button>
+          <button role="tab" aria-selected="${tab==='disputes'}" class="tab-btn ${tab==='disputes'?'active':''}" data-tab="disputes">⚖️ Disputes</button>
+          <button role="tab" aria-selected="${tab==='trade_credit'}" class="tab-btn ${tab==='trade_credit'?'active':''}" data-tab="trade_credit">💳 Credit</button>
+          <button role="tab" aria-selected="${tab==='crop_post'}" class="tab-btn ${tab==='crop_post'?'active':''}" data-tab="crop_post">🌾 Crop Post</button>
+          <button role="tab" aria-selected="${tab==='experts'}" class="tab-btn ${tab==='experts'?'active':''}" data-tab="experts">🧑‍🔬 Experts</button>
+          <button role="tab" aria-selected="${tab==='workflow'}" class="tab-btn ${tab==='workflow'?'active':''}" data-tab="workflow">🔄 Workflow</button>
+          <button role="tab" aria-selected="${tab==='negotiate'}" class="tab-btn ${tab==='negotiate'?'active':''}" data-tab="negotiate">🤝 Negotiate</button>
+          <button role="tab" aria-selected="${tab==='insights'}" class="tab-btn ${tab==='insights'?'active':''}" data-tab="insights">🧠 Insights</button>
+          <button role="tab" aria-selected="${tab==='privacy'}" class="tab-btn ${tab==='privacy'?'active':''}" data-tab="privacy">🔒 Privacy</button>
+          <button role="tab" aria-selected="${tab==='ai_predict'}" class="tab-btn ${tab==='ai_predict'?'active':''}" data-tab="ai_predict">🤖 AI Predict</button>
+          <button role="tab" aria-selected="${tab==='payments_v10'}" class="tab-btn ${tab==='payments_v10'?'active':''}" data-tab="payments_v10">💳 Payments</button>
+          <button role="tab" aria-selected="${tab==='growth'}" class="tab-btn ${tab==='growth'?'active':''}" data-tab="growth">🚀 Growth</button>
           <button role="tab" aria-selected="${tab==='analytics'}" class="tab-btn ${tab==='analytics'?'active':''}" data-tab="analytics">📈 ${t('analytics')}</button>
           <button role="tab" aria-selected="${tab==='settings'}" class="tab-btn ${tab==='settings'?'active':''}" data-tab="settings">⚙️ ${t('settings')}</button>
         `}
@@ -108,6 +148,7 @@ export function renderAquaOS(container) {
   function renderTab() {
     switch(tab) {
       case 'dashboard': return renderDashboard();
+      case 'daily': return renderDailyWorkflow();
       case 'farms': return renderFarms();
       case 'ponds': return renderPonds();
       case 'sensors': return renderIoTSensors();
@@ -123,7 +164,42 @@ export function renderAquaOS(container) {
       case 'leads': return renderLeads();
       case 'community': return renderAquaCommunity();
       case 'analytics': return renderAnalytics();
+      case 'finance': return renderFinanceTab();
+      case 'disease': return renderDiseaseTab();
+      case 'auctions': return renderAuctionsTab();
+      case 'logistics': return renderLogisticsTab();
+      case 'training': return renderTrainingTab();
+      case 'schemes': return renderSchemesTab();
       case 'saved': return renderSavedSearches();
+      case 'rfq': return renderRFQTab();
+      case 'forecast': return renderForecastTab();
+      case 'escrow': return renderEscrowTab();
+      case 'units': return renderCultureUnitsTab();
+      case 'harvest_opt': return renderHarvestOptimizerTab();
+      case 'peracre': return renderPerAcreTab();
+      case 'kpi_engine': return renderKPIEngineTab();
+      case 'predictions': return renderPredictionsTab();
+      case 'supply_market': return renderSupplyMarketTab();
+      case 'alert_engine': return renderAlertEngineTab();
+      case 'fish_mkt': return renderFishMarketTab();
+      case 'cold_chain_plus': return renderColdChainPlusTab();
+      case 'traceability': return renderTraceabilityTab();
+      case 'pmmsy_dpr': return renderPMMSYDPRTab();
+      case 'supplier_hub': return renderSupplierHubTab();
+      case 'reviews_perf': return renderReviewsTab();
+      case 'logistics_plus': return renderLogisticsPlusTab();
+      case 'training_hub': return renderTrainingHubTab();
+      case 'disputes': return renderDisputesTab();
+      case 'trade_credit': return renderTradeCreditTab();
+      case 'crop_post': return renderCropPostTab();
+      case 'experts': return renderExpertsTab();
+      case 'workflow': return renderWorkflowTab();
+      case 'negotiate': return renderNegotiateTab();
+      case 'insights': return renderInsightsTab();
+      case 'privacy': return renderPrivacyTab();
+      case 'ai_predict': return renderAIPredictTab();
+      case 'payments_v10': return renderPaymentsV10Tab();
+      case 'growth': return renderGrowthTab();
       case 'settings': return renderSettings();
       default: return renderDashboard();
     }
@@ -142,6 +218,7 @@ export function renderAquaOS(container) {
         <div class="stat-card"><div class="stat-icon">🏊</div><div class="stat-value">${pondStats.active_ponds || 0}</div><div class="stat-label">Active Ponds</div></div>
         <div class="stat-card"><div class="stat-icon">📐</div><div class="stat-value">${Number(pondStats.total_area || 0).toFixed(1)}</div><div class="stat-label">Total Acres</div></div>
         <div class="stat-card"><div class="stat-icon">📈</div><div class="stat-value">${Number(pondStats.avg_survival || 0).toFixed(0)}%</div><div class="stat-label">Avg Survival</div></div>
+        ${d.revenue_estimate ? `<div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value">₹${(d.revenue_estimate / 100000).toFixed(1)}L</div><div class="stat-label">Revenue Est.</div></div>` : ''}
       </div>
 
       ${crops.length > 0 ? `
@@ -198,6 +275,54 @@ export function renderAquaOS(container) {
           <div class="fw-700" style="font-size:18px;color:${pondStats.avg_do < 4 ? '#F44336' : 'var(--success)'}">${pondStats.avg_do || '--'} mg/L</div>
         </div>
       </div>
+    </div>`;
+  }
+
+  // DAILY WORKFLOW CHECKLIST
+  function renderDailyWorkflow() {
+    const wf = workflowData || {};
+    const items = wf.checklist || [];
+    const morningTasks = items.filter(i => i.time_of_day === 'morning');
+    const afternoonTasks = items.filter(i => i.time_of_day === 'afternoon');
+    const eveningTasks = items.filter(i => i.time_of_day === 'evening');
+    const otherTasks = items.filter(i => i.time_of_day === 'any');
+
+    const renderTaskGroup = (title, emoji, tasks) => tasks.length === 0 ? '' : `
+      <div class="card" style="padding:12px;margin-bottom:10px">
+        <div class="fw-700" style="margin-bottom:8px">${emoji} ${title}</div>
+        ${tasks.map(t => `
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div style="width:24px;height:24px;border-radius:50%;background:${t.done ? 'var(--success)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:13px">${t.done ? '✅' : '⬜'}</div>
+            <div style="flex:1">
+              <div class="fw-600" style="font-size:13px;${t.done ? 'text-decoration:line-through;opacity:0.6' : ''}">${t.title}</div>
+              <div class="text-muted" style="font-size:11px">${t.description}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    return `<div class="section" style="padding-top:8px">
+      <div class="card" style="padding:14px;margin-bottom:12px;background:linear-gradient(135deg,#2f80ed 0%,#00c9a7 100%);color:white">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="fw-700" style="font-size:16px">📝 Today's Workflow</div>
+            <div style="font-size:12px;opacity:0.9">${wf.date || new Date().toISOString().split('T')[0]} · ${wf.active_ponds || 0} active ponds</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:28px;font-weight:800">${wf.completion_pct || 0}%</div>
+            <div style="font-size:10px;opacity:0.8">${wf.completed_tasks || 0}/${wf.total_tasks || 0} done</div>
+          </div>
+        </div>
+        <div style="height:6px;background:rgba(255,255,255,0.25);border-radius:3px;margin-top:8px;overflow:hidden">
+          <div style="height:100%;width:${wf.completion_pct || 0}%;background:white;border-radius:3px;transition:width 0.5s"></div>
+        </div>
+      </div>
+      ${renderTaskGroup('Morning — Water Quality', '🌅', morningTasks)}
+      ${renderTaskGroup('Afternoon — Feeding', '☀️', afternoonTasks)}
+      ${renderTaskGroup('Evening — Mortality Check', '🌇', eveningTasks)}
+      ${renderTaskGroup('Periodic — Growth Sampling', '🔬', otherTasks)}
+      ${items.length === 0 ? '<div class="empty-state"><div class="es-icon">📝</div><div class="es-title">No active ponds</div><div class="es-text">Add ponds and start crop cycles to see your daily checklist</div></div>' : ''}
     </div>`;
   }
 
@@ -533,6 +658,254 @@ export function renderAquaOS(container) {
       <div class="card" style="padding:14px;background:var(--info-bg);border:1px solid var(--info);margin-top:8px">
         <div class="fw-600 text-sm">💡 How search alerts work</div>
         <div class="text-sm text-muted mt-sm">When a farmer lists a harvest matching your filters, you'll see it instantly here. Upgrade to Pro/Enterprise for push + email notifications.</div>
+      </div>
+    </div>`;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // V9: NEGOTIATE TAB — Real-time negotiation rooms
+  // ══════════════════════════════════════════════════════════════
+  function renderNegotiateTab() {
+    const rooms = [
+      { id:'n1', buyer_name:'Coastal Exports Ltd', species:'Vannamei Shrimp', current_offer:395, counter_offer:410, quantity:'2,500 kg', status:'active', round:3, last_action:'buyer', updated:'2 hrs ago' },
+      { id:'n2', buyer_name:'SeaFresh Processors', species:'Vannamei Shrimp', current_offer:380, counter_offer:null, quantity:'1,800 kg', status:'active', round:1, last_action:'buyer', updated:'5 hrs ago' },
+      { id:'n3', buyer_name:'AP Marine Exports', species:'Rohu', current_offer:165, counter_offer:null, quantity:'3,000 kg', status:'agreed', agreed_price:162, updated:'1 day ago' },
+    ];
+    return `<div class="section" style="padding:12px">
+      <h3 style="margin:0 0 8px;font-size:15px;font-weight:700">🤝 Negotiation Rooms</h3>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:12px">Real-time price negotiation with buyers. Counter offers, accept or reject deals.</p>
+      ${rooms.map(r => `
+        <div class="card" style="padding:12px;margin-bottom:10px;border-left:4px solid ${r.status==='agreed'?'var(--success)':'var(--primary)'}">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <div style="font-weight:600;font-size:13px">${r.buyer_name}</div>
+              <div style="font-size:11px;color:var(--text3)">${r.species} · ${r.quantity} · Round ${r.round}</div>
+            </div>
+            <span style="font-size:10px;padding:2px 6px;border-radius:8px;background:${r.status==='agreed'?'#E8F5E9':'#E3F2FD'};color:${r.status==='agreed'?'#2E7D32':'#1565C0'}">${r.status}</span>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:8px;font-size:12px">
+            <span>Offer: <b>₹${r.current_offer}/kg</b></span>
+            ${r.counter_offer ? `<span>Your counter: <b>₹${r.counter_offer}/kg</b></span>` : ''}
+            ${r.agreed_price ? `<span style="color:var(--success)">✓ Agreed: <b>₹${r.agreed_price}/kg</b></span>` : ''}
+          </div>
+          ${r.status === 'active' ? `
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn-primary" style="flex:1;padding:6px;font-size:11px" onclick="showToast('Accepting offer...')">✓ Accept</button>
+            <button style="flex:1;padding:6px;font-size:11px;background:#FFF3E0;border:1px solid #FFB74D;border-radius:6px;cursor:pointer" onclick="showToast('Send counter-offer...')">↩ Counter</button>
+            <button style="flex:1;padding:6px;font-size:11px;background:#FFEBEE;border:1px solid #EF9A9A;border-radius:6px;cursor:pointer" onclick="showToast('Rejecting...')">✗ Reject</button>
+          </div>` : ''}
+          <div style="font-size:10px;color:var(--text3);margin-top:6px;text-align:right">Updated ${r.updated}</div>
+        </div>
+      `).join('')}
+      <div class="card" style="padding:12px;background:#F3E5F5;border:1px dashed #CE93D8">
+        <div style="font-size:12px;font-weight:600;color:#6A1B9A">💡 Platform Workflow</div>
+        <ol style="font-size:11px;color:#4A148C;margin:6px 0 0;padding-left:18px">
+          <li>Farmer posts crop → Buyers see listing</li>
+          <li>Buyer sends offer → Negotiation starts</li>
+          <li>Counter-offers exchanged in real-time</li>
+          <li>Deal agreed → Escrow payment</li>
+          <li>Platform collects 2% commission</li>
+        </ol>
+      </div>
+    </div>`;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // V9: INSIGHTS TAB — Production data (hidden asset)
+  // ══════════════════════════════════════════════════════════════
+  function renderInsightsTab() {
+    const insightsData = [
+      { type:'🎯 Survival Rate', items:[{d:'Nellore',v:'72.5%',s:245},{d:'West Godavari',v:'68.3%',s:180},{d:'East Godavari',v:'74.1%',s:156}] },
+      { type:'📈 Growth Rate', items:[{d:'Nellore',v:'0.28 g/day',s:245},{d:'West Godavari',v:'0.31 g/day',s:180}] },
+      { type:'🍽️ FCR', items:[{d:'Nellore',v:'1.42',s:200},{d:'West Godavari',v:'1.38',s:165}] },
+      { type:'🏭 Top Feed Performance', items:[{d:'CP Foods',v:'0.32 g/day',s:120},{d:'Avanti Feeds',v:'0.29 g/day',s:95}] },
+      { type:'📊 Yield/Acre', items:[{d:'Nellore',v:'4,200 kg/acre',s:245},{d:'West Godavari',v:'3,800 kg/acre',s:180}] },
+      { type:'🦠 Disease Hotspots', items:[{d:'Nellore (WSSV)',v:'12.5%',s:245},{d:'East Godavari (EHP)',v:'8.2%',s:156}] },
+    ];
+    return `<div class="section" style="padding:12px">
+      <h3 style="margin:0 0 4px;font-size:15px;font-weight:700">🧠 Production Insights</h3>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:4px">Aggregated data from 1,250+ farms across Andhra Pradesh. <b>Your biggest hidden asset.</b></p>
+      <div style="font-size:10px;color:#1565C0;margin-bottom:12px">Updated: April 2026 · Species: Vannamei Shrimp</div>
+      ${insightsData.map(cat => `
+        <div style="margin-bottom:12px">
+          <div style="font-weight:600;font-size:12px;margin-bottom:4px">${cat.type}</div>
+          ${cat.items.map(i => `
+            <div style="display:flex;justify-content:space-between;padding:4px 8px;background:#FAFAFA;border-radius:4px;margin-bottom:2px;font-size:11px">
+              <span>${i.d}</span>
+              <span style="font-weight:600">${i.v} <span style="color:var(--text3);font-weight:400">(n=${i.s})</span></span>
+            </div>
+          `).join('')}
+        </div>
+      `).join('')}
+      <div class="card" style="padding:10px;background:#E8F5E9;border:1px solid #A5D6A7">
+        <div style="font-size:11px;font-weight:600;color:#2E7D32">📊 Why this data matters:</div>
+        <ul style="font-size:10px;color:#1B5E20;margin:4px 0 0;padding-left:16px">
+          <li>Average shrimp survival: 72% (industry benchmark)</li>
+          <li>Best feed brand growth rate comparison</li>
+          <li>Optimal harvest period identification</li>
+          <li>Disease outbreak early warning by region</li>
+        </ul>
+      </div>
+    </div>`;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // V9: PRIVACY TAB — Farmer controls data visibility
+  // ══════════════════════════════════════════════════════════════
+  function renderPrivacyTab() {
+    const ps = privacySettings || {};
+    const toggles = [
+      { key:'show_farm_location', label:'Show farm location to buyers', val: ps.show_farm_location !== false },
+      { key:'show_production_volumes', label:'Show production volumes', val: ps.show_production_volumes !== false },
+      { key:'show_contact_phone', label:'Show phone number', val: ps.show_contact_phone === true },
+      { key:'show_contact_email', label:'Show email address', val: ps.show_contact_email !== false },
+      { key:'show_pond_details', label:'Show pond details', val: ps.show_pond_details !== false },
+      { key:'show_feed_brand', label:'Show feed brand used', val: ps.show_feed_brand === true },
+      { key:'show_survival_rate', label:'Show survival rate', val: ps.show_survival_rate === true },
+      { key:'allow_buyer_contact', label:'Allow buyers to contact me', val: ps.allow_buyer_contact !== false },
+      { key:'allow_supplier_contact', label:'Allow suppliers to contact me', val: ps.allow_supplier_contact !== false },
+      { key:'anonymous_community_posts', label:'Post anonymously in community', val: ps.anonymous_community_posts === true },
+      { key:'data_sharing_consent', label:'Share anonymized data for insights', val: ps.data_sharing_consent !== false },
+      { key:'analytics_opt_in', label:'Help improve platform with usage data', val: ps.analytics_opt_in !== false },
+    ];
+    return `<div class="section" style="padding:12px">
+      <h3 style="margin:0 0 4px;font-size:15px;font-weight:700">🔒 Privacy Controls</h3>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:12px">Control what data is visible to buyers, suppliers, and the platform.</p>
+      <div class="card" style="padding:10px;margin-bottom:12px;background:#FFF3E0;border:1px solid #FFE0B2">
+        <div style="font-size:11px;color:#E65100">
+          <b>Data Visibility Rules:</b> Buyers can see your crop posts. Suppliers CANNOT see your farm data. Other farmers CANNOT see your details.
+        </div>
+      </div>
+      ${toggles.map(t => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f5f5f5">
+          <span style="font-size:12px">${t.label}</span>
+          <label style="position:relative;width:36px;height:20px;display:inline-block">
+            <input type="checkbox" ${t.val?'checked':''} style="opacity:0;width:0;height:0" data-privacy="${t.key}">
+            <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:${t.val?'var(--primary)':'#ccc'};border-radius:20px;transition:0.3s"></span>
+          </label>
+        </div>
+      `).join('')}
+      <button class="btn-primary" style="width:100%;margin-top:14px;padding:10px;font-size:12px" onclick="showToast('Privacy settings saved')">💾 Save Privacy Settings</button>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // V10: AI PREDICT TAB — Disease, Yield, Feed predictions
+  // ════════════════════════════════════════════════════════════════
+  function renderAIPredictTab() {
+    const predictions = [
+      { type:'disease_prediction', model:'WSSV Risk Model', risk:'high', confidence:82, label:'High Risk', rec:'Reduce stocking density. Monitor for white spots. Prepare emergency harvest plan.', icon:'🦠' },
+      { type:'yield_prediction', model:'Yield Estimator v1', risk:'low', confidence:88, value:3150, rec:'Expected yield 3,150 kg. Harvest at DOC 110 for optimal size-price.', icon:'📊' },
+      { type:'feed_optimization', model:'Feed Optimizer v1', risk:'low', confidence:91, value:42.5, rec:'Recommend 42.5 kg/day. Reduce by 10% if poor weather. Switch to finisher feed at DOC 80.', icon:'🍽️' },
+      { type:'price_prediction', model:'Price Forecast v1', risk:'medium', confidence:78, value:395, rec:'Price expected to rise to ₹395/kg. Consider holding harvest 7 days for better price.', icon:'💰' },
+      { type:'mortality_risk', model:'Mortality Alert v1', risk:'medium', confidence:75, label:'Elevated', rec:'Oxygen levels critical. Activate aerators immediately. Reduce feeding by 30%.', icon:'⚠️' },
+    ];
+    const riskColors = { high:'#F44336', medium:'#FF9800', low:'#4CAF50' };
+    return `<div class="section" style="padding:12px">
+      <h3 style="margin:0 0 4px;font-size:15px;font-weight:700">🤖 AI Advisory Predictions</h3>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:12px">Machine learning models analyze your farm data to predict disease risk, yield, optimal feed, and market prices.</p>
+      <div class="card" style="padding:10px;margin-bottom:12px;background:#E8F5E9;border:1px solid #C8E6C9">
+        <div style="font-size:11px;color:#2E7D32"><b>Future AI Modules:</b> Disease Detection (Computer Vision) • Satellite Pond Monitoring • Automated Feeding Optimization</div>
+      </div>
+      ${predictions.map(p => `
+        <div class="card" style="padding:12px;margin-bottom:10px;border-left:4px solid ${riskColors[p.risk]}">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:13px;font-weight:600">${p.icon} ${p.type.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase())}</span>
+            <span style="font-size:10px;padding:2px 6px;border-radius:8px;background:${riskColors[p.risk]}22;color:${riskColors[p.risk]}">${p.risk.toUpperCase()} (${p.confidence}%)</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">Model: ${p.model}${p.value ? ` • Value: ${p.value}` : ''}</div>
+          <div style="font-size:11px;margin-top:6px;padding:6px 8px;background:#f5f5f5;border-radius:6px">💡 ${p.rec}</div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // V10: PAYMENTS TAB — Transaction history & subscriptions
+  // ════════════════════════════════════════════════════════════════
+  function renderPaymentsV10Tab() {
+    const plans = [
+      { name:'Farmer Basic', price:'FREE', features:['Full Farm OS','Advisory','Community','List harvest','Buy inputs','Chat'], role:'farmer' },
+      { name:'Buyer Pro', price:'₹4,999/mo', features:['Unlimited offers','Priority alerts','Advanced filters','Direct chat','Price forecasts'], role:'buyer' },
+      { name:'Supplier Premium', price:'₹2,999/mo', features:['Unlimited listings','Featured placement','Campaign tools','Sales leads','Analytics'], role:'supplier' },
+    ];
+    const transactions = [
+      { id:'txn1', type:'harvest_sale', amount:95000, status:'completed', desc:'Vannamei Shrimp 250kg to Coastal Exports', date:'2026-04-28', commission:'₹2,375' },
+      { id:'txn2', type:'input_purchase', amount:12500, status:'completed', desc:'CP Aqua Feed 500kg', date:'2026-04-25', commission:'₹375' },
+      { id:'txn3', type:'harvest_sale', amount:48000, status:'pending', desc:'Rohu 300kg to Fresh Mart', date:'2026-05-01', commission:'₹1,200' },
+    ];
+    return `<div class="section" style="padding:12px">
+      <h3 style="margin:0 0 4px;font-size:15px;font-weight:700">💳 Payments & Monetization</h3>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:12px">Secure payments via Razorpay. Farmers always FREE. Commission: 2.5% harvest, 3% inputs.</p>
+      <div style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">📋 Subscription Plans</div>
+        ${plans.map(p => `
+          <div class="card" style="padding:10px;margin-bottom:6px;${p.role==='farmer'?'border:2px solid var(--success)':''}">
+            <div style="display:flex;justify-content:space-between"><span style="font-weight:600;font-size:12px">${p.name}</span><span style="font-size:12px;color:var(--primary);font-weight:700">${p.price}</span></div>
+            <div style="font-size:10px;color:var(--text3);margin-top:3px">${p.features.join(' • ')}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px">📜 Recent Transactions</div>
+      ${transactions.map(t => `
+        <div class="card" style="padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:11px;font-weight:500">${t.desc}</div>
+            <div style="font-size:10px;color:var(--text3)">${t.date} • Commission: ${t.commission}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:12px;font-weight:700">₹${t.amount.toLocaleString()}</div>
+            <span style="font-size:9px;padding:1px 4px;border-radius:4px;background:${t.status==='completed'?'#E8F5E9':'#FFF3E0'};color:${t.status==='completed'?'#2E7D32':'#E65100'}">${t.status}</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // V10: GROWTH TAB — Launch strategy & metrics
+  // ════════════════════════════════════════════════════════════════
+  function renderGrowthTab() {
+    const districts = [
+      { name:'Nellore', farmers:15800, target:35000, pct:45.1 },
+      { name:'Krishna', farmers:12100, target:30000, pct:40.3 },
+      { name:'West Godavari', farmers:8500, target:25000, pct:34.0 },
+      { name:'East Godavari', farmers:6200, target:20000, pct:31.0 },
+    ];
+    const phases = [
+      { name:'Phase 1: Farm OS + Harvest Marketplace', status:'active', color:'#4CAF50' },
+      { name:'Phase 2: Input Marketplace', status:'upcoming', color:'#FF9800' },
+      { name:'Phase 3: Advisory Engine + AI', status:'planned', color:'#2196F3' },
+      { name:'Phase 4: Community + Full Ecosystem', status:'planned', color:'#9C27B0' },
+    ];
+    return `<div class="section" style="padding:12px">
+      <h3 style="margin:0 0 4px;font-size:15px;font-weight:700">🚀 Growth & Launch Strategy</h3>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:12px">Andhra Pradesh first. Target: 100K farmers, 10K buyers, 2K suppliers.</p>
+      <div style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">🎯 Launch Phases</div>
+        ${phases.map(p => `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f5f5f5">
+            <span style="width:8px;height:8px;border-radius:50%;background:${p.color}"></span>
+            <span style="font-size:11px;flex:1">${p.name}</span>
+            <span style="font-size:10px;padding:1px 6px;border-radius:8px;background:${p.color}22;color:${p.color}">${p.status}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px">📍 District Progress</div>
+      ${districts.map(d => `
+        <div class="card" style="padding:8px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;font-size:11px"><span style="font-weight:500">${d.name}</span><span>${d.farmers.toLocaleString()} / ${d.target.toLocaleString()}</span></div>
+          <div style="height:6px;background:#e0e0e0;border-radius:3px;margin-top:4px;overflow:hidden">
+            <div style="height:100%;width:${d.pct}%;background:var(--primary);border-radius:3px"></div>
+          </div>
+          <div style="font-size:9px;color:var(--text3);text-align:right;margin-top:2px">${d.pct}%</div>
+        </div>
+      `).join('')}
+      <div class="card" style="padding:10px;margin-top:10px;background:#E3F2FD;border:1px solid #BBDEFB">
+        <div style="font-size:11px;color:#1565C0"><b>Key Metrics:</b> GMV ₹4.25 Cr • 890 completed deals • 3.2 avg days to sell • 42,600 registered farmers</div>
+      </div>
+      <div class="card" style="padding:10px;margin-top:8px;background:#F3E5F5;border:1px solid #CE93D8">
+        <div style="font-size:11px;color:#6A1B9A"><b>Market Opportunity:</b> India aquaculture growing 10%+ YoY. AP = 70% of India's shrimp production. Strong export demand to US, EU, Japan, Vietnam, Thailand.</div>
       </div>
     </div>`;
   }
@@ -1546,6 +1919,1640 @@ export function renderAquaOS(container) {
     });
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // FINANCIAL TRACKING TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderFinanceTab() {
+    const sampleExpenses = [
+      { category: 'feed', subcategory: 'CP 35P Shrimp Feed', amount: 84000, quantity: 30, unit: '25kg bags', expense_date: '2026-04-25', pond_code: 'Pond A' },
+      { category: 'seed', subcategory: 'Vannamei PL-10', amount: 35000, quantity: 200000, unit: 'PL', expense_date: '2026-02-28', pond_code: 'Pond A' },
+      { category: 'medicine', subcategory: 'Probiotics + Minerals', amount: 8500, quantity: 5, unit: 'kg', expense_date: '2026-04-10', pond_code: 'Pond A' },
+      { category: 'labor', subcategory: 'Monthly labor (2 workers)', amount: 24000, expense_date: '2026-04-01' },
+      { category: 'electricity', subcategory: 'Aerator power', amount: 12000, expense_date: '2026-04-01' },
+      { category: 'lime', subcategory: 'Dolomite lime', amount: 3500, quantity: 200, unit: 'kg', expense_date: '2026-03-15', pond_code: 'Pond A' },
+    ];
+    const totalExp = sampleExpenses.reduce((s, e) => s + e.amount, 0);
+    const sampleRevenue = { total: 456000, quantity_kg: 2400, price_per_kg: 190 };
+    const profit = sampleRevenue.total - totalExp;
+    const costPerKg = (totalExp / sampleRevenue.quantity_kg).toFixed(2);
+
+    return `<div class="section">
+      <h3 style="margin:0 0 12px">💵 Financial Tracker — Profit per Pond</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+        <div class="metric-card" style="background:#e8f5e9;padding:12px;border-radius:10px;text-align:center">
+          <div style="font-size:11px;color:#666">Revenue</div>
+          <div style="font-size:18px;font-weight:800;color:#2e7d32">₹${(sampleRevenue.total/1000).toFixed(0)}K</div>
+        </div>
+        <div class="metric-card" style="background:#fbe9e7;padding:12px;border-radius:10px;text-align:center">
+          <div style="font-size:11px;color:#666">Expenses</div>
+          <div style="font-size:18px;font-weight:800;color:#d32f2f">₹${(totalExp/1000).toFixed(0)}K</div>
+        </div>
+        <div class="metric-card" style="background:${profit>=0?'#e0f2f1':'#ffebee'};padding:12px;border-radius:10px;text-align:center">
+          <div style="font-size:11px;color:#666">Net Profit</div>
+          <div style="font-size:18px;font-weight:800;color:${profit>=0?'#00796b':'#c62828'}">₹${(profit/1000).toFixed(0)}K</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+        <div style="background:#f3e5f5;padding:10px;border-radius:8px;text-align:center">
+          <div style="font-size:10px;color:#666">Cost/kg</div>
+          <div style="font-weight:700">₹${costPerKg}</div>
+        </div>
+        <div style="background:#e3f2fd;padding:10px;border-radius:8px;text-align:center">
+          <div style="font-size:10px;color:#666">Profit/Acre</div>
+          <div style="font-weight:700">₹${(profit/2.5/1000).toFixed(0)}K</div>
+        </div>
+      </div>
+      <h4 style="margin:12px 0 8px;font-size:13px">📊 Expense Breakdown</h4>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${sampleExpenses.map(e => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f9f9f9;border-radius:8px">
+            <div>
+              <div style="font-weight:600;font-size:12px">${e.category.charAt(0).toUpperCase()+e.category.slice(1)}${e.pond_code?` · ${e.pond_code}`:''}</div>
+              <div style="font-size:10px;color:#666">${e.subcategory||''} ${e.quantity?`(${e.quantity} ${e.unit||''})`:''}</div>
+            </div>
+            <div style="font-weight:700;color:#d32f2f">₹${e.amount.toLocaleString()}</div>
+          </div>
+        `).join('')}
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="document.dispatchEvent(new CustomEvent('aqua-add-expense'))">+ Add Expense</button>
+      <button class="btn btn-outline" style="width:100%;margin-top:8px" onclick="document.dispatchEvent(new CustomEvent('aqua-add-revenue'))">+ Record Revenue</button>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // DISEASE REPORTING TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderDiseaseTab() {
+    const sampleAlerts = [
+      { disease_name: 'White Spot Syndrome (WSSV)', severity: 'critical', report_count: 5, district_name: 'West Godavari', species: 'Vannamei Shrimp', latest_report: '2026-05-01' },
+      { disease_name: 'EMS/AHPND', severity: 'high', report_count: 3, district_name: 'Nellore', species: 'Vannamei Shrimp', latest_report: '2026-04-28' },
+    ];
+    const sampleReports = [
+      { id: 'dr1', disease_name: 'Suspected White Spot', severity: 'high', pond_code: 'Pond A', status: 'reported', symptoms: ['Lethargy', 'White spots on shell', 'Reduced feed intake'], reported_at: '2026-04-30', mortality_count: 150 },
+    ];
+
+    return `<div class="section">
+      <h3 style="margin:0 0 12px">🦠 Disease Reporting & Regional Alerts</h3>
+      ${sampleAlerts.length > 0 ? `
+        <div style="background:#fff3e0;border-left:4px solid #ff9800;padding:12px;border-radius:8px;margin-bottom:12px">
+          <div style="font-weight:700;font-size:13px;color:#e65100">⚠️ Regional Disease Alerts (Last 30 days)</div>
+          ${sampleAlerts.map(a => `
+            <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px;background:rgba(255,255,255,0.7);border-radius:6px">
+              <span style="background:${a.severity==='critical'?'#d32f2f':'#f57c00'};color:white;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700">${a.severity.toUpperCase()}</span>
+              <div style="flex:1">
+                <div style="font-weight:600;font-size:12px">${a.disease_name}</div>
+                <div style="font-size:10px;color:#666">${a.district_name} · ${a.species} · ${a.report_count} reports</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+      <h4 style="margin:12px 0 8px;font-size:13px">📋 My Disease Reports</h4>
+      ${sampleReports.length > 0 ? sampleReports.map(r => `
+        <div style="padding:12px;background:#f9f9f9;border-radius:10px;margin-bottom:8px;border-left:4px solid ${r.severity==='critical'?'#d32f2f':r.severity==='high'?'#f57c00':'#fbc02d'}">
+          <div style="display:flex;justify-content:space-between">
+            <div style="font-weight:700;font-size:13px">${r.disease_name || 'Unknown'}</div>
+            <span style="font-size:10px;background:#e0e0e0;padding:2px 6px;border-radius:4px">${r.status}</span>
+          </div>
+          <div style="font-size:11px;color:#666;margin-top:4px">${r.pond_code} · Mortality: ${r.mortality_count}</div>
+          <div style="font-size:11px;color:#666;margin-top:2px">Symptoms: ${(r.symptoms||[]).join(', ')}</div>
+        </div>
+      `).join('') : '<p style="color:#999;font-size:12px">No disease reports filed yet</p>'}
+      <button class="btn btn-primary" style="width:100%;margin-top:12px;background:#d32f2f" onclick="document.dispatchEvent(new CustomEvent('aqua-report-disease'))">🦠 Report Disease/Symptoms</button>
+      <div style="background:#e8f5e9;padding:12px;border-radius:10px;margin-top:12px">
+        <div style="font-weight:700;font-size:12px;color:#2e7d32">💡 Disease Prevention Tips</div>
+        <ul style="font-size:11px;margin:8px 0 0;padding-left:16px;color:#333">
+          <li>Maintain biosecurity — limit visitors and disinfect equipment</li>
+          <li>Monitor water quality daily (DO > 4 mg/L, pH 7.5–8.5)</li>
+          <li>Use PCR-tested seed from certified hatcheries</li>
+          <li>Apply probiotics regularly to maintain gut health</li>
+          <li>Reduce stocking density if disease pressure is high</li>
+        </ul>
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // AUCTIONS TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderAuctionsTab() {
+    const sampleAuctions = [
+      { id: 'auc1', species: 'Vannamei Shrimp', size_count: '30 count', quantity_kg: 3000, base_price: 360, current_bid: 395, bid_count: 7, farmer_name: 'Ramesh Aqua', location_label: 'Nellore, AP', end_time: new Date(Date.now() + 3600000*5).toISOString(), status: 'active' },
+      { id: 'auc2', species: 'Black Tiger Shrimp', size_count: '20 count', quantity_kg: 800, base_price: 600, current_bid: 680, bid_count: 12, farmer_name: 'Coastal Premium', location_label: 'Kakinada, AP', end_time: new Date(Date.now() + 3600000*2).toISOString(), status: 'active' },
+      { id: 'auc3', species: 'Rohu', size_count: '1-1.5kg', quantity_kg: 5000, base_price: 140, current_bid: 158, bid_count: 4, farmer_name: 'Godavari Fish', location_label: 'Eluru, AP', end_time: new Date(Date.now() + 3600000*8).toISOString(), status: 'active' },
+    ];
+
+    return `<div class="section">
+      <h3 style="margin:0 0 12px">🔨 Live Fish Auctions</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Real-time auctions for fresh aquaculture harvests. Place bids to secure supply at best prices.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${sampleAuctions.map(a => {
+          const endMs = new Date(a.end_time).getTime() - Date.now();
+          const hoursLeft = Math.max(0, Math.floor(endMs / 3600000));
+          const minsLeft = Math.max(0, Math.floor((endMs % 3600000) / 60000));
+          return `
+          <div style="padding:14px;background:#f9f9f9;border-radius:12px;border:1px solid #e0e0e0">
+            <div style="display:flex;justify-content:space-between;align-items:start">
+              <div>
+                <div style="font-weight:700;font-size:14px">${a.species}</div>
+                <div style="font-size:11px;color:#666">${a.size_count} · ${a.quantity_kg.toLocaleString()} kg · ${a.location_label}</div>
+                <div style="font-size:10px;color:#888;margin-top:2px">by ${a.farmer_name}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:10px;color:#666">Current Bid</div>
+                <div style="font-size:18px;font-weight:800;color:#2f80ed">₹${a.current_bid}</div>
+                <div style="font-size:10px;color:#666">/kg</div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:10px;align-items:center">
+              <div style="display:flex;gap:8px">
+                <span style="font-size:10px;background:#e3f2fd;padding:3px 8px;border-radius:4px">🏷️ Base: ₹${a.base_price}</span>
+                <span style="font-size:10px;background:#f3e5f5;padding:3px 8px;border-radius:4px">🔥 ${a.bid_count} bids</span>
+              </div>
+              <div style="font-size:11px;color:${hoursLeft<1?'#d32f2f':'#666'};font-weight:600">⏰ ${hoursLeft}h ${minsLeft}m left</div>
+            </div>
+            ${isBuyer ? `<button class="btn btn-primary" style="width:100%;margin-top:10px;font-size:12px">Place Bid →</button>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+      ${!isBuyer ? `<button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="document.dispatchEvent(new CustomEvent('aqua-create-auction'))">+ Create Auction</button>` : ''}
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // COLD CHAIN & LOGISTICS TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderLogisticsTab() {
+    const providers = [
+      { name: 'Snowman Logistics', provider_type: 'integrated', services: ['Cold Storage', 'Reefer Transport', 'Ice Supply'], rating: 4.5, price_per_km: 45, price_per_ton: 3500, is_verified: true },
+      { name: 'ColdEX Logistics', provider_type: 'cold_chain', services: ['Reefer Transport', 'Temperature Monitoring', 'Last Mile'], rating: 4.3, price_per_km: 38, price_per_ton: 3000, is_verified: true },
+      { name: 'Gati Fish Express', provider_type: 'transport', services: ['Insulated Transport', 'Ice Supply', 'Door Pickup'], rating: 4.1, price_per_km: 32, price_per_ton: 2500, is_verified: true },
+      { name: 'AP Aqua Transport', provider_type: 'regional', services: ['Pond Pickup', 'Ice Packing', 'Market Delivery'], rating: 4.0, price_per_km: 25, price_per_ton: 2000, is_verified: false },
+      { name: 'Tessol Cold Solutions', provider_type: 'technology', services: ['Solar Cold Storage', 'Reefer Transport', 'IoT Monitoring'], rating: 4.6, price_per_km: 50, price_per_ton: 4000, is_verified: true },
+    ];
+
+    return `<div class="section">
+      <h3 style="margin:0 0 8px">🚛 Cold Chain & Logistics Network</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Book verified logistics for fish transport with cold chain integrity — from pond to market.</p>
+      <div style="background:#e3f2fd;padding:12px;border-radius:10px;margin-bottom:14px">
+        <div style="font-weight:700;font-size:12px;color:#1565c0">❄️ Cold Chain Steps</div>
+        <div style="display:flex;gap:4px;margin-top:8px;overflow-x:auto;font-size:10px">
+          ${['🐟 Harvest','🧊 Ice Pack','🏭 Cold Store','🚛 Reefer','🏪 Market'].map((s,i) => `
+            <div style="background:white;padding:6px 8px;border-radius:6px;text-align:center;min-width:60px;white-space:nowrap">
+              ${s}${i<4?'<span style="margin-left:4px">→</span>':''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <h4 style="margin:0 0 8px;font-size:13px">🏢 Verified Logistics Partners</h4>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${providers.map(p => `
+          <div style="padding:12px;background:#f9f9f9;border-radius:10px;border-left:4px solid ${p.is_verified?'#2e7d32':'#bdbdbd'}">
+            <div style="display:flex;justify-content:space-between;align-items:start">
+              <div>
+                <div style="font-weight:700;font-size:13px">${p.name} ${p.is_verified?'<span style="color:#2e7d32">✓</span>':''}</div>
+                <div style="font-size:10px;color:#666;margin-top:2px">${p.services.join(' · ')}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:11px;color:#f57c00;font-weight:600">⭐ ${p.rating}</div>
+                <div style="font-size:10px;color:#666">₹${p.price_per_km}/km</div>
+              </div>
+            </div>
+            <button class="btn btn-outline" style="width:100%;margin-top:8px;font-size:11px;padding:6px">Book Transport →</button>
+          </div>
+        `).join('')}
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="document.dispatchEvent(new CustomEvent('aqua-book-logistics'))">📦 New Logistics Booking</button>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // TRAINING & KNOWLEDGE HUB TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderTrainingTab() {
+    const modules = [
+      { title: 'Pond Preparation for Shrimp Culture', category: 'pond_preparation', difficulty: 'beginner', duration_mins: 15, view_count: 1250 },
+      { title: 'Feed Management Best Practices', category: 'feed_management', difficulty: 'intermediate', duration_mins: 20, view_count: 980 },
+      { title: 'Water Quality Management', category: 'water_quality', difficulty: 'beginner', duration_mins: 12, view_count: 1450 },
+      { title: 'White Spot Disease Prevention', category: 'disease_management', difficulty: 'advanced', duration_mins: 25, view_count: 2100 },
+      { title: 'Harvest Planning & Market Timing', category: 'harvest', difficulty: 'intermediate', duration_mins: 18, view_count: 870 },
+      { title: 'PMMSY Subsidy Application Guide', category: 'government_schemes', difficulty: 'beginner', duration_mins: 30, view_count: 3200 },
+      { title: 'Biofloc Technology for Fish Farming', category: 'advanced_systems', difficulty: 'advanced', duration_mins: 35, view_count: 650 },
+      { title: 'RAS Setup and Operations', category: 'advanced_systems', difficulty: 'advanced', duration_mins: 40, view_count: 420 },
+    ];
+    const diffColors = { beginner: '#4caf50', intermediate: '#ff9800', advanced: '#d32f2f' };
+    const catIcons = { pond_preparation: '🏗️', feed_management: '🍽️', water_quality: '💧', disease_management: '🦠', harvest: '🎣', government_schemes: '🏛️', advanced_systems: '⚙️' };
+
+    return `<div class="section">
+      <h3 style="margin:0 0 8px">📚 Training & Knowledge Hub</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Learn best practices from experts. Courses available in Telugu, Hindi & English.</p>
+      <div style="display:flex;gap:6px;margin-bottom:12px;overflow-x:auto">
+        ${['All', 'Beginner', 'Intermediate', 'Advanced'].map(d => `<button class="btn btn-outline" style="font-size:10px;padding:4px 10px;white-space:nowrap">${d}</button>`).join('')}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${modules.map(m => `
+          <div style="padding:12px;background:#f9f9f9;border-radius:10px;cursor:pointer" class="training-item">
+            <div style="display:flex;gap:10px;align-items:start">
+              <div style="font-size:24px">${catIcons[m.category] || '📄'}</div>
+              <div style="flex:1">
+                <div style="font-weight:600;font-size:12px">${m.title}</div>
+                <div style="display:flex;gap:8px;margin-top:4px;align-items:center">
+                  <span style="font-size:9px;background:${diffColors[m.difficulty]};color:white;padding:2px 6px;border-radius:4px">${m.difficulty}</span>
+                  <span style="font-size:10px;color:#666">⏱ ${m.duration_mins} min</span>
+                  <span style="font-size:10px;color:#666">👁 ${m.view_count}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // GOVERNMENT SCHEMES (PMMSY) TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderSchemesTab() {
+    const components = [
+      { code: 'pond_construction', name: 'New Pond Construction', max_cost: 700000, subsidy_40: 280000, subsidy_60: 420000 },
+      { code: 'pond_renovation', name: 'Pond Renovation', max_cost: 300000, subsidy_40: 120000, subsidy_60: 180000 },
+      { code: 'hatchery', name: 'Fish/Shrimp Hatchery', max_cost: 5000000, subsidy_40: 2000000, subsidy_60: 3000000 },
+      { code: 'aerator', name: 'Aerators & Equipment', max_cost: 500000, subsidy_40: 200000, subsidy_60: 300000 },
+      { code: 'biofloc', name: 'Biofloc Unit', max_cost: 800000, subsidy_40: 320000, subsidy_60: 480000 },
+      { code: 'ras', name: 'RAS Unit', max_cost: 5000000, subsidy_40: 2000000, subsidy_60: 3000000 },
+      { code: 'cage_culture', name: 'Cage Culture', max_cost: 3000000, subsidy_40: 1200000, subsidy_60: 1800000 },
+      { code: 'cold_storage', name: 'Cold Storage Unit', max_cost: 4000000, subsidy_40: 1600000, subsidy_60: 2400000 },
+    ];
+
+    return `<div class="section">
+      <h3 style="margin:0 0 8px">🏛️ Government Schemes — PMMSY</h3>
+      <div style="background:linear-gradient(135deg,#1a237e,#283593);color:white;padding:14px;border-radius:12px;margin-bottom:14px">
+        <div style="font-weight:800;font-size:14px">Pradhan Mantri Matsya Sampada Yojana</div>
+        <div style="font-size:11px;opacity:0.9;margin-top:4px">Blue Revolution scheme for sustainable fisheries development</div>
+        <div style="display:flex;gap:12px;margin-top:10px">
+          <div style="background:rgba(255,255,255,0.15);padding:8px 12px;border-radius:8px;text-align:center">
+            <div style="font-size:20px;font-weight:800">40%</div>
+            <div style="font-size:9px;opacity:0.8">General Category</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.15);padding:8px 12px;border-radius:8px;text-align:center">
+            <div style="font-size:20px;font-weight:800">60%</div>
+            <div style="font-size:9px;opacity:0.8">SC/ST/Women</div>
+          </div>
+        </div>
+      </div>
+      <h4 style="margin:0 0 8px;font-size:13px">🧾 Eligible Components & Subsidy</h4>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+        ${components.map(c => `
+          <div style="padding:10px;background:#f5f5f5;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:600;font-size:12px">${c.name}</div>
+              <div style="font-size:10px;color:#666">Max cost: ₹${(c.max_cost/100000).toFixed(1)}L</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:11px;color:#2e7d32;font-weight:600">₹${(c.subsidy_40/100000).toFixed(1)}L</div>
+              <div style="font-size:9px;color:#666">subsidy (40%)</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="background:#fff8e1;padding:12px;border-radius:10px;margin-bottom:14px">
+        <div style="font-weight:700;font-size:12px;color:#f57f17">📄 Documents Required</div>
+        <ul style="font-size:11px;margin:8px 0 0;padding-left:16px;color:#333">
+          <li>Aadhaar Card + PAN Card</li>
+          <li>Land document (ownership/lease 7-10 years)</li>
+          <li>Bank passbook/cancelled cheque</li>
+          <li>Quotations for equipment/construction</li>
+          <li>Caste certificate (for 60% subsidy)</li>
+          <li>Passport-size photo + site photos</li>
+        </ul>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="document.dispatchEvent(new CustomEvent('aqua-apply-scheme'))">📝 Start PMMSY Application (DPR)</button>
+      <button class="btn btn-outline" style="width:100%;margin-top:8px">📊 Track My Applications</button>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // RFQ (Request for Quotation) TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderRFQTab() {
+    const sampleRFQs = [
+      { id:'rfq1', title:'Need 5 tons Vannamei 30ct', species:'Vannamei Shrimp', quantity_kg:5000, size_spec:'30 count', max_price_per_kg:400, delivery_location:'Visakhapatnam', delivery_date:'2026-05-20', buyer_name:'FreshCatch Exports', quote_count:4, status:'open' },
+      { id:'rfq2', title:'Rohu 1kg+ for restaurant chain', species:'Rohu', quantity_kg:2000, size_spec:'1-1.5kg', max_price_per_kg:180, delivery_location:'Hyderabad', delivery_date:'2026-05-15', buyer_name:'SeaFresh Hotels', quote_count:2, status:'open' },
+      { id:'rfq3', title:'Pangasius bulk order for processing', species:'Pangasius', quantity_kg:10000, size_spec:'1.5-2kg', max_price_per_kg:110, delivery_location:'Vijayawada', delivery_date:'2026-05-25', buyer_name:'AP Fish Processing Ltd', quote_count:6, status:'open' },
+    ];
+
+    return `<div class="section">
+      <h3 style="margin:0 0 8px">📋 Request for Quotation (RFQ)</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">${isBuyer ? 'Post your fish/shrimp requirements. Farmers submit competitive quotes directly.' : 'Browse buyer demands. Submit your best quote to win orders.'}</p>
+      ${isBuyer ? `<button class="btn btn-primary" style="width:100%;margin-bottom:14px" onclick="document.dispatchEvent(new CustomEvent('aqua-create-rfq'))">+ Post New RFQ</button>` : ''}
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${sampleRFQs.map(r => `
+          <div style="padding:14px;background:#f9f9f9;border-radius:12px;border-left:4px solid #2f80ed">
+            <div style="display:flex;justify-content:space-between;align-items:start">
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:13px">${r.title}</div>
+                <div style="font-size:11px;color:#666;margin-top:3px">${r.species} · ${r.size_spec} · ${r.quantity_kg.toLocaleString()} kg</div>
+                <div style="font-size:10px;color:#888;margin-top:2px">📍 ${r.delivery_location} · 📅 By ${r.delivery_date}</div>
+                <div style="font-size:10px;color:#888;margin-top:2px">Posted by: ${r.buyer_name}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:10px;color:#666">Max Price</div>
+                <div style="font-size:16px;font-weight:800;color:#2f80ed">₹${r.max_price_per_kg}</div>
+                <div style="font-size:10px;color:#666">/kg</div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+              <span style="font-size:10px;background:#e3f2fd;padding:3px 8px;border-radius:4px">📝 ${r.quote_count} quotes received</span>
+              ${!isBuyer ? `<button class="btn btn-primary" style="font-size:11px;padding:6px 12px">Submit Quote →</button>` : `<button class="btn btn-outline" style="font-size:11px;padding:6px 12px">View Quotes</button>`}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // YIELD FORECAST TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderForecastTab() {
+    const sampleForecast = {
+      pond_code: 'Pond A', species: 'Vannamei Shrimp', doc: 62, current_weight_g: 15.5,
+      confidence_pct: 78,
+      growth_curve: [
+        { doc: 62, predicted_weight_g: 15.5 }, { doc: 69, predicted_weight_g: 17.8 },
+        { doc: 76, predicted_weight_g: 20.2 }, { doc: 83, predicted_weight_g: 22.4 },
+        { doc: 90, predicted_weight_g: 24.5 }, { doc: 97, predicted_weight_g: 26.3 },
+        { doc: 104, predicted_weight_g: 28.0 }, { doc: 111, predicted_weight_g: 29.4 },
+        { doc: 118, predicted_weight_g: 30.6 },
+      ],
+      harvest_scenarios: [
+        { size_label: '50 count', days_from_now: 14, estimated_yield_kg: 2800, market_price: 290, estimated_revenue: 812000, estimated_profit: 620000 },
+        { size_label: '40 count', days_from_now: 32, estimated_yield_kg: 2650, market_price: 340, estimated_revenue: 901000, estimated_profit: 680000 },
+        { size_label: '30 count', days_from_now: 55, estimated_yield_kg: 2500, market_price: 380, estimated_revenue: 950000, estimated_profit: 700000 },
+      ],
+      recommended_harvest: { size_label: '30 count', days_from_now: 55, estimated_revenue: 950000, estimated_profit: 700000 }
+    };
+
+    return `<div class="section">
+      <h3 style="margin:0 0 8px">📈 Yield Forecasting — ${sampleForecast.pond_code}</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">AI-powered growth prediction using Von Bertalanffy model calibrated to your farm data.</p>
+      <div style="background:linear-gradient(135deg,#1a237e,#283593);color:white;padding:14px;border-radius:12px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:11px;opacity:0.8">${sampleForecast.species} · DOC ${sampleForecast.doc}</div>
+            <div style="font-size:22px;font-weight:800;margin-top:4px">${sampleForecast.current_weight_g}g</div>
+            <div style="font-size:10px;opacity:0.7">Current avg weight</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;opacity:0.8">Confidence</div>
+            <div style="font-size:20px;font-weight:800">${sampleForecast.confidence_pct}%</div>
+          </div>
+        </div>
+      </div>
+      <h4 style="margin:0 0 8px;font-size:13px">📊 Growth Projection</h4>
+      <div style="display:flex;gap:4px;margin-bottom:14px;overflow-x:auto;padding:4px 0">
+        ${sampleForecast.growth_curve.map(p => `
+          <div style="display:flex;flex-direction:column;align-items:center;min-width:40px">
+            <div style="width:24px;background:linear-gradient(to top,#2f80ed,#56ccf2);border-radius:4px;height:${Math.round(p.predicted_weight_g*2)}px"></div>
+            <div style="font-size:8px;color:#666;margin-top:2px">${p.predicted_weight_g.toFixed(0)}g</div>
+            <div style="font-size:7px;color:#999">D${p.doc}</div>
+          </div>
+        `).join('')}
+      </div>
+      <h4 style="margin:0 0 8px;font-size:13px">🎯 Harvest Scenarios</h4>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${sampleForecast.harvest_scenarios.map((s, i) => `
+          <div style="padding:10px;background:${i===sampleForecast.harvest_scenarios.length-1?'#e8f5e9':'#f5f5f5'};border-radius:10px;${i===sampleForecast.harvest_scenarios.length-1?'border:2px solid #4caf50':''}">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-weight:700;font-size:12px">${s.size_label} ${i===sampleForecast.harvest_scenarios.length-1?'⭐ Recommended':''}</div>
+                <div style="font-size:10px;color:#666">${s.days_from_now} days · ${s.estimated_yield_kg.toLocaleString()} kg · ₹${s.market_price}/kg</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:14px;font-weight:800;color:#2e7d32">₹${(s.estimated_profit/1000).toFixed(0)}K</div>
+                <div style="font-size:9px;color:#666">est. profit</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="background:#fff3e0;padding:12px;border-radius:10px;margin-top:14px">
+        <div style="font-weight:700;font-size:12px;color:#e65100">💡 Recommendation</div>
+        <div style="font-size:11px;color:#333;margin-top:4px">Wait for 30 count size (${sampleForecast.recommended_harvest.days_from_now} more days) for maximum profit of ₹${(sampleForecast.recommended_harvest.estimated_profit/100000).toFixed(1)} lakh.</div>
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ESCROW PAYMENT TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderEscrowTab() {
+    const sampleEscrows = [
+      { id:'esc1', species:'Vannamei Shrimp', quantity_kg:2500, amount:950000, platform_fee:28500, buyer_name:'FreshCatch Exports', seller_name:'Ramesh Aqua', status:'quality_verified', created_at:'2026-05-01' },
+      { id:'esc2', species:'Rohu', quantity_kg:1500, amount:240000, platform_fee:7200, buyer_name:'SeaFresh Hotels', seller_name:'Godavari Fish', status:'funded', created_at:'2026-04-28' },
+      { id:'esc3', species:'Vannamei Shrimp', quantity_kg:3000, amount:1140000, platform_fee:34200, buyer_name:'AP Exports', seller_name:'Krishna Aqua', status:'released', created_at:'2026-04-20' },
+    ];
+    const statusColors = { initiated:'#9e9e9e', funded:'#2196f3', quality_verified:'#ff9800', dispatched:'#9c27b0', delivered:'#00bcd4', released:'#4caf50', disputed:'#f44336' };
+    const statusLabels = { initiated:'Initiated', funded:'Funded', quality_verified:'Quality OK', dispatched:'Dispatched', delivered:'Delivered', released:'Payment Released', disputed:'Disputed' };
+
+    return `<div class="section">
+      <h3 style="margin:0 0 8px">🔒 Secure Escrow Payments</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Protected transactions with escrow. Funds released only after quality verification & delivery confirmation.</p>
+      <div style="background:#e3f2fd;padding:12px;border-radius:10px;margin-bottom:14px">
+        <div style="font-weight:700;font-size:12px;color:#1565c0">Payment Flow</div>
+        <div style="display:flex;gap:2px;margin-top:8px;font-size:9px;overflow-x:auto">
+          ${['Initiated','Funded','Quality ✓','Dispatched','Delivered','Released'].map((s,i) => `
+            <div style="background:white;padding:4px 6px;border-radius:4px;text-align:center;white-space:nowrap;flex:1">
+              ${s}${i<5?'→':''}
+            </div>
+          `).join('')}
+        </div>
+        <div style="font-size:10px;color:#666;margin-top:6px">Platform fee: 3% · Seller payout after buyer confirms delivery</div>
+      </div>
+      <h4 style="margin:0 0 8px;font-size:13px">📋 My Transactions</h4>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${sampleEscrows.map(e => `
+          <div style="padding:12px;background:#f9f9f9;border-radius:10px;border-left:4px solid ${statusColors[e.status]||'#ccc'}">
+            <div style="display:flex;justify-content:space-between;align-items:start">
+              <div>
+                <div style="font-weight:700;font-size:12px">${e.species} · ${e.quantity_kg.toLocaleString()} kg</div>
+                <div style="font-size:10px;color:#666;margin-top:2px">${isBuyer ? `Seller: ${e.seller_name}` : `Buyer: ${e.buyer_name}`}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-weight:800;font-size:14px">₹${(e.amount/1000).toFixed(0)}K</div>
+                <span style="font-size:9px;background:${statusColors[e.status]};color:white;padding:2px 6px;border-radius:4px">${statusLabels[e.status]}</span>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  }
+
+  // ═══════════ CULTURE UNITS TAB ═══════════
+  function renderCultureUnitsTab() {
+    const SAMPLE_UNITS = [
+      { id:'cu1', unit_code:'Pond-1', unit_type:'pond', species:'Vannamei Shrimp', area_acres:3.0, status:'active', current_stock_count:120000, stocking_date:'2026-03-01', farm_name:'Main Farm' },
+      { id:'cu2', unit_code:'Pond-2', unit_type:'pond', species:'Vannamei Shrimp', area_acres:2.5, status:'active', current_stock_count:100000, stocking_date:'2026-03-15', farm_name:'Main Farm' },
+      { id:'cu3', unit_code:'RAS-Block-A', unit_type:'ras_tank', species:'Tilapia', tank_count:10, volume_m3:50, status:'active', current_stock_count:15000, stocking_date:'2026-02-10', farm_name:'Indoor Facility' },
+      { id:'cu4', unit_code:'Cage-1', unit_type:'cage', species:'Seabass', cage_count:4, volume_m3:200, status:'active', current_stock_count:2000, stocking_date:'2026-01-20', farm_name:'Coastal Site' },
+      { id:'cu5', unit_code:'Biofloc-1', unit_type:'biofloc', species:'Vannamei Shrimp', tank_count:6, volume_m3:30, status:'active', current_stock_count:30000, stocking_date:'2026-04-01', farm_name:'R&D Unit' },
+      { id:'cu6', unit_code:'Crab-Pen-1', unit_type:'cage', species:'Mud Crab', cage_count:20, status:'active', current_stock_count:500, stocking_date:'2026-03-20', farm_name:'Mangrove Site' },
+      { id:'cu7', unit_code:'Hatchery-1', unit_type:'hatchery', species:'Vannamei Shrimp', tank_count:20, volume_m3:10, status:'active', farm_name:'Seed Unit' },
+    ];
+    const typeIcons = { pond:'🏊', ras_tank:'🔄', cage:'🪤', biofloc:'🫧', hatchery:'🥚', nursery:'🍼', raceway:'🌊' };
+    const typeLabels = { pond:'Pond', ras_tank:'RAS Tank', cage:'Cage', biofloc:'Biofloc', hatchery:'Hatchery', nursery:'Nursery', raceway:'Raceway' };
+    return `<div class="section" style="padding-top:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 style="margin:0;font-size:15px">🏗️ Culture Units</h3>
+        <button class="btn-sm" style="font-size:11px">+ Add Unit</button>
+      </div>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Manage all culture systems: ponds, RAS tanks, cages, biofloc, hatcheries</p>
+      <div class="stats-grid" style="margin-bottom:12px">
+        <div class="stat-card"><div class="stat-value">${SAMPLE_UNITS.length}</div><div class="stat-label">Total Units</div></div>
+        <div class="stat-card"><div class="stat-value">${SAMPLE_UNITS.filter(u=>u.unit_type==='pond').length}</div><div class="stat-label">Ponds</div></div>
+        <div class="stat-card"><div class="stat-value">${SAMPLE_UNITS.filter(u=>u.unit_type==='ras_tank').length}</div><div class="stat-label">RAS Tanks</div></div>
+        <div class="stat-card"><div class="stat-value">${SAMPLE_UNITS.filter(u=>!['pond','ras_tank'].includes(u.unit_type)).length}</div><div class="stat-label">Cages/Bio</div></div>
+      </div>
+      ${SAMPLE_UNITS.map(u => `
+        <div class="list-card" style="margin-bottom:8px;padding:12px;border-left:4px solid ${u.status==='active'?'#00c9a7':'#999'}">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <strong>${typeIcons[u.unit_type]||'🐟'} ${u.unit_code}</strong>
+              <span style="font-size:10px;background:#f0f0f0;padding:2px 6px;border-radius:8px;margin-left:6px">${typeLabels[u.unit_type]||u.unit_type}</span>
+            </div>
+            <span style="font-size:10px;color:${u.status==='active'?'#00c9a7':'#999'};font-weight:600">${u.status.toUpperCase()}</span>
+          </div>
+          <div style="font-size:12px;color:#444;margin-top:4px">${u.species || 'Not stocked'} · ${u.farm_name}</div>
+          <div style="font-size:11px;color:#666;margin-top:2px">
+            ${u.area_acres ? `${u.area_acres} acres · ` : ''}${u.tank_count > 1 ? `${u.tank_count} tanks · ` : ''}${u.cage_count > 1 ? `${u.cage_count} cages · ` : ''}${u.volume_m3 ? `${u.volume_m3}m³ · ` : ''}Stock: ${(u.current_stock_count||0).toLocaleString()}
+          </div>
+          ${u.stocking_date ? `<div style="font-size:10px;color:#888;margin-top:2px">Stocked: ${u.stocking_date} · DOC: ${Math.round((Date.now() - new Date(u.stocking_date).getTime())/86400000)}d</div>` : ''}
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  // ═══════════ HARVEST OPTIMIZER TAB ═══════════
+  function renderHarvestOptimizerTab() {
+    const scenarios = [
+      { size:'30 count', target_weight_g:33, price:420, days_remaining:28, yield_kg:3300, revenue:1386000, feed_cost:95000, net:1291000, recommended:true },
+      { size:'40 count', target_weight_g:25, price:340, days_remaining:12, yield_kg:2750, revenue:935000, feed_cost:38000, net:897000 },
+      { size:'50 count', target_weight_g:20, price:290, days_remaining:0, yield_kg:2200, revenue:638000, feed_cost:0, net:638000 },
+      { size:'20 count', target_weight_g:50, price:550, days_remaining:55, yield_kg:4500, revenue:2475000, feed_cost:210000, net:2265000 },
+    ];
+    scenarios.sort((a,b) => b.net - a.net);
+    const best = scenarios[0];
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 6px;font-size:15px">🎯 Harvest Optimizer</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">AI recommends optimal harvest timing based on size-price relationship</p>
+
+      <div style="background:linear-gradient(135deg,#1a5276,#2471a3);color:#fff;padding:14px;border-radius:12px;margin-bottom:14px">
+        <div style="font-size:11px;opacity:0.8">⭐ RECOMMENDED: Wait for ${best.size}</div>
+        <div style="font-size:22px;font-weight:800;margin-top:4px">₹${(best.net/100000).toFixed(1)} lakh net</div>
+        <div style="font-size:11px;opacity:0.9;margin-top:2px">₹${best.price}/kg · ${best.days_remaining} more days · ${best.yield_kg}kg yield</div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">All Harvest Scenarios (Pond A — Vannamei)</div>
+      <div style="font-size:10px;color:#666;margin-bottom:6px">Current: DOC 62 · Avg 20g · 95,000 shrimp · 85% survival</div>
+
+      ${scenarios.map((s,i) => `
+        <div style="display:flex;align-items:center;padding:10px;border-radius:8px;margin-bottom:6px;background:${i===0?'#e8f8f5':'#f8f9fa'};border:${i===0?'2px solid #00c9a7':'1px solid #e9ecef'}">
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:12px">${s.recommended?'⭐ ':''} ${s.size} — ₹${s.price}/kg</div>
+            <div style="font-size:10px;color:#666">${s.days_remaining > 0 ? `${s.days_remaining} days to go` : '✅ Ready NOW'} · Yield: ${s.yield_kg}kg</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:14px;font-weight:700;color:#1a5276">₹${(s.net/100000).toFixed(1)}L</div>
+            <div style="font-size:9px;color:#888">net revenue</div>
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="background:#fff3cd;padding:10px;border-radius:8px;margin-top:12px;font-size:11px">
+        💡 <strong>Tip:</strong> Shrimp price increases significantly with size. Growing from 50ct (₹290) to 30ct (₹420) adds ₹130/kg but takes 28 days more feed.
+        The optimizer accounts for additional feed cost to find true profit maximum.
+      </div>
+    </div>`;
+  }
+
+  // ═══════════ PER-ACRE ANALYTICS TAB ═══════════
+  function renderPerAcreTab() {
+    const farmData = {
+      farm_name: 'Ramesh Aqua Farm', total_area_acres: 10,
+      metrics: { production_per_acre_kg: '6200', revenue_per_acre: '420000', expense_per_acre: '280000', profit_per_acre: '140000', feed_per_acre_kg: '9300', feed_cost_per_acre: '186000', avg_survival_pct: '85.2', avg_weight_g: '28.5' }
+    };
+    const m = farmData.metrics;
+    const benchmarks = [
+      { label:'Production/acre', value:`${Number(m.production_per_acre_kg).toLocaleString()} kg`, bench:'5,500 kg', status: Number(m.production_per_acre_kg) > 5500 ? 'above' : 'below' },
+      { label:'Revenue/acre', value:`₹${(Number(m.revenue_per_acre)/100000).toFixed(1)} lakh`, bench:'₹3.8 lakh', status:'above' },
+      { label:'Profit/acre', value:`₹${(Number(m.profit_per_acre)/100000).toFixed(1)} lakh`, bench:'₹1.0 lakh', status:'above' },
+      { label:'Feed/acre', value:`${Number(m.feed_per_acre_kg).toLocaleString()} kg`, bench:'9,000 kg', status: Number(m.feed_per_acre_kg) > 9000 ? 'high' : 'optimal' },
+      { label:'FCR (avg)', value:'1.5', bench:'1.6', status:'above' },
+      { label:'Survival', value:`${m.avg_survival_pct}%`, bench:'80%', status:'above' },
+    ];
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 6px;font-size:15px">📐 Per-Acre Analytics</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">${farmData.farm_name} · ${farmData.total_area_acres} acres total</p>
+
+      <div class="stats-grid" style="margin-bottom:14px">
+        <div class="stat-card" style="background:linear-gradient(135deg,#e8f8f5,#d1f2eb)"><div class="stat-value" style="font-size:16px">₹${(Number(m.profit_per_acre)/100000).toFixed(1)}L</div><div class="stat-label">Profit/Acre</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:16px">${Number(m.production_per_acre_kg).toLocaleString()}</div><div class="stat-label">Kg/Acre</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:16px">${m.avg_survival_pct}%</div><div class="stat-label">Survival</div></div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">Metrics vs Regional Benchmark</div>
+      ${benchmarks.map(b => `
+        <div style="display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid #f0f0f0">
+          <div style="flex:1;font-size:12px">${b.label}</div>
+          <div style="font-weight:700;font-size:12px;margin-right:12px">${b.value}</div>
+          <div style="font-size:10px;color:${b.status==='above'||b.status==='optimal'?'#27ae60':'#e74c3c'}">${b.status==='above'?'▲':'▼'} Bench: ${b.bench}</div>
+        </div>
+      `).join('')}
+
+      <div style="background:#eaf2f8;padding:12px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>📊 Farm Size = ${farmData.total_area_acres} acres</strong><br>
+        Output: Shrimp ${(Number(m.production_per_acre_kg)*farmData.total_area_acres/1000).toFixed(0)} tons · Feed ${(Number(m.feed_per_acre_kg)*farmData.total_area_acres/1000).toFixed(0)} tons · Revenue ₹${(Number(m.revenue_per_acre)*farmData.total_area_acres/100000).toFixed(0)} lakh
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // V5: KPI ENGINE TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderKPIEngineTab() {
+    const sampleKPIs = {
+      cycle_info: { species: 'Vannamei Shrimp', unit_code: 'Pond-1', days_of_culture: 78, seed_count: 200000, current_count: 168000 },
+      kpis: { fcr: 1.42, sgr_pct_per_day: 3.21, adg_g_per_day: 0.28, survival_rate_pct: 84.0, current_biomass_kg: 4200, total_feed_kg: 3150, feed_cost_per_kg_production: 62 },
+      growth_trend: [
+        { sample_date: '2026-03-15', avg_weight_g: 2.5, sgr_interval: 8.2, adg_g_per_day: 0.18 },
+        { sample_date: '2026-03-30', avg_weight_g: 6.8, sgr_interval: 6.5, adg_g_per_day: 0.29 },
+        { sample_date: '2026-04-14', avg_weight_g: 12.4, sgr_interval: 4.1, adg_g_per_day: 0.37 },
+        { sample_date: '2026-04-29', avg_weight_g: 19.2, sgr_interval: 2.9, adg_g_per_day: 0.45 },
+        { sample_date: '2026-05-04', avg_weight_g: 25.0, sgr_interval: 2.5, adg_g_per_day: 0.42 },
+      ],
+      benchmark: { target_fcr: 1.5, expected_growth_g_per_day: 0.25, typical_culture_days: 120, harvest_size_range: '20-40g' },
+      performance_vs_benchmark: { fcr_vs_target: '95%', growth_vs_expected: '112%', days_remaining: 42 }
+    };
+    const k = sampleKPIs.kpis;
+    const p = sampleKPIs.performance_vs_benchmark;
+    const b = sampleKPIs.benchmark;
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">📊 Advanced KPI Engine</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">${sampleKPIs.cycle_info.species} · ${sampleKPIs.cycle_info.unit_code} · Day ${sampleKPIs.cycle_info.days_of_culture}</p>
+
+      <div class="stats-grid" style="margin-bottom:12px">
+        <div class="stat-card" style="background:${k.fcr<=1.5?'linear-gradient(135deg,#e8f8f5,#d1f2eb)':'linear-gradient(135deg,#fef9e7,#fdebd0)'}">
+          <div class="stat-value" style="font-size:18px">${k.fcr}</div><div class="stat-label">FCR</div>
+          <div style="font-size:9px;color:${k.fcr<=b.target_fcr?'#27ae60':'#e67e22'}">Target: ${b.target_fcr}</div>
+        </div>
+        <div class="stat-card"><div class="stat-value" style="font-size:18px">${k.sgr_pct_per_day}%</div><div class="stat-label">SGR/day</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:18px">${k.adg_g_per_day}g</div><div class="stat-label">ADG</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:18px">${k.survival_rate_pct}%</div><div class="stat-label">Survival</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <div class="card" style="padding:10px;text-align:center"><div style="font-size:18px;font-weight:800;color:var(--primary)">${k.current_biomass_kg.toLocaleString()} kg</div><div class="text-sm text-muted">Current Biomass</div></div>
+        <div class="card" style="padding:10px;text-align:center"><div style="font-size:18px;font-weight:800">₹${k.feed_cost_per_kg_production}</div><div class="text-sm text-muted">Feed ₹/kg Fish</div></div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">📈 Growth Trend (SGR at intervals)</div>
+      <div style="overflow-x:auto;margin-bottom:14px">
+        <table style="width:100%;font-size:11px;border-collapse:collapse">
+          <tr style="background:#f8f9fa"><th style="padding:6px;text-align:left">Date</th><th>Weight</th><th>SGR%</th><th>ADG g/d</th></tr>
+          ${sampleKPIs.growth_trend.map(g => `
+            <tr style="border-bottom:1px solid #eee">
+              <td style="padding:5px">${g.sample_date.slice(5)}</td>
+              <td style="text-align:center;font-weight:600">${g.avg_weight_g}g</td>
+              <td style="text-align:center;color:${g.sgr_interval>3?'#27ae60':'#e67e22'}">${g.sgr_interval}%</td>
+              <td style="text-align:center">${g.adg_g_per_day}</td>
+            </tr>
+          `).join('')}
+        </table>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">🎯 Performance vs Benchmark</div>
+      <div style="background:#f0f8ff;padding:10px;border-radius:8px;font-size:12px;margin-bottom:12px">
+        <div style="margin-bottom:4px"><strong>FCR Efficiency:</strong> ${p.fcr_vs_target} of target (${k.fcr <= b.target_fcr ? '✅ Better' : '⚠️ Above target'})</div>
+        <div style="margin-bottom:4px"><strong>Growth vs Expected:</strong> ${p.growth_vs_expected} ${parseInt(p.growth_vs_expected)>100?'✅ Faster':'⚠️ Slower'}</div>
+        <div><strong>Days Remaining:</strong> ${p.days_remaining} days · Harvest size: ${b.harvest_size_range}</div>
+      </div>
+
+      <div style="background:#eaf2f8;padding:10px;border-radius:8px;font-size:11px">
+        <strong>ℹ️ Formulas Used:</strong><br>
+        • FCR = Total Feed (kg) ÷ Total Weight Gain (kg)<br>
+        • SGR (%/day) = [ln(Wf) - ln(Wi)] ÷ Days × 100<br>
+        • ADG (g/day) = (Final Wt - Initial Wt) ÷ Days<br>
+        • Survival Rate = (Final Count ÷ Initial Count) × 100
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // V5: PREDICTIONS TAB (Von Bertalanffy + Bio-Economic)
+  // ════════════════════════════════════════════════════════════════
+  function renderPredictionsTab() {
+    const prediction = {
+      model: 'von_bertalanffy_bio_economic',
+      current_state: { day: 78, weight_g: 25, count: 168000, biomass_kg: 4200 },
+      growth_predictions: [
+        { day: 78, date: '2026-05-04', predicted_weight_g: 25.0, predicted_biomass_kg: 4200, confidence_low_kg: 3570, confidence_high_kg: 4830 },
+        { day: 85, date: '2026-05-11', predicted_weight_g: 27.2, predicted_biomass_kg: 4526, confidence_low_kg: 3805, confidence_high_kg: 5247 },
+        { day: 92, date: '2026-05-18', predicted_weight_g: 29.1, predicted_biomass_kg: 4818, confidence_low_kg: 4000, confidence_high_kg: 5636 },
+        { day: 99, date: '2026-05-25', predicted_weight_g: 30.8, predicted_biomass_kg: 5078, confidence_low_kg: 4163, confidence_high_kg: 5993 },
+        { day: 106, date: '2026-06-01', predicted_weight_g: 32.3, predicted_biomass_kg: 5310, confidence_low_kg: 4301, confidence_high_kg: 6319 },
+        { day: 113, date: '2026-06-08', predicted_weight_g: 33.6, predicted_biomass_kg: 5515, confidence_low_kg: 4413, confidence_high_kg: 6617 },
+        { day: 120, date: '2026-06-15', predicted_weight_g: 34.8, predicted_biomass_kg: 5696, confidence_low_kg: 4503, confidence_high_kg: 6889 },
+      ],
+      profit_optimization: {
+        optimal_harvest_day: 106, optimal_harvest_date: '2026-06-01',
+        optimal_weight_g: 32.3, max_profit: 1245000,
+        profit_curve: [
+          { day: 85, weight_g: 27.2, revenue: 1267000, total_cost: 540000, profit: 727000 },
+          { day: 92, weight_g: 29.1, revenue: 1540000, total_cost: 620000, profit: 920000 },
+          { day: 99, weight_g: 30.8, revenue: 1726000, total_cost: 710000, profit: 1016000 },
+          { day: 106, weight_g: 32.3, revenue: 2065000, total_cost: 820000, profit: 1245000 },
+          { day: 113, weight_g: 33.6, revenue: 2152000, total_cost: 940000, profit: 1212000 },
+          { day: 120, weight_g: 34.8, revenue: 2222000, total_cost: 1070000, profit: 1152000 },
+        ]
+      },
+      production_range: { low_estimate_kg: 4503, expected_kg: 5696, high_estimate_kg: 6889 }
+    };
+    const opt = prediction.profit_optimization;
+    const rng = prediction.production_range;
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🔮 Growth Prediction & Harvest Optimizer</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Von Bertalanffy Bio-Economic Model</p>
+
+      <div class="card" style="padding:12px;margin-bottom:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:white">
+        <div style="font-size:12px;opacity:0.9">🎯 Optimal Harvest Recommendation</div>
+        <div style="font-size:22px;font-weight:800;margin:4px 0">Day ${opt.optimal_harvest_day} · ${opt.optimal_harvest_date}</div>
+        <div style="display:flex;gap:16px;font-size:12px;margin-top:6px">
+          <div>Target: <strong>${opt.optimal_weight_g}g</strong></div>
+          <div>Max Profit: <strong>₹${(opt.max_profit/100000).toFixed(1)} lakh</strong></div>
+        </div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">📈 Production Forecast (Probabilistic)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px;text-align:center">
+        <div class="card" style="padding:8px"><div style="font-size:10px;color:#e74c3c">Low</div><div style="font-weight:700">${(rng.low_estimate_kg/1000).toFixed(1)} tons</div></div>
+        <div class="card" style="padding:8px;border:2px solid var(--primary)"><div style="font-size:10px;color:var(--primary)">Expected</div><div style="font-weight:800;font-size:16px">${(rng.expected_kg/1000).toFixed(1)} tons</div></div>
+        <div class="card" style="padding:8px"><div style="font-size:10px;color:#27ae60">High</div><div style="font-weight:700">${(rng.high_estimate_kg/1000).toFixed(1)} tons</div></div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">💰 Profit Curve (Revenue vs Cost)</div>
+      <div style="overflow-x:auto;margin-bottom:14px">
+        <table style="width:100%;font-size:11px;border-collapse:collapse">
+          <tr style="background:#f8f9fa"><th style="padding:5px">Day</th><th>Weight</th><th>Revenue</th><th>Cost</th><th>Profit</th></tr>
+          ${opt.profit_curve.map(p => `
+            <tr style="border-bottom:1px solid #eee;${p.day===opt.optimal_harvest_day?'background:#e8f8f5;font-weight:700':''}">
+              <td style="padding:5px;text-align:center">${p.day}${p.day===opt.optimal_harvest_day?' ⭐':''}</td>
+              <td style="text-align:center">${p.weight_g}g</td>
+              <td style="text-align:center;color:#27ae60">₹${(p.revenue/100000).toFixed(1)}L</td>
+              <td style="text-align:center;color:#e74c3c">₹${(p.total_cost/100000).toFixed(1)}L</td>
+              <td style="text-align:center;font-weight:700">₹${(p.profit/100000).toFixed(1)}L</td>
+            </tr>
+          `).join('')}
+        </table>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">📉 Weight Projection with Confidence Bands</div>
+      <div style="overflow-x:auto;margin-bottom:12px">
+        <table style="width:100%;font-size:11px;border-collapse:collapse">
+          <tr style="background:#f8f9fa"><th style="padding:5px">Date</th><th>Day</th><th>Weight</th><th>Biomass</th><th>Range</th></tr>
+          ${prediction.growth_predictions.map(g => `
+            <tr style="border-bottom:1px solid #eee"><td style="padding:5px">${g.date.slice(5)}</td><td style="text-align:center">${g.day}</td><td style="text-align:center;font-weight:600">${g.predicted_weight_g}g</td><td style="text-align:center">${(g.predicted_biomass_kg/1000).toFixed(1)}t</td><td style="text-align:center;font-size:10px;color:#666">${(g.confidence_low_kg/1000).toFixed(1)}-${(g.confidence_high_kg/1000).toFixed(1)}t</td></tr>
+          `).join('')}
+        </table>
+      </div>
+
+      <div style="background:#fef9e7;padding:10px;border-radius:8px;font-size:11px">
+        <strong>⚠️ Important:</strong> Predictions are probabilistic estimates based on current growth data. Actual results may vary due to disease, weather, or management changes. The model uses:<br>
+        • Von Bertalanffy growth function: W(t) = W∞ × (1 - e^(-K×(t-t₀)))³<br>
+        • Bio-economic optimization: Max(Revenue - Cost) over harvest timeline
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // V5: SUPPLY MARKETPLACE TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderSupplyMarketTab() {
+    const products = [
+      { id: 1, product_name: 'Avanti Supreme Shrimp Feed 35P', brand: 'Avanti Feeds', category: 'feed', price_per_unit: 85, unit: 'kg', bulk_price: 78, bulk_min_qty: 500, supplier_name: 'Avanti Feeds Ltd', supplier_verified: true, rating: 4.5, stock_available: 50000 },
+      { id: 2, product_name: 'SPF Vannamei PL-10 Seeds', brand: 'BMR Aqua', category: 'seed', price_per_unit: 350, unit: 'thousand', supplier_name: 'BMR Aqua Seeds', supplier_verified: true, rating: 4.3, stock_available: 5000 },
+      { id: 3, product_name: '2HP Paddle Wheel Aerator', brand: 'AquaTech', category: 'aerator', price_per_unit: 28000, unit: 'piece', bulk_price: 25000, bulk_min_qty: 5, supplier_name: 'AquaTech Equipment', supplier_verified: true, rating: 4.6, stock_available: 200 },
+      { id: 4, product_name: 'HDPE Pond Liner 500 micron', brand: 'AquaTech', category: 'pond_liner', price_per_unit: 65, unit: 'sqm', bulk_price: 55, bulk_min_qty: 5000, supplier_name: 'AquaTech Equipment', supplier_verified: true, rating: 4.4, stock_available: 100000 },
+      { id: 5, product_name: 'ProBio Aqua Probiotic', brand: 'Avanti Feeds', category: 'probiotic', price_per_unit: 650, unit: 'kg', supplier_name: 'Avanti Feeds Ltd', supplier_verified: true, rating: 4.2, stock_available: 5000 },
+      { id: 6, product_name: 'OxyTab DO Booster', brand: 'CP Aquaculture', category: 'water_treatment', price_per_unit: 380, unit: 'kg', supplier_name: 'CP Aquaculture India', supplier_verified: true, rating: 4.1, stock_available: 10000 },
+    ];
+    const categories = ['all', 'feed', 'seed', 'medicine', 'probiotic', 'equipment', 'aerator', 'pond_liner', 'water_treatment'];
+    const catIcons = { feed: '🍽️', seed: '🌱', medicine: '💊', probiotic: '🧫', equipment: '⚙️', aerator: '💨', pond_liner: '🛡️', water_treatment: '💧', all: '📦' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🏪 Aqua Supply Marketplace</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:10px">B2B marketplace for seeds, feed, equipment, medicines & more</p>
+
+      <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px">
+        ${categories.map(c => `<button style="flex-shrink:0;padding:5px 10px;border-radius:16px;border:1px solid ${c==='all'?'var(--primary)':'#ddd'};background:${c==='all'?'var(--primary)':'white'};color:${c==='all'?'white':'#333'};font-size:11px;cursor:pointer">${catIcons[c]||'📦'} ${c==='all'?'All':c.replace('_',' ')}</button>`).join('')}
+      </div>
+
+      ${products.map(p => `
+        <div class="card" style="padding:12px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700;margin-bottom:2px">${p.product_name}</div>
+              <div style="font-size:11px;color:#666;margin-bottom:4px">${p.supplier_name} ${p.supplier_verified?'✅':''} · ⭐${p.rating}</div>
+              <div style="display:flex;gap:8px;font-size:11px;margin-bottom:4px">
+                <span style="background:#eee;padding:2px 6px;border-radius:4px">${catIcons[p.category]||'📦'} ${p.category}</span>
+                <span style="color:#27ae60">In Stock: ${p.stock_available.toLocaleString()} ${p.unit}</span>
+              </div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:16px;font-weight:800;color:var(--primary)">₹${p.price_per_unit.toLocaleString()}</div>
+              <div style="font-size:10px;color:#666">per ${p.unit}</div>
+              ${p.bulk_price?`<div style="font-size:10px;color:#27ae60">Bulk: ₹${p.bulk_price}/${p.unit} (${p.bulk_min_qty}+)</div>`:''}
+            </div>
+          </div>
+          <button style="width:100%;margin-top:8px;padding:8px;background:var(--primary);color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🛒 Add to Order</button>
+        </div>
+      `).join('')}
+
+      <div style="background:#f0f8ff;padding:12px;border-radius:8px;margin-top:8px;font-size:11px">
+        <strong>🏪 Marketplace Features:</strong><br>
+        • Direct from verified suppliers (Avanti Feeds, CP Aquaculture, etc.)<br>
+        • Bulk pricing for large orders<br>
+        • Track order status & delivery<br>
+        • Rate suppliers after delivery<br>
+        • Species-specific product recommendations
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // V5: ALERT ENGINE TAB
+  // ════════════════════════════════════════════════════════════════
+  function renderAlertEngineTab() {
+    const activeAlerts = [
+      { id: 1, severity: 'critical', title: '🚨 Low Dissolved Oxygen', message: 'DO below 4 mg/L (3.2). Risk of fish stress/mortality.', parameter: 'dissolved_oxygen', actual_value: 3.2, threshold: 4.0, category: 'water_quality', created_at: '2026-05-04T06:30:00Z', acknowledged: false },
+      { id: 2, severity: 'warning', title: '⚠️ High FCR Detected', message: 'Feed conversion ratio high (2.6). Feed may be wasted.', parameter: 'fcr', actual_value: 2.6, threshold: 2.5, category: 'feed', created_at: '2026-05-03T14:00:00Z', acknowledged: false },
+      { id: 3, severity: 'info', title: 'ℹ️ Harvest Ready', message: 'Estimated harvest in 5 days. Start planning logistics.', parameter: 'days_to_harvest', actual_value: 5, threshold: 7, category: 'harvest', created_at: '2026-05-02T08:00:00Z', acknowledged: true },
+    ];
+    const rules = [
+      { rule_name: 'Low pH Alert', category: 'water_quality', parameter: 'ph', condition: '< 6.5', severity: 'critical', is_system: true },
+      { rule_name: 'Low Dissolved Oxygen', category: 'water_quality', parameter: 'dissolved_oxygen', condition: '< 4.0', severity: 'critical', is_system: true },
+      { rule_name: 'High Ammonia', category: 'water_quality', parameter: 'ammonia', condition: '> 0.5', severity: 'warning', is_system: true },
+      { rule_name: 'Mortality Spike', category: 'mortality', parameter: 'daily_mortality_pct', condition: '> 1%', severity: 'critical', is_system: true },
+      { rule_name: 'High FCR', category: 'feed', parameter: 'fcr', condition: '> 2.5', severity: 'warning', is_system: true },
+      { rule_name: 'Growth Slowdown', category: 'growth', parameter: 'sgr', condition: '< 1.0', severity: 'warning', is_system: true },
+    ];
+    const sevColors = { critical: '#e74c3c', warning: '#f39c12', info: '#3498db' };
+    const sevBg = { critical: '#fdeaea', warning: '#fef9e7', info: '#ebf5fb' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🔔 Smart Alert Engine</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Rule-based alerts for water quality, growth, feed & disease</p>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">Active Alerts (${activeAlerts.filter(a=>!a.acknowledged).length} unread)</div>
+      ${activeAlerts.map(a => `
+        <div class="card" style="padding:10px;margin-bottom:8px;border-left:4px solid ${sevColors[a.severity]};background:${sevBg[a.severity]}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700">${a.title}</div>
+              <div style="font-size:11px;color:#555;margin-top:2px">${a.message}</div>
+              <div style="font-size:10px;color:#999;margin-top:4px">${a.category} · ${new Date(a.created_at).toLocaleDateString()}</div>
+            </div>
+            ${!a.acknowledged?`<button style="flex-shrink:0;padding:4px 8px;font-size:10px;border:1px solid #ccc;border-radius:4px;background:white;cursor:pointer">✓ Ack</button>`:`<span style="font-size:10px;color:#27ae60">✓ Seen</span>`}
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="font-size:13px;font-weight:700;margin:16px 0 8px">📋 Active Alert Rules</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;font-size:11px;border-collapse:collapse">
+          <tr style="background:#f8f9fa"><th style="padding:5px;text-align:left">Rule</th><th>Parameter</th><th>Condition</th><th>Severity</th></tr>
+          ${rules.map(r => `
+            <tr style="border-bottom:1px solid #eee">
+              <td style="padding:5px;font-weight:600">${r.rule_name}</td>
+              <td style="text-align:center">${r.parameter}</td>
+              <td style="text-align:center;font-family:monospace">${r.condition}</td>
+              <td style="text-align:center"><span style="background:${sevColors[r.severity]};color:white;padding:1px 6px;border-radius:3px;font-size:9px">${r.severity}</span></td>
+            </tr>
+          `).join('')}
+        </table>
+      </div>
+
+      <button style="width:100%;margin-top:12px;padding:10px;background:white;border:2px dashed var(--primary);color:var(--primary);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">+ Add Custom Alert Rule</button>
+
+      <div style="background:#eaf2f8;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>ℹ️ How Alerts Work:</strong><br>
+        • Rules are evaluated each time you log data (water params, feed, sampling)<br>
+        • System rules are pre-configured for common thresholds<br>
+        • Custom rules let you set your own thresholds<br>
+        • Critical alerts = immediate attention needed<br>
+        • No AI required — simple threshold calculations
+      </div>
+    </div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // AquaOS V6 TABS — Fish Marketplace, Cold Chain+, Traceability, PMMSY DPR, Supplier Hub
+  // ═══════════════════════════════════════════════════════════
+
+  function renderFishMarketTab() {
+    const sampleListings = [
+      { id:'fm1', species:'Vannamei Shrimp', size_category:'30 count', quality_grade:'A+', listing_type:'auction', price_per_kg:380, quantity_kg:2500, available_quantity_kg:2500, location:'Nellore, AP', harvest_date:'2026-05-10', status:'active', batch_code:'AQ-M3X7K9', farmer_name:'Ramesh Aqua Farm', bids_count:4 },
+      { id:'fm2', species:'Rohu', size_category:'800g-1kg', quality_grade:'A', listing_type:'fixed_price', price_per_kg:160, quantity_kg:3000, available_quantity_kg:3000, location:'Eluru, AP', harvest_date:'2026-05-08', status:'active', batch_code:'AQ-N4Y8L2', farmer_name:'Godavari Fish Farm', bids_count:0 },
+      { id:'fm3', species:'Pangasius', size_category:'1-1.5kg', quality_grade:'B', listing_type:'rfq', price_per_kg:95, quantity_kg:5000, available_quantity_kg:5000, location:'Vijayawada, AP', harvest_date:'2026-05-03', status:'active', batch_code:'AQ-P5Z9M3', farmer_name:'Delta Aquaculture', bids_count:7 },
+      { id:'fm4', species:'Black Tiger Shrimp', size_category:'20 count', quality_grade:'A+', listing_type:'auction', price_per_kg:650, quantity_kg:800, available_quantity_kg:800, location:'Kakinada, AP', harvest_date:'2026-05-12', status:'active', batch_code:'AQ-Q6A1N4', farmer_name:'Coastal Premium Aqua', bids_count:12 },
+      { id:'fm5', species:'Catla', size_category:'1-2kg', quality_grade:'A', listing_type:'fixed_price', price_per_kg:140, quantity_kg:2000, available_quantity_kg:1500, location:'Bhimavaram, AP', harvest_date:'2026-05-06', status:'active', batch_code:'AQ-R7B2O5', farmer_name:'Krishna Aqua', bids_count:2 },
+    ];
+    const buyerSegments = [
+      { segment: 'wholesaler', icon: '🏪', label: 'Wholesaler', desc: 'Bulk purchase, price-sensitive', count: 45 },
+      { segment: 'restaurant', icon: '🍽️', label: 'Restaurant/HoReCa', desc: 'Freshness, consistency', count: 28 },
+      { segment: 'exporter', icon: '✈️', label: 'Exporter', desc: 'HACCP/BRC compliant, traceable', count: 12 },
+      { segment: 'processor', icon: '🏭', label: 'Processor', desc: 'Contract farming, high volume', count: 18 },
+    ];
+    const typeIcons = { fixed_price: '🏷️', auction: '🔨', rfq: '📋' };
+    const typeLabels = { fixed_price: 'Fixed Price', auction: 'Auction', rfq: 'RFQ' };
+    const gradeColors = { 'A+': '#27ae60', 'A': '#2ecc71', 'B': '#f39c12', 'C': '#e67e22' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🐟 Fish Marketplace</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Auction · RFQ · Fixed Price — Direct farmer-to-buyer trading</p>
+
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">👥 Buyer Segments</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px">
+        ${buyerSegments.map(b => `
+          <div class="card" style="padding:10px;text-align:center">
+            <div style="font-size:24px">${b.icon}</div>
+            <div style="font-size:12px;font-weight:700;margin-top:4px">${b.label}</div>
+            <div style="font-size:10px;color:#666">${b.desc}</div>
+            <div style="font-size:11px;color:var(--primary);font-weight:600;margin-top:4px">${b.count} active</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">📦 Active Listings (${sampleListings.length})</div>
+      ${sampleListings.map(l => `
+        <div class="card" style="padding:12px;margin-bottom:8px;border-left:4px solid ${gradeColors[l.quality_grade] || '#ccc'}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700">${l.species} — ${l.size_category}</div>
+              <div style="font-size:11px;color:#555;margin-top:2px">${l.farmer_name} · ${l.location}</div>
+            </div>
+            <div style="text-align:right">
+              <span style="background:${gradeColors[l.quality_grade]};color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">Grade ${l.quality_grade}</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <span class="tag tag-blue">${typeIcons[l.listing_type]} ${typeLabels[l.listing_type]}</span>
+            <span class="tag" style="background:#f0f0f0">₹${l.price_per_kg}/kg</span>
+            <span class="tag" style="background:#e8f5e9">${l.quantity_kg.toLocaleString()} kg</span>
+            <span class="tag" style="background:#fff3e0">📋 ${l.batch_code}</span>
+            ${l.bids_count > 0 ? `<span class="tag" style="background:#e3f2fd">🔨 ${l.bids_count} bids</span>` : ''}
+          </div>
+          <div style="font-size:10px;color:#999;margin-top:6px">Harvest: ${l.harvest_date} · ${l.available_quantity_kg < l.quantity_kg ? `${l.available_quantity_kg}/${l.quantity_kg} kg left` : 'Full qty available'}</div>
+        </div>
+      `).join('')}
+
+      <button style="width:100%;padding:10px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px">+ Create New Listing</button>
+
+      <div style="background:#e8f5e9;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>📊 Quality Grading (BIS IS 4303):</strong> A+ (Premium, score ≥9) · A (Standard, ≥7) · B (Economy, ≥5) · C (Processing grade). Scored on freshness, size uniformity, appearance, odor, texture.
+      </div>
+    </div>`;
+  }
+
+  function renderColdChainPlusTab() {
+    const shipments = [
+      { id:'cs1', listing_species:'Vannamei Shrimp', provider:'Snowman Logistics', status:'in_transit', pickup:'Nellore, AP', delivery:'Hyderabad, TS', distance_km:456, temperature_c:2.8, vehicle:'Reefer Truck 5T', booked_at:'2026-05-03T10:00:00Z' },
+      { id:'cs2', listing_species:'Rohu', provider:'Tessol', status:'delivered', pickup:'Eluru, AP', delivery:'Bangalore, KA', distance_km:612, temperature_c:3.1, vehicle:'Reefer Van 2T', booked_at:'2026-05-01T08:00:00Z' },
+      { id:'cs3', listing_species:'Black Tiger', provider:'Gati KWE', status:'picked_up', pickup:'Kakinada, AP', delivery:'Chennai, TN', distance_km:580, temperature_c:1.5, vehicle:'Reefer Truck 10T', booked_at:'2026-05-04T06:00:00Z' },
+    ];
+    const providers = [
+      { name: 'Snowman Logistics', type: 'Cold Chain', city: 'Mumbai', rating: 4.6, deliveries: 12500, vehicles: 'Reefer Trucks, Vans' },
+      { name: 'ColdEX Logistics', type: 'Cold Chain', city: 'Delhi', rating: 4.4, deliveries: 8200, vehicles: 'Reefer Trucks, Containers' },
+      { name: 'Tessol', type: 'Cold Chain Tech', city: 'Mumbai', rating: 4.5, deliveries: 5600, vehicles: 'Phase-Change Containers' },
+      { name: 'Gati KWE', type: 'Express Cold', city: 'Hyderabad', rating: 4.3, deliveries: 15800, vehicles: 'Reefer Trucks, Vans' },
+      { name: 'Blue Star Cold Chain', type: 'Infrastructure', city: 'Mumbai', rating: 4.7, deliveries: 9400, vehicles: 'Cold Rooms, Trucks' },
+    ];
+    const statusColors = { requested:'#3498db', confirmed:'#9b59b6', picked_up:'#f39c12', in_transit:'#e67e22', delivered:'#27ae60', cancelled:'#e74c3c' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🧊 Cold Chain+ Logistics</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Temperature-monitored transport · Live tracking · Provider directory</p>
+
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">📦 Active Shipments</div>
+      ${shipments.map(s => `
+        <div class="card" style="padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700">${s.listing_species}</div>
+              <div style="font-size:11px;color:#555">${s.provider} · ${s.vehicle}</div>
+            </div>
+            <span style="background:${statusColors[s.status]};color:white;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase">${s.status.replace(/_/g,' ')}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:#555">
+            <div>📍 ${s.pickup} → ${s.delivery}</div>
+            <div>${s.distance_km} km</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <span class="tag" style="background:${s.temperature_c > 4 ? '#fdeaea' : '#e8f5e9'};color:${s.temperature_c > 4 ? '#e74c3c' : '#27ae60'}">🌡️ ${s.temperature_c}°C ${s.temperature_c > 4 ? '⚠️ ALERT' : '✓ OK'}</span>
+            <span class="tag" style="background:#f0f0f0">💰 Est. ₹${(s.distance_km * 15).toLocaleString()}</span>
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="font-size:12px;font-weight:700;margin:16px 0 8px">🚛 Logistics Providers</div>
+      ${providers.map(p => `
+        <div class="card" style="padding:10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:12px;font-weight:700">${p.name}</div>
+            <div style="font-size:10px;color:#555">${p.type} · ${p.city} · ${p.vehicles}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:12px;font-weight:700;color:#f39c12">⭐ ${p.rating}</div>
+            <div style="font-size:9px;color:#999">${p.deliveries.toLocaleString()} trips</div>
+          </div>
+        </div>
+      `).join('')}
+
+      <button style="width:100%;padding:10px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px">📦 Book New Shipment</button>
+
+      <div style="background:#ebf5fb;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>🌡️ Cold Chain Protocol:</strong> Max 4°C threshold · IoT temp sensors every 15 min · Automatic alerts on breach · ₹15/km estimated cost
+      </div>
+    </div>`;
+  }
+
+  function renderTraceabilityTab() {
+    const batches = [
+      { batch_code:'TR-M3X7K9A', species:'Vannamei Shrimp', quantity_kg:2500, harvest_date:'2026-05-10', harvest_location:'Nellore, AP', blockchain_hash:'a3f8c2d1e5b7...4f9a', nfdp_compliant:true, events_count:4 },
+      { batch_code:'TR-N4Y8L2B', species:'Rohu', quantity_kg:3000, harvest_date:'2026-05-08', harvest_location:'Eluru, AP', blockchain_hash:'b7d2e9f4a1c3...8e5b', nfdp_compliant:true, events_count:3 },
+      { batch_code:'TR-P5Z9M3C', species:'Pangasius', quantity_kg:5000, harvest_date:'2026-05-03', harvest_location:'Vijayawada, AP', blockchain_hash:'c1e4f8a2b6d9...2c7d', nfdp_compliant:false, events_count:5 },
+    ];
+    const sampleEvents = [
+      { event_type:'harvest', icon:'🎣', description:'Harvested from Pond A-3', location:'Nellore, AP', temperature_c:28.5, timestamp:'2026-05-10T05:30:00Z', verified:true },
+      { event_type:'processing', icon:'🔪', description:'Cleaned, sorted by size grade A+', location:'Nellore Processing Unit', temperature_c:4.0, timestamp:'2026-05-10T08:00:00Z', verified:true },
+      { event_type:'cold_storage', icon:'🧊', description:'Cold stored at 2°C', location:'Nellore Cold Storage', temperature_c:2.0, timestamp:'2026-05-10T09:30:00Z', verified:true },
+      { event_type:'transport', icon:'🚛', description:'Shipped via Snowman Logistics', location:'In Transit to Hyderabad', temperature_c:2.8, timestamp:'2026-05-10T14:00:00Z', verified:false },
+    ];
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🔗 Farm-to-Fork Traceability</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">QR codes · Blockchain hashes · Critical Tracking Events (CTEs)</p>
+
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">📦 Trace Batches</div>
+      ${batches.map(b => `
+        <div class="card" style="padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700">${b.species} — ${b.quantity_kg.toLocaleString()} kg</div>
+              <div style="font-size:11px;color:#555">${b.harvest_location} · ${b.harvest_date}</div>
+            </div>
+            <div style="text-align:right">
+              ${b.nfdp_compliant ? '<span style="background:#e8f5e9;color:#27ae60;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700">✓ NFDP</span>' : '<span style="background:#f5f5f5;color:#999;padding:2px 6px;border-radius:4px;font-size:9px">Pending</span>'}
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+            <span class="tag" style="background:#e3f2fd;font-family:monospace;font-size:10px">📋 ${b.batch_code}</span>
+            <span class="tag" style="background:#f3e5f5;font-family:monospace;font-size:10px">🔗 ${b.blockchain_hash}</span>
+            <span class="tag" style="background:#fff3e0">📍 ${b.events_count} CTEs</span>
+          </div>
+          <div style="margin-top:8px;text-align:center">
+            <div style="border:2px dashed #ccc;padding:12px;border-radius:8px;font-size:11px;color:#999">📱 QR Code — Scan to trace batch ${b.batch_code}</div>
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="font-size:12px;font-weight:700;margin:16px 0 8px">📍 Chain of Custody — ${batches[0]?.batch_code || ''}</div>
+      <div style="position:relative;padding-left:24px">
+        ${sampleEvents.map((e, i) => `
+          <div style="position:relative;padding-bottom:${i < sampleEvents.length-1 ? '20px' : '0'};margin-bottom:0">
+            ${i < sampleEvents.length-1 ? '<div style="position:absolute;left:-16px;top:20px;bottom:0;width:2px;background:#ddd"></div>' : ''}
+            <div style="position:absolute;left:-22px;top:2px;width:14px;height:14px;border-radius:50%;background:${e.verified ? '#27ae60' : '#f39c12'};display:flex;align-items:center;justify-content:center;font-size:8px;color:white">${e.verified ? '✓' : '?'}</div>
+            <div class="card" style="padding:10px;margin-bottom:0">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div>
+                  <div style="font-size:12px;font-weight:700">${e.icon} ${e.event_type.replace(/_/g,' ').toUpperCase()}</div>
+                  <div style="font-size:11px;color:#555">${e.description}</div>
+                  <div style="font-size:10px;color:#999;margin-top:2px">📍 ${e.location} · 🌡️ ${e.temperature_c}°C</div>
+                </div>
+                <div style="font-size:10px;color:#999;white-space:nowrap">${new Date(e.timestamp).toLocaleString()}</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <button style="width:100%;padding:10px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:14px">+ Create New Trace Batch</button>
+
+      <div style="background:#f3e5f5;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>🔗 Blockchain Immutability:</strong> Every CTE generates a SHA-256 hash. QR codes link to public trace view. DPDP Act 2023 compliant. NFDP interoperable.
+      </div>
+    </div>`;
+  }
+
+  function renderPMMSYDPRTab() {
+    const sampleApps = [
+      { id:'pm1', project_type:'new_pond', beneficiary_category:'general', total_project_cost:2500000, subsidy_pct:40, subsidy_amount:1000000, loan_amount:1000000, own_contribution:500000, bcr:1.8, irr:22.5, npv:850000, district:'Nellore', state:'Andhra Pradesh', status:'approved', land_area_acres:5 },
+      { id:'pm2', project_type:'ras', beneficiary_category:'sc_st', total_project_cost:5000000, subsidy_pct:60, subsidy_amount:3000000, loan_amount:1500000, own_contribution:500000, bcr:2.1, irr:28.3, npv:1500000, district:'East Godavari', state:'Andhra Pradesh', status:'under_review', land_area_acres:2 },
+      { id:'pm3', project_type:'biofloc', beneficiary_category:'women', total_project_cost:1500000, subsidy_pct:60, subsidy_amount:900000, loan_amount:400000, own_contribution:200000, bcr:1.6, irr:18.7, npv:420000, district:'Krishna', state:'Andhra Pradesh', status:'draft', land_area_acres:1 },
+    ];
+    const requiredDocs = [
+      { type:'aadhaar', label:'Aadhaar Card', icon:'🪪', uploaded:true, verified:true },
+      { type:'pan', label:'PAN Card', icon:'💳', uploaded:true, verified:true },
+      { type:'bank_passbook', label:'Bank Passbook', icon:'🏦', uploaded:true, verified:false },
+      { type:'land_deed', label:'Land Deed/Lease', icon:'📜', uploaded:true, verified:false },
+      { type:'caste_certificate', label:'Caste Certificate', icon:'📄', uploaded:false, verified:false },
+      { type:'quotations', label:'Equipment Quotations', icon:'📋', uploaded:false, verified:false },
+      { type:'site_photos', label:'Site Photographs', icon:'📷', uploaded:false, verified:false },
+      { type:'project_report', label:'Project Report', icon:'📊', uploaded:false, verified:false },
+    ];
+    const statusColors = { draft:'#3498db', documents_pending:'#f39c12', submitted:'#9b59b6', under_review:'#e67e22', approved:'#27ae60', rejected:'#e74c3c' };
+    const projectTypes = { new_pond:'New Pond', ras:'RAS Unit', cage_culture:'Cage Culture', biofloc:'Biofloc', hatchery:'Hatchery', cold_storage:'Cold Storage', processing_unit:'Processing Unit' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">📄 PMMSY DPR Builder</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Auto-subsidy calculation · Financial projections · Document upload</p>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+        <div class="card" style="padding:10px;text-align:center;background:linear-gradient(135deg,#e8f5e9,#c8e6c9)">
+          <div style="font-size:10px;color:#2e7d32;font-weight:600">General Category</div>
+          <div style="font-size:20px;font-weight:800;color:#1b5e20">40%</div>
+          <div style="font-size:9px;color:#388e3c">Subsidy Rate</div>
+        </div>
+        <div class="card" style="padding:10px;text-align:center;background:linear-gradient(135deg,#e3f2fd,#bbdefb)">
+          <div style="font-size:10px;color:#1565c0;font-weight:600">SC/ST Category</div>
+          <div style="font-size:20px;font-weight:800;color:#0d47a1">60%</div>
+          <div style="font-size:9px;color:#1976d2">Subsidy Rate</div>
+        </div>
+        <div class="card" style="padding:10px;text-align:center;background:linear-gradient(135deg,#fce4ec,#f8bbd0)">
+          <div style="font-size:10px;color:#c62828;font-weight:600">Women Category</div>
+          <div style="font-size:20px;font-weight:800;color:#b71c1c">60%</div>
+          <div style="font-size:9px;color:#d32f2f">Subsidy Rate</div>
+        </div>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">📋 My Applications (${sampleApps.length})</div>
+      ${sampleApps.map(a => `
+        <div class="card" style="padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700">${projectTypes[a.project_type] || a.project_type} — ${a.land_area_acres} acres</div>
+              <div style="font-size:11px;color:#555">${a.district}, ${a.state}</div>
+            </div>
+            <span style="background:${statusColors[a.status]};color:white;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase">${a.status.replace(/_/g,' ')}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;text-align:center">
+            <div style="background:#f8f9fa;padding:6px;border-radius:6px">
+              <div style="font-size:10px;color:#666">Project Cost</div>
+              <div style="font-size:12px;font-weight:700">₹${(a.total_project_cost/100000).toFixed(1)}L</div>
+            </div>
+            <div style="background:#e8f5e9;padding:6px;border-radius:6px">
+              <div style="font-size:10px;color:#666">Subsidy (${a.subsidy_pct}%)</div>
+              <div style="font-size:12px;font-weight:700;color:#27ae60">₹${(a.subsidy_amount/100000).toFixed(1)}L</div>
+            </div>
+            <div style="background:#fff3e0;padding:6px;border-radius:6px">
+              <div style="font-size:10px;color:#666">Loan</div>
+              <div style="font-size:12px;font-weight:700;color:#e67e22">₹${(a.loan_amount/100000).toFixed(1)}L</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;justify-content:center">
+            <span class="tag" style="background:#e3f2fd">BCR: ${a.bcr}</span>
+            <span class="tag" style="background:#f3e5f5">IRR: ${a.irr}%</span>
+            <span class="tag" style="background:#e8f5e9">NPV: ₹${(a.npv/100000).toFixed(1)}L</span>
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="font-size:12px;font-weight:700;margin:16px 0 8px">📎 Required Documents</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">
+        ${requiredDocs.map(d => `
+          <div class="card" style="padding:8px;display:flex;align-items:center;gap:8px;background:${d.verified ? '#e8f5e9' : d.uploaded ? '#fff3e0' : '#f5f5f5'}">
+            <span style="font-size:18px">${d.icon}</span>
+            <div style="flex:1">
+              <div style="font-size:11px;font-weight:600">${d.label}</div>
+              <div style="font-size:9px;color:${d.verified ? '#27ae60' : d.uploaded ? '#f39c12' : '#999'}">${d.verified ? '✓ Verified' : d.uploaded ? '⏳ Pending' : '○ Not uploaded'}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <button style="width:100%;padding:10px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:14px">+ New PMMSY Application</button>
+    </div>`;
+  }
+
+  function renderSupplierHubTab() {
+    const suppliers = [
+      { name:'Avanti Feeds Limited', category:'feed', city:'Hyderabad', state:'AP', specialization:'Shrimp & fish feed', verified:true, featured:true, rating:4.8, experience_years:30 },
+      { name:'CP Aquaculture (India)', category:'feed', city:'Chennai', state:'TN', specialization:'High-quality feed, technical support', verified:true, featured:true, rating:4.7, experience_years:40 },
+      { name:'Bangla Krishi Khamar', category:'hatchery', city:'Kolkata', state:'WB', specialization:'IMC, catfish, tilapia, Pangasius', verified:true, featured:false, rating:4.5, experience_years:15 },
+      { name:'MM Hatcheries', category:'hatchery', city:'Raipur', state:'CG', specialization:'Monosex Tilapia pioneer, Pangasius, IMC', verified:true, featured:true, rating:4.6, experience_years:20 },
+      { name:'SRR Aqua Suppliers LLP', category:'equipment', city:'Hyderabad', state:'TS', specialization:'Paddle wheel aerators, pan-India', verified:true, featured:false, rating:4.4, experience_years:12 },
+      { name:'TIL Biosciences', category:'medicine', city:'Vijayawada', state:'AP', specialization:'Probiotics, mineral mixes', verified:true, featured:true, rating:4.5, experience_years:18 },
+      { name:'Snowman Logistics', category:'cold_chain', city:'Mumbai', state:'MH', specialization:'Cold chain logistics leader', verified:true, featured:true, rating:4.6, experience_years:25 },
+      { name:'Growel Feeds Pvt. Ltd.', category:'feed', city:'Hyderabad', state:'AP', specialization:'Extruded floating fish feed', verified:true, featured:false, rating:4.3, experience_years:15 },
+      { name:'BlueVeta Biolabs', category:'medicine', city:'Kolkata', state:'WB', specialization:'Medicines, probiotics, supplements', verified:false, featured:false, rating:4.2, experience_years:8 },
+      { name:'Godrej Agrovet Limited', category:'feed', city:'Mumbai', state:'MH', specialization:'Diversified aquafeed', verified:true, featured:true, rating:4.7, experience_years:35 },
+      { name:'Tessol', category:'cold_chain', city:'Mumbai', state:'MH', specialization:'Phase-change cold chain tech', verified:true, featured:false, rating:4.4, experience_years:10 },
+      { name:'Keytone Life Sciences', category:'medicine', city:'Hyderabad', state:'TS', specialization:'Sustainable aqua medicines, herbal', verified:true, featured:false, rating:4.3, experience_years:12 },
+    ];
+    const catIcons = { hatchery:'🐟', feed:'🍽️', equipment:'⚙️', medicine:'💊', cold_chain:'🧊', online_platform:'🌐' };
+    const catLabels = { hatchery:'Hatchery', feed:'Feed', equipment:'Equipment', medicine:'Medicine', cold_chain:'Cold Chain', online_platform:'Online' };
+    const categories = ['all','hatchery','feed','equipment','medicine','cold_chain'];
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🏭 National Supplier Directory</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">27 verified suppliers · Hatcheries · Feed · Equipment · Medicine · Cold Chain</p>
+
+      <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px">
+        ${categories.map(c => `<button style="padding:5px 12px;border:1px solid ${c==='all'?'var(--primary)':'#ddd'};border-radius:16px;background:${c==='all'?'var(--primary)':'white'};color:${c==='all'?'white':'#333'};font-size:11px;cursor:pointer;white-space:nowrap;font-weight:${c==='all'?'600':'400'}">${c==='all'?'All':catIcons[c]+' '+catLabels[c]}</button>`).join('')}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr;gap:8px">
+        ${suppliers.map(s => `
+          <div class="card" style="padding:12px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div style="flex:1">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="font-size:18px">${catIcons[s.category] || '📦'}</span>
+                  <div>
+                    <div style="font-size:13px;font-weight:700">${s.name}</div>
+                    <div style="font-size:10px;color:#555">${s.city}, ${s.state} · ${s.experience_years} yrs exp</div>
+                  </div>
+                </div>
+                <div style="font-size:11px;color:#666;margin-top:4px">${s.specialization}</div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:12px;font-weight:700;color:#f39c12">⭐ ${s.rating}</div>
+                <div style="display:flex;gap:4px;margin-top:4px;justify-content:flex-end">
+                  ${s.verified ? '<span style="background:#e8f5e9;color:#27ae60;padding:1px 5px;border-radius:3px;font-size:8px;font-weight:700">✓ Verified</span>' : ''}
+                  ${s.featured ? '<span style="background:#fff3e0;color:#e67e22;padding:1px 5px;border-radius:3px;font-size:8px;font-weight:700">⭐ Featured</span>' : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="text-align:center;margin-top:12px">
+        <button style="padding:8px 24px;background:white;border:2px solid var(--primary);color:var(--primary);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Load More Suppliers →</button>
+      </div>
+
+      <div style="background:#e8eaf6;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>🏭 Supplier Categories:</strong> Hatcheries (seed suppliers) · Feed Manufacturers (Avanti, CP, Growel, Godrej, Sreema, Happy Feeds) · Equipment (aerators, pumps) · Medicine (probiotics, supplements) · Cold Chain (Snowman, Tessol, Gati)
+      </div>
+    </div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // AquaOS V7 TABS: Reviews, Logistics+, Training Hub, Disputes, Trade Credit
+  // ═══════════════════════════════════════════════════════════
+
+  function renderReviewsTab() {
+    const reviews = [
+      { seller: 'Ramesh Aqua Farm', rating: 4.5, quality: 5, freshness: 5, packaging: 4, delivery: 4, text: 'Excellent shrimp quality, well-packed in ice. Delivery was on time.', date: '2026-05-01', buyer: 'Krishna Hotels', verified: true, helpful: 12 },
+      { seller: 'Delta Aquaculture', rating: 4.0, quality: 4, freshness: 4, packaging: 4, delivery: 4, text: 'Good Pangasius, consistent size. Would order again.', date: '2026-04-28', buyer: 'AP Seafood Exports', verified: true, helpful: 8 },
+      { seller: 'Godavari Fish Farm', rating: 4.8, quality: 5, freshness: 5, packaging: 5, delivery: 4, text: 'Premium Rohu, perfect for restaurant use. Farm-fresh quality.', date: '2026-04-25', buyer: 'Coastal Kitchen', verified: true, helpful: 15 },
+      { seller: 'Krishna Aqua', rating: 3.5, quality: 4, freshness: 3, packaging: 3, delivery: 4, text: 'Decent quality but some size variation. Packaging could improve.', date: '2026-04-22', buyer: 'Hyderabad Fish Market', verified: true, helpful: 5 },
+    ];
+    const topSellers = [
+      { name: 'Ramesh Aqua Farm', badge: 'gold', rating: 4.7, orders: 156, on_time: 98, accuracy: 97 },
+      { name: 'Godavari Fish Farm', badge: 'gold', rating: 4.8, orders: 142, on_time: 99, accuracy: 99 },
+      { name: 'Coastal Premium Aqua', badge: 'silver', rating: 4.6, orders: 89, on_time: 95, accuracy: 96 },
+      { name: 'Delta Aquaculture', badge: 'silver', rating: 4.3, orders: 210, on_time: 93, accuracy: 94 },
+    ];
+    const badgeColors = { platinum: '#8e24aa', gold: '#f9a825', silver: '#78909c', bronze: '#8d6e63', new: '#90a4ae' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">⭐ Reviews & Performance</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Verified purchase reviews · Seller performance metrics · Trust badges</p>
+
+      <div style="font-weight:700;font-size:12px;margin-bottom:8px">🏆 Top Performers</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        ${topSellers.map(s => `
+          <div class="card" style="padding:10px;text-align:center">
+            <div style="font-size:11px;font-weight:700">${s.name}</div>
+            <div style="margin:4px 0"><span style="background:${badgeColors[s.badge]};color:white;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700;text-transform:uppercase">${s.badge}</span></div>
+            <div style="font-size:18px;font-weight:800;color:#f39c12">⭐ ${s.rating}</div>
+            <div style="font-size:9px;color:#666;margin-top:2px">${s.orders} orders · ${s.on_time}% on-time · ${s.accuracy}% accurate</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="font-weight:700;font-size:12px;margin-bottom:8px">📝 Recent Reviews</div>
+      ${reviews.map(r => `
+        <div class="card" style="padding:10px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-size:12px;font-weight:700">${r.seller}</div>
+            <div style="font-size:14px;font-weight:800;color:#f39c12">⭐ ${r.rating}</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:6px;font-size:9px;color:#555">
+            <span>Quality: ${'★'.repeat(r.quality)}${'☆'.repeat(5-r.quality)}</span>
+            <span>Fresh: ${'★'.repeat(r.freshness)}${'☆'.repeat(5-r.freshness)}</span>
+            <span>Pack: ${'★'.repeat(r.packaging)}${'☆'.repeat(5-r.packaging)}</span>
+          </div>
+          <div style="font-size:11px;color:#333;margin-bottom:4px">"${r.text}"</div>
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:#999">
+            <span>By ${r.buyer} ${r.verified?'✓ Verified Purchase':''}</span>
+            <span>👍 ${r.helpful} helpful · ${r.date}</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  function renderLogisticsPlusTab() {
+    const providers = [
+      { name: 'Snowman Logistics', type: 'Integrated', coverage: 'Pan-India', iot: true, cold: true, rating: 4.7, deliveries: 15000, price: '₹18.5/km' },
+      { name: 'Gati Ltd.', type: 'Integrated', coverage: 'Pan-India', iot: true, cold: true, rating: 4.5, deliveries: 12000, price: '₹15/km' },
+      { name: 'Tessol', type: 'Reefer Transport', coverage: 'MH/KA/TN/AP/TS', iot: true, cold: true, rating: 4.4, deliveries: 3500, price: '₹12/km' },
+      { name: 'FreshCatch Logistics', type: 'Farm Pickup', coverage: 'AP/TS/TN', iot: false, cold: true, rating: 4.1, deliveries: 2800, price: '₹10/km' },
+      { name: 'SeaLink Cold Chain', type: 'Last Mile', coverage: 'AP/TS/KA/TN', iot: true, cold: true, rating: 4.2, deliveries: 4200, price: '₹14/km' },
+    ];
+    const bookings = [
+      { id: 'BK001', provider: 'Snowman Logistics', status: 'in_transit', from: 'Nellore, AP', to: 'Hyderabad, TS', temp: '1.2°C ✓', distance: '456 km', cost: '₹8,436' },
+      { id: 'BK002', provider: 'Tessol', status: 'delivered', from: 'Bhimavaram, AP', to: 'Bangalore, KA', temp: '0.8°C ✓', distance: '620 km', cost: '₹7,440' },
+      { id: 'BK003', provider: 'FreshCatch', status: 'pickup_scheduled', from: 'Eluru, AP', to: 'Vijayawada, AP', temp: '--', distance: '58 km', cost: '₹580' },
+    ];
+    const statusColors = { requested:'#90a4ae', confirmed:'#42a5f5', pickup_scheduled:'#ab47bc', in_transit:'#ff9800', delivered:'#4caf50', cancelled:'#ef5350' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🚚 Logistics+ (Cold Chain Integrated)</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Book transport · IoT temp monitoring · Route optimization · Real-time GPS</p>
+
+      <div style="font-weight:700;font-size:12px;margin-bottom:8px">📦 My Bookings</div>
+      ${bookings.map(b => `
+        <div class="card" style="padding:10px;margin-bottom:8px;border-left:4px solid ${statusColors[b.status]}">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:12px;font-weight:700">${b.provider} · ${b.id}</div>
+              <div style="font-size:10px;color:#555">${b.from} → ${b.to}</div>
+            </div>
+            <span style="background:${statusColors[b.status]};color:white;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:600">${b.status.replace(/_/g,' ')}</span>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:#555">
+            <span>🌡️ ${b.temp}</span><span>📏 ${b.distance}</span><span>💰 ${b.cost}</span>
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="font-weight:700;font-size:12px;margin:14px 0 8px">🚛 Available Providers</div>
+      ${providers.map(p => `
+        <div class="card" style="padding:10px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:12px;font-weight:700">${p.name}</div>
+              <div style="font-size:10px;color:#555">${p.type} · ${p.coverage} · ${p.price}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:12px;font-weight:700;color:#f39c12">⭐ ${p.rating}</div>
+              <div style="display:flex;gap:4px;justify-content:flex-end;margin-top:2px">
+                ${p.cold?'<span style="background:#e3f2fd;color:#1565c0;padding:1px 4px;border-radius:3px;font-size:8px">❄️</span>':''}
+                ${p.iot?'<span style="background:#e8f5e9;color:#2e7d32;padding:1px 4px;border-radius:3px;font-size:8px">📡IoT</span>':''}
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+
+      <button class="btn-primary" style="width:100%;margin-top:10px;padding:10px;font-size:13px" onclick="showToast('Opening booking form...')">📦 Book New Shipment</button>
+
+      <div style="background:#e3f2fd;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>🧊 Cold Chain Protocol:</strong> Target 0-4°C · IoT sensors every 5 min · Auto-alert if temp > 4°C · GPS route tracking · Estimated ₹15/km avg cost
+      </div>
+    </div>`;
+  }
+
+  function renderTrainingHubTab() {
+    const modules = [
+      { title: 'Pond Site Selection & Design', category: 'pond_preparation', difficulty: 'beginner', format: 'guide', duration: 45, institution: 'ICAR-CIFA', views: 4500, rating: 4.6, language: 'EN' },
+      { title: 'Water Quality Management', category: 'water_quality', difficulty: 'beginner', format: 'video', duration: 30, institution: 'ICAR-CIFA', views: 6200, rating: 4.8, language: 'EN' },
+      { title: 'Feed Management & FCR', category: 'feed_management', difficulty: 'intermediate', format: 'video', duration: 40, institution: 'ICAR-CIFA', views: 5100, rating: 4.7, language: 'EN' },
+      { title: 'Fish Disease Prevention', category: 'health_biosecurity', difficulty: 'intermediate', format: 'guide', duration: 50, institution: 'ICAR-CIFA', views: 4800, rating: 4.5, language: 'EN' },
+      { title: 'Harvesting & Post-Harvest', category: 'harvest_handling', difficulty: 'beginner', format: 'video', duration: 35, institution: 'ASCI', views: 3900, rating: 4.4, language: 'EN' },
+      { title: 'PMMSY Application Guide', category: 'government_schemes', difficulty: 'beginner', format: 'guide', duration: 25, institution: 'DoF India', views: 7800, rating: 4.3, language: 'EN' },
+      { title: 'Biofloc Technology', category: 'technology', difficulty: 'intermediate', format: 'video', duration: 55, institution: 'ICAR-CIFA', views: 3200, rating: 4.5, language: 'EN' },
+      { title: 'మత్స్య సంపద: చెరువు నిర్వహణ', category: 'pond_preparation', difficulty: 'beginner', format: 'video', duration: 30, institution: 'ICAR-CIFA', views: 2100, rating: 4.4, language: 'TE' },
+      { title: 'Good Aquaculture Practices', category: 'health_biosecurity', difficulty: 'beginner', format: 'guide', duration: 40, institution: 'NACA/FAO', views: 2900, rating: 4.6, language: 'EN' },
+    ];
+    const categories = ['All','pond_preparation','water_quality','feed_management','health_biosecurity','harvest_handling','technology','government_schemes'];
+    const catLabels = { pond_preparation:'Pond Prep', water_quality:'Water', feed_management:'Feed', health_biosecurity:'Health', harvest_handling:'Harvest', technology:'Tech', government_schemes:'Schemes', marketing:'Marketing' };
+    const diffColors = { beginner:'#4caf50', intermediate:'#ff9800', advanced:'#f44336' };
+    const formatIcons = { video:'🎬', guide:'📖', article:'📄', quiz:'❓', infographic:'📊', interactive:'🎮' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">📚 Training & Knowledge Hub</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">ICAR-CIFA · ASCI · Multi-language · Offline-ready · GAqP/BMPs compliant</p>
+
+      <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px">
+        ${categories.map(c => `<button style="padding:4px 10px;border:1px solid ${c==='All'?'var(--primary)':'#ddd'};border-radius:14px;background:${c==='All'?'var(--primary)':'white'};color:${c==='All'?'white':'#333'};font-size:10px;cursor:pointer;white-space:nowrap">${c==='All'?'All':catLabels[c]||c}</button>`).join('')}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr;gap:8px">
+        ${modules.map(m => `
+          <div class="card" style="padding:10px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div style="flex:1">
+                <div style="font-size:12px;font-weight:700">${formatIcons[m.format]} ${m.title}</div>
+                <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+                  <span style="background:${diffColors[m.difficulty]};color:white;padding:1px 6px;border-radius:8px;font-size:8px;font-weight:600">${m.difficulty}</span>
+                  <span style="background:#f5f5f5;padding:1px 6px;border-radius:8px;font-size:8px">${m.institution}</span>
+                  <span style="background:#e3f2fd;padding:1px 6px;border-radius:8px;font-size:8px">${m.language}</span>
+                  <span style="font-size:9px;color:#666">⏱️ ${m.duration}min</span>
+                </div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:11px;color:#f39c12;font-weight:700">⭐ ${m.rating}</div>
+                <div style="font-size:9px;color:#999">${m.views.toLocaleString()} views</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="background:#e8f5e9;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>📱 Features:</strong> Offline download · SMS/IVRS alerts · Vernacular languages (Telugu, Hindi, Tamil) · Certificate on completion · Expert Q&A connect
+      </div>
+    </div>`;
+  }
+
+  function renderDisputesTab() {
+    const disputes = [
+      { id: 'DSP-001', title: 'Undersized shrimp delivered', type: 'quality', severity: 'medium', stage: 'direct_communication', filed: '2026-05-01', against: 'Krishna Aqua', status_color: '#ff9800' },
+      { id: 'DSP-002', title: 'Late delivery — 2 days', type: 'delivery_delay', severity: 'low', stage: 'resolved', filed: '2026-04-20', against: 'Delta Aquaculture', status_color: '#4caf50', outcome: 'credit_note' },
+      { id: 'DSP-003', title: 'Payment not received', type: 'payment', severity: 'high', stage: 'platform_mediation', filed: '2026-04-28', against: 'AP Seafood Exports', status_color: '#f44336' },
+    ];
+    const stageLabels = { direct_communication: '💬 Direct Chat', platform_mediation: '⚖️ Mediation', arbitration: '🏛️ Arbitration', resolved: '✅ Resolved', closed: '🔒 Closed' };
+    const typeIcons = { quality:'🐟', quantity:'📦', delivery_delay:'🕐', payment:'💰', fraud:'🚨', damaged:'💥', wrong_item:'❌', other:'❓' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">⚖️ Online Dispute Resolution (ODR)</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">3-tier resolution: Direct Communication → Platform Mediation → Arbitration</p>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+        <div class="card" style="padding:8px;text-align:center;background:#fff3e0">
+          <div style="font-size:20px;font-weight:800;color:#e65100">1</div>
+          <div style="font-size:9px;font-weight:600">Active</div>
+        </div>
+        <div class="card" style="padding:8px;text-align:center;background:#e3f2fd">
+          <div style="font-size:20px;font-weight:800;color:#1565c0">1</div>
+          <div style="font-size:9px;font-weight:600">In Mediation</div>
+        </div>
+        <div class="card" style="padding:8px;text-align:center;background:#e8f5e9">
+          <div style="font-size:20px;font-weight:800;color:#2e7d32">1</div>
+          <div style="font-size:9px;font-weight:600">Resolved</div>
+        </div>
+      </div>
+
+      <div style="font-weight:700;font-size:12px;margin-bottom:8px">📋 My Disputes</div>
+      ${disputes.map(d => `
+        <div class="card" style="padding:10px;margin-bottom:8px;border-left:4px solid ${d.status_color}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div style="font-size:12px;font-weight:700">${typeIcons[d.type]} ${d.title}</div>
+            <span style="font-size:9px;color:${d.status_color};font-weight:600">${d.id}</span>
+          </div>
+          <div style="font-size:10px;color:#555;margin-bottom:4px">Against: ${d.against} · Filed: ${d.filed}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="background:#f5f5f5;padding:2px 8px;border-radius:10px;font-size:9px">${stageLabels[d.stage]}</span>
+            ${d.outcome ? `<span style="font-size:9px;color:#4caf50">Outcome: ${d.outcome.replace(/_/g,' ')}</span>` : ''}
+            ${d.stage==='direct_communication'?'<button style="font-size:9px;padding:3px 8px;background:#1976d2;color:white;border:none;border-radius:4px;cursor:pointer">Escalate ↑</button>':''}
+          </div>
+        </div>
+      `).join('')}
+
+      <button class="btn-primary" style="width:100%;margin-top:10px;padding:10px;font-size:13px" onclick="showToast('Opening dispute form...')">📝 File New Dispute</button>
+
+      <div style="background:#fce4ec;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>⚖️ ODR Process:</strong> Step 1: Direct communication (3 days) → Step 2: Platform mediation (7 days) → Step 3: Arbitration (final binding decision). Evidence including photos and documents required.
+      </div>
+    </div>`;
+  }
+
+  function renderTradeCreditTab() {
+    const credit = { limit: 500000, available: 320000, used: 180000, net_terms: 30, score: 72, risk: 'low', badge: 'silver', status: 'active' };
+    const invoices = [
+      { number: 'INV-Q7A3B2', seller: 'Ramesh Aqua Farm', amount: 95000, due: '2026-05-20', status: 'pending', days_left: 16 },
+      { number: 'INV-P5X9K1', seller: 'Delta Aquaculture', amount: 47500, due: '2026-05-10', status: 'pending', days_left: 6 },
+      { number: 'INV-M2N8Y4', seller: 'Krishna Aqua', amount: 37500, due: '2026-04-25', status: 'paid', days_left: 0 },
+    ];
+    const invoiceStatusColors = { pending: '#ff9800', paid: '#4caf50', overdue: '#f44336', partially_paid: '#2196f3' };
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">💳 Trade Credit & Net Terms</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Buy now, pay later · Net 30/60/90 terms · Auto credit scoring</p>
+
+      <div class="card" style="padding:14px;background:linear-gradient(135deg,#1a237e,#283593);color:white;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:11px;opacity:0.8">Credit Account · ${credit.status.toUpperCase()}</div>
+          <span style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700">🏅 ${credit.badge.toUpperCase()}</span>
+        </div>
+        <div style="font-size:24px;font-weight:800">₹${(credit.available/1000).toFixed(0)}K <span style="font-size:12px;font-weight:400;opacity:0.7">available</span></div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;opacity:0.8">
+          <span>Limit: ₹${(credit.limit/100000).toFixed(1)}L</span>
+          <span>Used: ₹${(credit.used/1000).toFixed(0)}K</span>
+          <span>Net ${credit.net_terms} days</span>
+        </div>
+        <div style="height:6px;background:rgba(255,255,255,0.2);border-radius:3px;margin-top:8px;overflow:hidden">
+          <div style="height:100%;width:${(credit.used/credit.limit*100)}%;background:#4caf50;border-radius:3px"></div>
+        </div>
+        <div style="font-size:9px;margin-top:4px;opacity:0.7">Credit Score: ${credit.score}/100 · Risk: ${credit.risk}</div>
+      </div>
+
+      <div style="font-weight:700;font-size:12px;margin-bottom:8px">📄 Outstanding Invoices</div>
+      ${invoices.map(i => `
+        <div class="card" style="padding:10px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:12px;font-weight:700">${i.number}</div>
+              <div style="font-size:10px;color:#555">${i.seller} · Due: ${i.due}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:13px;font-weight:700">₹${i.amount.toLocaleString()}</div>
+              <span style="color:${invoiceStatusColors[i.status]};font-size:9px;font-weight:600">${i.status === 'pending' ? `⏳ ${i.days_left} days left` : '✓ Paid'}</span>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+
+      <button class="btn-primary" style="width:100%;margin-top:10px;padding:10px;font-size:13px" onclick="showToast('Applying for credit increase...')">📈 Request Credit Increase</button>
+
+      <div style="background:#e8eaf6;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>💳 How it works:</strong> Apply once → Auto credit check → Get approved limit → Buy on Net 30/60/90 terms → Pay by due date → Credit score improves → Higher limits unlocked
+      </div>
+    </div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // V8: CROP POST TAB (Farmer posts harvest, buyers see)
+  // ═══════════════════════════════════════════════════════════════
+  function renderCropPostTab() {
+    const myCrops = [
+      { id:'cp1', species:'Vannamei Shrimp', size_grade:'30 count', expected_quantity_kg:2500, harvest_date:'2026-05-15', location_district:'West Godavari', asking_price_per_kg:420, culture_days:95, survival_rate:82, status:'available', offers_count:3, views_count:28 },
+      { id:'cp2', species:'Rohu', size_grade:'800g-1kg', expected_quantity_kg:3200, harvest_date:'2026-05-22', location_district:'Krishna', asking_price_per_kg:165, culture_days:180, survival_rate:75, status:'available', offers_count:1, views_count:12 },
+    ];
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🌾 Crop Post — Post Your Harvest</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Post when crop is ready · Only verified buyers can see · Get competitive offers</p>
+
+      <button class="btn-primary" style="width:100%;padding:12px;font-size:13px;margin-bottom:14px" onclick="showToast('Opening crop post form...')">+ Post New Crop for Sale</button>
+
+      <div style="font-weight:700;font-size:12px;margin-bottom:8px">📋 My Active Crop Posts</div>
+      ${myCrops.map(c => `
+        <div class="card" style="padding:12px;margin-bottom:8px;border-left:4px solid ${c.status==='available'?'#4caf50':'#ff9800'}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700">🐟 ${c.species} · ${c.size_grade}</div>
+              <div style="font-size:11px;color:#555;margin-top:2px">📍 ${c.location_district} · Harvest: ${c.harvest_date}</div>
+              <div style="font-size:10px;color:#777;margin-top:2px">Culture: ${c.culture_days} days · Survival: ${c.survival_rate}%</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:14px;font-weight:800;color:#2f80ed">₹${c.asking_price_per_kg}/kg</div>
+              <div style="font-size:11px;color:#555">${(c.expected_quantity_kg/1000).toFixed(1)} tons</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:#333">
+            <span>👁️ ${c.views_count} views</span>
+            <span>💬 ${c.offers_count} offers</span>
+            <span style="color:${c.status==='available'?'#4caf50':'#ff9800'}">● ${c.status}</span>
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="background:#e8f5e9;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>🔒 Privacy:</strong> Your crop posts are visible only to verified buyers. Other farmers cannot see your listings. Personal details shared only after you accept an offer.
+      </div>
+
+      <div style="background:#fff3e0;padding:10px;border-radius:8px;margin-top:8px;font-size:11px">
+        <strong>💡 Tip:</strong> Post 15-20 days before harvest for best offers. Include size grade and survival rate for premium prices. Buyers in Japan/US pay ₹80-120/kg more for export-grade 30ct.
+      </div>
+    </div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // V8: EXPERTS TAB
+  // ═══════════════════════════════════════════════════════════════
+  function renderExpertsTab() {
+    const experts = [
+      { name:'Dr. Ramesh Kumar', specialization:'Shrimp Disease Management', rating:4.8, experience_years:15, hourly_rate_inr:1500, languages:['EN','TE'], availability:'available' },
+      { name:'Dr. Lakshmi Narayana', specialization:'Feed Optimization & Nutrition', rating:4.6, experience_years:12, hourly_rate_inr:1200, languages:['EN','TE','HI'], availability:'available' },
+      { name:'Prof. Suresh Babu', specialization:'Biofloc & RAS Technology', rating:4.9, experience_years:20, hourly_rate_inr:2000, languages:['EN','TE'], availability:'busy' },
+      { name:'Dr. Anitha Devi', specialization:'Water Quality Management', rating:4.5, experience_years:8, hourly_rate_inr:1000, languages:['EN','TE','TA'], availability:'available' },
+      { name:'Venkat Rao', specialization:'Farm Economics & Marketing', rating:4.3, experience_years:10, hourly_rate_inr:800, languages:['EN','TE','HI'], availability:'available' },
+    ];
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🧑‍🔬 Expert Advisory Directory</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Aquaculture consultants · Veterinarians · Farm technicians · Get expert advice</p>
+
+      ${experts.map(e => `
+        <div class="card" style="padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:13px;font-weight:700">${e.name}</div>
+              <div style="font-size:11px;color:#555">${e.specialization}</div>
+              <div style="font-size:10px;color:#777;margin-top:2px">${e.experience_years} yrs exp · ${e.languages.join(', ')}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:12px;font-weight:700">⭐ ${e.rating}</div>
+              <div style="font-size:11px;color:#2f80ed;font-weight:600">₹${e.hourly_rate_inr}/hr</div>
+              <span style="font-size:9px;color:${e.availability==='available'?'#4caf50':'#ff9800'}">● ${e.availability}</span>
+            </div>
+          </div>
+          <button class="btn-primary" style="width:100%;margin-top:8px;padding:8px;font-size:11px" onclick="showToast('Booking consultation with ${e.name}...')" ${e.availability!=='available'?'disabled':''}>
+            ${e.availability==='available'?'📞 Book Consultation':'⏳ Currently Busy'}
+          </button>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // V8: WORKFLOW TAB (7-step platform lifecycle)
+  // ═══════════════════════════════════════════════════════════════
+  function renderWorkflowTab() {
+    const steps = [
+      { step:1, name:'Create farm profile', icon:'🏡', done:true },
+      { step:2, name:'Log stocking', icon:'🐟', done:true },
+      { step:3, name:'Track crop age', icon:'📅', done:true },
+      { step:4, name:'Post crop (near harvest)', icon:'🌾', done:false },
+      { step:5, name:'Receive buyer offers', icon:'💬', done:false },
+      { step:6, name:'Complete deal', icon:'🤝', done:false },
+      { step:7, name:'Earn & grow', icon:'💰', done:false },
+    ];
+    const completedCount = steps.filter(s => s.done).length;
+
+    return `<div class="section" style="padding-top:8px">
+      <h3 style="margin:0 0 4px;font-size:15px">🔄 Platform Workflow</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:12px">Your journey from pond to profit · ${completedCount}/7 steps completed</p>
+
+      <div style="height:8px;background:#e0e0e0;border-radius:4px;margin-bottom:14px;overflow:hidden">
+        <div style="height:100%;width:${(completedCount/7*100).toFixed(0)}%;background:linear-gradient(90deg,#4caf50,#2f80ed);border-radius:4px;transition:width 0.3s"></div>
+      </div>
+
+      ${steps.map(s => `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0">
+          <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;background:${s.done?'#e8f5e9':'#f5f5f5'}">${s.icon}</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:${s.done?'700':'400'};color:${s.done?'#333':'#999'}">Step ${s.step}: ${s.name}</div>
+          </div>
+          <div style="font-size:16px">${s.done?'✅':'⬜'}</div>
+        </div>
+      `).join('')}
+
+      <div style="background:#e3f2fd;padding:10px;border-radius:8px;margin-top:14px;font-size:11px">
+        <strong>📊 Your biggest asset</strong> is not the app — it is your farmer data + crop data + market data. Complete all steps to unlock premium analytics & better buyer connections.
+      </div>
+    </div>`;
+  }
+
   // DATA LOADING
   async function loadData() {
     loading = true; render();
@@ -1585,7 +3592,7 @@ export function renderAquaOS(container) {
         savedSearches = searches.searches || [];
         subscription = subR.subscription;
       } else {
-        const [db, p, adv, hl, ml, pr, of, prod, fm, conv, cp] = await Promise.all([
+        const [db, p, adv, hl, ml, pr, of, prod, fm, conv, cp, wf] = await Promise.all([
           api.getAquaDashboard().catch(() => ({})),
           api.getPonds().catch(() => ({ ponds: [] })),
           api.getAquaAdvisory().catch(() => ({ recommendations: [], system_advisories: [] })),
@@ -1597,6 +3604,7 @@ export function renderAquaOS(container) {
           api.getAquaFarms().catch(() => ({ farms: [] })),
           api.getAquaConversations().catch(() => ({ conversations: [] })),
           api.getPosts('?category=aqua&limit=20').catch(() => ({ posts: [] })),
+          api.getAquaDailyWorkflow().catch(() => null),
         ]);
         dashboard = db.dashboard || db || null;
         ponds = p.ponds || p || [];
@@ -1609,6 +3617,7 @@ export function renderAquaOS(container) {
         farms = fm.farms || [];
         conversations = conv.conversations || [];
         communityPosts = cp.posts || cp || [];
+        workflowData = wf;
       }
     } catch(e) { console.error('AquaOS load:', e); }
     // Fallback to sample data for new users

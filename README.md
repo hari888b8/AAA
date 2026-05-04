@@ -228,25 +228,282 @@ AgriHub is composed of **5 major sub-platforms** plus cross-cutting services:
 +----------------------------------------------------------------------+
 ```
 
-### AquaOS — Aquaculture Management
+### AquaOS — Complete Aquaculture Operating System (V1–V10)
 
 ```
-+----------------------------------------------------------------------+
-|                        AQUAOS                                          |
-|              Standalone Aquaculture Operating System                   |
-+----------------------------------------------------------------------+
-|                                                                      |
-|  Pond Management      |  Monitor water quality, feed schedules       |
-|  Species Tracking     |  Growth tracking, health monitoring          |
-|  Harvest Planning     |  Yield estimation, market timing             |
-|  Input Procurement    |  Feed, supplements, equipment                |
-|  Market Prices        |  Live aqua commodity prices                  |
-|  IoT Integration      |  Water sensors, dissolved oxygen             |
-|  Disease Management   |  AI-powered disease detection                |
-|  Compliance           |  Regulatory documentation & tracing          |
-|                                                                      |
-+----------------------------------------------------------------------+
++══════════════════════════════════════════════════════════════════════════+
+║                            AQUA OS                                      ║
+║          India's First Complete Aquaculture Digital Ecosystem            ║
+║                        10 Versions • 100+ Tables • 300+ API Endpoints   ║
++══════════════════════════════════════════════════════════════════════════+
 ```
+
+AquaOS is a **standalone aquaculture operating system** covering the entire value chain — from pond setup to harvest sale, input procurement to AI-powered advisory, financial tracking to cold chain logistics.
+
+---
+
+#### 🐟 V1 — Farm OS Core (`/api/aquaos`)
+
+| Module | Features |
+|--------|----------|
+| **Pond Management** | Register/manage ponds with area, depth, water source, GPS location |
+| **Species Catalog** | Multi-species tracking (Vannamei Shrimp, Rohu, Pangasius, Tiger Shrimp, Catla, Tilapia) |
+| **Feed Tracking** | Daily feed logs, brand tracking, FCR calculation |
+| **Water Quality** | pH, DO, temperature, ammonia, salinity logging |
+| **Harvest Recording** | Harvest weight, size, price, buyer assignment |
+| **Market Prices** | Live prices for Nellore, Bhimavaram, Kakinada, Ongole markets |
+| **Advisory** | Species-specific stocking density, feed schedules, water parameters |
+| **Dashboard** | Real-time farm KPIs — stocking, mortality, growth rates |
+
+---
+
+#### 💰 V2 — Financial & Operations Layer (`/api/aquaos-v2`)
+
+| Module | Features |
+|--------|----------|
+| **Financial Tracking** | Income/expense logs, pond-level P&L, ROI calculation |
+| **Disease Reports** | Disease logging with symptoms, diagnosis, treatment, mortality |
+| **PMMSY Schemes** | Pradhan Mantri Matsya Sampada Yojana scheme discovery & eligibility |
+| **Cold Chain Logistics** | Temperature-monitored transport with IoT tracking |
+| **Training Hub** | Video courses, certifications for aquaculture best practices |
+| **Live Auctions** | Real-time bidding system for harvests |
+| **Benchmarks** | Compare farm performance against regional averages |
+| **Bulk Orders** | Aggregated input procurement with volume discounts |
+| **KPI Engine** | SGR (Specific Growth Rate), ADG, FCR, survival rate computation |
+
+---
+
+#### 📋 V3 — RFQ & Marketplace (`/api/aquaos-v3`)
+
+| Module | Features |
+|--------|----------|
+| **RFQ System** | Request for Quotation — buyers post requirements, farmers respond |
+| **Escrow Payments** | Secure payment holding until delivery confirmation |
+| **Yield Forecasting** | Von Bertalanffy growth model predicting harvest dates & weights |
+| **Aqua Community** | Farmer-to-farmer knowledge posts, Q&A, expert answers |
+| **Farmer Onboarding** | Step-by-step onboarding wizard with document verification |
+| **Regional Analytics** | District-level production volumes, price trends, disease patterns |
+
+---
+
+#### 🏗️ V4 — Infrastructure & Optimization (`/api/aquaos-v4`)
+
+| Module | Features |
+|--------|----------|
+| **Culture Units** | Pond / RAS / Cage / Biofloc / Hatchery unit management |
+| **Production Cycles** | Full lifecycle tracking: stocking → growth → harvest |
+| **Multi-Species Config** | Polyculture support with species-specific parameters |
+| **Harvest Optimizer** | Price-size optimization — when to harvest for max profit |
+| **IoT Device Management** | Water sensors, aerators, auto-feeders with threshold alerts |
+| **Trust Verification** | GST / FSSAI / MPEDA registration verification |
+| **Per-Acre Analytics** | Productivity per acre, input cost per acre, yield per acre |
+| **Farm KPIs** | Comprehensive dashboard with all key metrics |
+
+---
+
+#### 📊 V5 — Predictive Intelligence (`/api/aquaos-v5`)
+
+| Module | Features |
+|--------|----------|
+| **Advanced KPI Engine** | Interval-based SGR/ADG/FCR with temporal trends |
+| **Von Bertalanffy Model** | Predictive growth curves with bio-economic optimization |
+| **Rule-Based Alert Engine** | Configurable thresholds: water quality / growth / mortality / feed |
+| **B2B Supply Marketplace** | Supplier directory, product catalog, order placement, reviews |
+
+---
+
+#### 🐠 V6 — Fish Marketplace & Compliance (`/api/aquaos-v6`)
+
+| Module | Features |
+|--------|----------|
+| **Fish Marketplace** | Auction / RFQ / Fixed-price listing modes |
+| **Buyer Profiles** | Wholesaler / Restaurant / Exporter / Processor categorization |
+| **Quality Grading** | BIS (Bureau of Indian Standards) grading system |
+| **Cold Chain+ Logistics** | Real-time temperature monitoring with IoT sensors |
+| **Farm-to-Fork Traceability** | QR code / Blockchain / Critical Tracking Events (CTEs) |
+| **PMMSY DPR Builder** | Auto-generate Detailed Project Report with subsidy calculation |
+| **National Supplier Directory** | 27+ seeded input suppliers with product catalogs |
+
+---
+
+#### ⭐ V7 — Trust, Logistics & Training (`/api/aquaos-v7`)
+
+| Module | Features |
+|--------|----------|
+| **Verified Seller Reviews** | Star ratings + performance badges (Gold/Silver/Bronze) |
+| **Logistics+ Directory** | 10+ logistics providers with booking, route optimization |
+| **IoT Temperature Monitoring** | Real-time cold chain temperature during transit |
+| **Online Dispute Resolution** | 3-tier escalation: P2P → Mediator → Platform arbitration |
+| **Trade Credit** | Net-30/Net-60 invoicing with credit scoring |
+| **Training Curriculum** | 14+ modules from ICAR-CIFA/ASCI in EN/TE/HI/TA languages |
+| **Vessel Monitoring (VMS)** | IUU compliance tracking for fishing boats |
+
+---
+
+#### 🌐 V8 — Role-Based Ecosystem (`/api/aquaos-v8`)
+
+| Module | Features |
+|--------|----------|
+| **Role Guard Middleware** | `roleGuard('farmer','buyer','supplier','admin')` access control |
+| **Crop Posts** | Farmers post upcoming harvests visible ONLY to buyers |
+| **Crop Offers** | Buyers place offers on crop posts with counter-negotiation |
+| **Community Discussions** | Categorized forums: Disease / Feed / Market / Tech / General |
+| **Market Prices Multi-District** | 14 species across Nellore/Bhimavaram/Kakinada/Ongole/Vijayawada |
+| **Supply Forecast** | Buyer-facing supply predictions by species/district/week |
+| **Supplier Promotions** | Campaign system for input suppliers (discounts, bundles) |
+| **Sales Leads Tracking** | CRM-style lead pipeline for buyers |
+| **Expert Advisory Directory** | 5+ aquaculture experts with specializations |
+| **7-Step Workflow** | Site Selection → Pond Prep → Stocking → Feed Mgmt → Water Mgmt → Harvest → Market |
+| **Platform Analytics** | User counts, listing volumes, transaction metrics |
+
+---
+
+#### 🔒 V9 — Privacy, Negotiation & Admin (`/api/aquaos-v9`)
+
+| Module | Features |
+|--------|----------|
+| **Privacy Controls** | Per-field visibility toggles (location, price, phone, yield data) |
+| **Negotiation Rooms** | Real-time counter-offers with accept/reject/counter workflow |
+| **Notification Preferences** | Channel selection (SMS/Push/WhatsApp/Email) with quiet hours |
+| **Production Insights** | Hidden asset: survival rates, growth, FCR, disease, yield stats |
+| **Admin Panel** | Analytics + User Management + Harvest Monitoring |
+| **Verification Queue** | Document review workflow for KYC/FSSAI/MPEDA |
+| **Fraud Alerts** | Suspicious activity detection and flagging |
+| **Audit Log** | Complete action trail for compliance |
+| **Security** | Fraud reporting endpoint + Rate limit tracking |
+
+---
+
+#### 🤖 V10 — AI, Payments & Scale (`/api/aquaos-v10`)
+
+| Module | Features |
+|--------|----------|
+| **Analytics Layer** | Avg survival rates, feed efficiency, regional disease outbreaks |
+| **Full-Text Search** | PostgreSQL GIN indexes for products, listings, community posts |
+| **Payment System (Razorpay)** | Supplier payments, buyer subscriptions, marketplace commissions |
+| **Pricing Intelligence** | Daily market prices for 14+ species in Andhra Pradesh |
+| **Price Alerts** | Configurable threshold alerts (above/below target price) |
+| **Chat/Messaging** | Text messaging, image sharing, offer negotiation |
+| **AI Prediction Engine** | Disease prediction, yield forecasting, feed optimization |
+| **Growth Metrics** | 4 target districts: West Godavari, East Godavari, Krishna, Nellore |
+| **IoT Sensor Ingestion** | Water quality readings with automatic threshold alerting |
+| **Monetization Config** | Buyer subscriptions, supplier listings, transaction commissions |
+| **System Health Monitoring** | Service uptime, response times, error tracking |
+
+---
+
+#### 📐 AquaOS Database Schema (100+ Tables)
+
+| Migration | Tables Created | Key Data |
+|-----------|---------------|----------|
+| `migrate-v11-aquaos.js` | Ponds, species, feed logs, water quality, harvests, financials, disease, auctions, training | Core farm data |
+| `migrate-v12-aquaos-rfq.js` | RFQ, escrow, yield forecasts, community, onboarding | Marketplace foundations |
+| `migrate-v13-aquaos-v4.js` | Culture units, production cycles, IoT devices, trust verification | Infrastructure |
+| `migrate-v14-aquaos-v5.js` | KPI intervals, predictions, alerts, B2B suppliers/products/orders | Intelligence layer |
+| `migrate-v15-aquaos-v6.js` | Fish marketplace, buyer profiles, quality grades, cold chain, traceability, DPR, suppliers | 12 tables |
+| `migrate-v16-aquaos-v7.js` | Reviews, logistics providers, disputes, trade credit, training curriculum, VMS | 12 tables, 10 providers, 14 modules |
+| `migrate-v17-aquaos-v8.js` | Crop posts, offers, community, market prices, supply forecasts, promotions, leads, experts, workflows, visibility rules | 12 tables, 14 price seeds |
+| `migrate-v18-aquaos-v9.js` | Privacy settings, negotiation rooms, notification prefs, production insights, admin actions, fraud reports, audit log | 9 tables, 20 insights |
+| `migrate-v19-aquaos-v10.js` | Analytics, search index, payments, pricing intelligence, chat, AI predictions, growth, IoT readings, monetization, system health | 12 tables |
+
+---
+
+#### 🎯 AquaOS Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    AquaOS PLATFORM LAYERS                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
+│  │  Farm OS │  │ Market-  │  │  Input   │  │ Advisory │        │
+│  │  (V1-V4) │  │  place   │  │  Market  │  │  Engine  │        │
+│  │          │  │  (V3-V8) │  │  (V5-V6) │  │ (V5-V10) │        │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘        │
+│       │              │              │              │               │
+│  ─────┴──────────────┴──────────────┴──────────────┴─────         │
+│                           │                                       │
+│  ┌───────────────────────────────────────────────────────┐       │
+│  │              INTELLIGENCE ENGINE (V5-V10)              │       │
+│  │  AI Predictions │ KPI Engine │ Alert System │ Analytics│       │
+│  └───────────────────────────────────────────────────────┘       │
+│                           │                                       │
+│  ┌───────────────────────────────────────────────────────┐       │
+│  │              INFRASTRUCTURE (V4-V10)                    │       │
+│  │  IoT │ Payments │ Chat │ Search │ Cache │ Monitoring   │       │
+│  └───────────────────────────────────────────────────────┘       │
+│                           │                                       │
+│  ┌───────────────────────────────────────────────────────┐       │
+│  │              TRUST & COMPLIANCE (V6-V9)                │       │
+│  │  Traceability │ Reviews │ Disputes │ Privacy │ Admin   │       │
+│  └───────────────────────────────────────────────────────┘       │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+#### 🚀 AquaOS Launch Strategy
+
+| Phase | Module | Status |
+|-------|--------|--------|
+| **Phase 1** | Farm OS + Harvest Marketplace | ✅ Complete (V1-V4) |
+| **Phase 2** | Input Marketplace + B2B Supply | ✅ Complete (V5-V6) |
+| **Phase 3** | Advisory Engine + AI Predictions | ✅ Complete (V7-V10) |
+| **Phase 4** | Community + Full Ecosystem | ✅ Complete (V8-V10) |
+
+---
+
+#### 📈 AquaOS Scale Targets
+
+| Metric | Target | Focus Districts |
+|--------|--------|-----------------|
+| Farmers | 100,000 | West Godavari, East Godavari, Krishna, Nellore |
+| Buyers | 10,000 | Wholesalers, restaurants, exporters, processors |
+| Suppliers | 2,000 | Feed, supplements, equipment, services |
+
+---
+
+#### 💵 AquaOS Monetization
+
+| Revenue Stream | Description | Who Pays |
+|---------------|-------------|----------|
+| **Buyer Subscriptions** | Premium access to crop posts, supply forecasts, leads | Buyers |
+| **Supplier Listings** | Featured product placements, promotion campaigns | Suppliers |
+| **Transaction Commissions** | 1-3% on marketplace transactions | Both parties |
+| **Advertising** | Banner ads, sponsored listings | Suppliers |
+| **Farmers** | **Always FREE** — no charges for any farmer features | — |
+
+---
+
+#### 🌏 Market Opportunity
+
+- **India Aquaculture**: $16B+ market, 10%+ YoY growth
+- **AP State**: 40% of India's shrimp production from target districts
+- **Export Demand**: Vietnam, Thailand, USA, Japan — growing 15% annually
+- **Digital Gap**: <5% of farmers use any aquaculture technology
+
+---
+
+#### 🔮 Future Technology (Planned)
+
+| Technology | Application |
+|-----------|-------------|
+| **IoT Water Sensors** | Continuous DO, pH, temperature, ammonia monitoring |
+| **Satellite Pond Monitoring** | NDVI for algal bloom detection, water level estimation |
+| **Automated Feeding Systems** | IoT-connected auto-feeders with AI-optimized schedules |
+| **Computer Vision** | Shrimp/fish size estimation from underwater cameras |
+| **Blockchain** | Full farm-to-fork traceability with immutable records |
+
+---
+
+#### 🏆 Platform Positioning
+
+AquaOS transforms into a **three-in-one platform**:
+
+1. **Aquaculture Operating System** — Complete farm management from pond to plate
+2. **Marketplace** — Connecting farmers, buyers, and suppliers in one ecosystem
+3. **Knowledge Network** — Training, community, expert advisory, and AI insights
 
 ### KisanConnect — Rural Super-App
 
@@ -474,13 +731,161 @@ GET    /api/agriflow/crops         # Crop catalog
 GET    /api/agriflow/districts     # District list
 ```
 
-#### AquaOS — Aquaculture
+#### AquaOS — Complete Aquaculture API (300+ Endpoints)
+
+**V1 Core Farm OS** (`/api/aquaos`)
 ```
-GET    /api/aquaos/ponds           # Pond listing
-POST   /api/aquaos/ponds           # Register pond
-GET    /api/aquaos/species         # Species catalog
-POST   /api/aquaos/harvest         # Record harvest
-GET    /api/aquaos/market-prices   # Aqua commodity prices
+GET    /api/aquaos/ponds                    # List all ponds
+POST   /api/aquaos/ponds                    # Register new pond
+GET    /api/aquaos/ponds/:id                # Pond details with water quality
+PUT    /api/aquaos/ponds/:id                # Update pond parameters
+GET    /api/aquaos/species                  # Species catalog
+POST   /api/aquaos/feed-log                 # Record daily feed
+GET    /api/aquaos/water-quality/:pondId    # Water quality history
+POST   /api/aquaos/harvest                  # Record harvest
+GET    /api/aquaos/market-prices            # Live market prices
+GET    /api/aquaos/dashboard                # Farm KPIs summary
+GET    /api/aquaos/advisory                 # Species-specific advisory
+```
+
+**V2 Financial & Operations** (`/api/aquaos-v2`)
+```
+POST   /api/aquaos-v2/finance/transaction   # Record income/expense
+GET    /api/aquaos-v2/finance/pnl/:pondId   # Pond-level P&L
+POST   /api/aquaos-v2/disease/report        # Log disease event
+GET    /api/aquaos-v2/schemes/pmmsy         # PMMSY scheme list
+POST   /api/aquaos-v2/cold-chain/shipment   # Create cold chain shipment
+GET    /api/aquaos-v2/training/courses       # Training catalog
+POST   /api/aquaos-v2/auctions/create       # Start live auction
+POST   /api/aquaos-v2/auctions/:id/bid      # Place bid
+GET    /api/aquaos-v2/benchmarks/:district  # District benchmarks
+POST   /api/aquaos-v2/bulk-orders           # Aggregated input order
+GET    /api/aquaos-v2/kpi/:pondId           # Pond KPI engine
+```
+
+**V3 RFQ & Escrow** (`/api/aquaos-v3`)
+```
+POST   /api/aquaos-v3/rfq                   # Create RFQ (buyer)
+GET    /api/aquaos-v3/rfq                    # List RFQs
+POST   /api/aquaos-v3/rfq/:id/respond       # Farmer responds to RFQ
+POST   /api/aquaos-v3/escrow/create         # Initialize escrow payment
+POST   /api/aquaos-v3/escrow/:id/release    # Release escrow on delivery
+GET    /api/aquaos-v3/forecast/:pondId      # Yield forecast (Von Bertalanffy)
+POST   /api/aquaos-v3/community/post        # Community knowledge post
+GET    /api/aquaos-v3/analytics/regional    # District-level analytics
+POST   /api/aquaos-v3/onboarding/start      # Start farmer onboarding
+```
+
+**V4 Infrastructure** (`/api/aquaos-v4`)
+```
+POST   /api/aquaos-v4/units                 # Create culture unit (pond/RAS/cage/biofloc)
+GET    /api/aquaos-v4/units                 # List culture units
+POST   /api/aquaos-v4/cycles                # Start production cycle
+GET    /api/aquaos-v4/harvest-optimizer     # Price-size optimization
+POST   /api/aquaos-v4/iot/devices           # Register IoT device
+GET    /api/aquaos-v4/iot/alerts            # IoT threshold alerts
+POST   /api/aquaos-v4/trust/verify          # GST/FSSAI/MPEDA verification
+GET    /api/aquaos-v4/analytics/per-acre    # Per-acre productivity stats
+GET    /api/aquaos-v4/kpi/farm              # Farm-level KPIs
+```
+
+**V5 Predictive Intelligence** (`/api/aquaos-v5`)
+```
+GET    /api/aquaos-v5/kpi/advanced/:pondId  # Interval SGR/ADG/FCR
+GET    /api/aquaos-v5/predict/growth        # Von Bertalanffy prediction
+GET    /api/aquaos-v5/predict/profit        # Bio-economic optimization
+GET    /api/aquaos-v5/alerts                # Active alert rules
+POST   /api/aquaos-v5/alerts/rules          # Configure alert thresholds
+GET    /api/aquaos-v5/supply/products       # B2B product catalog
+POST   /api/aquaos-v5/supply/orders         # Place supply order
+POST   /api/aquaos-v5/supply/reviews        # Review supplier
+```
+
+**V6 Fish Marketplace & Compliance** (`/api/aquaos-v6`)
+```
+POST   /api/aquaos-v6/marketplace/listing   # Create fish listing (auction/RFQ/fixed)
+GET    /api/aquaos-v6/marketplace/listings  # Browse marketplace
+POST   /api/aquaos-v6/marketplace/:id/bid   # Bid on auction
+POST   /api/aquaos-v6/buyer/profile         # Create buyer profile
+GET    /api/aquaos-v6/quality/grades        # BIS quality grades
+POST   /api/aquaos-v6/cold-chain/monitor    # Cold chain temperature log
+GET    /api/aquaos-v6/traceability/:lotId   # Full traceability chain
+POST   /api/aquaos-v6/pmmsy/dpr            # Generate PMMSY DPR
+GET    /api/aquaos-v6/suppliers/directory   # National supplier directory
+```
+
+**V7 Trust & Logistics** (`/api/aquaos-v7`)
+```
+POST   /api/aquaos-v7/reviews               # Submit seller review
+GET    /api/aquaos-v7/reviews/:sellerId     # Seller reviews + badges
+GET    /api/aquaos-v7/logistics/providers   # Logistics directory
+POST   /api/aquaos-v7/logistics/book        # Book logistics
+GET    /api/aquaos-v7/logistics/:id/track   # Temperature + location tracking
+POST   /api/aquaos-v7/disputes/open         # Open dispute
+PUT    /api/aquaos-v7/disputes/:id/escalate # Escalate dispute
+POST   /api/aquaos-v7/credit/apply          # Apply for trade credit
+GET    /api/aquaos-v7/training/curriculum   # Multi-language training modules
+GET    /api/aquaos-v7/vms/vessels           # Vessel monitoring
+```
+
+**V8 Role-Based Ecosystem** (`/api/aquaos-v8`)
+```
+POST   /api/aquaos-v8/crop-posts            # Create crop post (farmer)
+GET    /api/aquaos-v8/crop-posts            # List crop posts (buyers only)
+POST   /api/aquaos-v8/crop-posts/:id/offer  # Make offer on crop post
+GET    /api/aquaos-v8/community/discussions # Community discussions by category
+GET    /api/aquaos-v8/market-prices         # Multi-district prices (14 species)
+GET    /api/aquaos-v8/supply-forecast       # Supply forecast by species/district
+POST   /api/aquaos-v8/promotions            # Supplier promotion campaign
+GET    /api/aquaos-v8/leads                  # Sales leads for buyers
+GET    /api/aquaos-v8/experts                # Expert advisory directory
+GET    /api/aquaos-v8/workflow/:farmId      # 7-step workflow progress
+GET    /api/aquaos-v8/platform/analytics    # Platform-wide stats
+```
+
+**V9 Privacy & Admin** (`/api/aquaos-v9`)
+```
+GET    /api/aquaos-v9/privacy/settings      # Get privacy settings
+PUT    /api/aquaos-v9/privacy/settings      # Update visibility toggles
+POST   /api/aquaos-v9/negotiate/room        # Create negotiation room
+POST   /api/aquaos-v9/negotiate/:id/offer   # Send counter-offer
+PUT    /api/aquaos-v9/negotiate/:id/accept  # Accept offer
+PUT    /api/aquaos-v9/notifications/prefs   # Update notification channels
+GET    /api/aquaos-v9/insights/production   # Production data insights
+GET    /api/aquaos-v9/admin/dashboard       # Admin analytics
+GET    /api/aquaos-v9/admin/users           # User management
+GET    /api/aquaos-v9/admin/harvests        # Harvest monitoring
+GET    /api/aquaos-v9/admin/verification    # Verification queue
+GET    /api/aquaos-v9/admin/fraud-alerts    # Fraud alert dashboard
+POST   /api/aquaos-v9/security/report-fraud # Report fraud
+```
+
+**V10 AI, Payments & Scale** (`/api/aquaos-v10`)
+```
+GET    /api/aquaos-v10/analytics/overview    # Platform-wide analytics insights
+GET    /api/aquaos-v10/analytics/survival    # Survival rate analytics
+GET    /api/aquaos-v10/analytics/feed        # Feed efficiency metrics
+GET    /api/aquaos-v10/analytics/disease     # Regional disease outbreaks
+GET    /api/aquaos-v10/search?q=             # Full-text search (products/listings/posts)
+POST   /api/aquaos-v10/payments/create-order # Razorpay payment order
+POST   /api/aquaos-v10/payments/verify       # Verify payment signature
+GET    /api/aquaos-v10/payments/history      # Payment history
+POST   /api/aquaos-v10/payments/refund       # Initiate refund
+GET    /api/aquaos-v10/subscriptions/plans   # Subscription plans
+POST   /api/aquaos-v10/subscriptions/subscribe # Start subscription
+GET    /api/aquaos-v10/prices                # Daily market prices (14+ species, AP markets)
+GET    /api/aquaos-v10/prices/forecast       # Price forecasting
+POST   /api/aquaos-v10/prices/alerts         # Set price alert
+POST   /api/aquaos-v10/chat/rooms            # Create chat room
+POST   /api/aquaos-v10/chat/messages         # Send message (text/image/offer)
+GET    /api/aquaos-v10/chat/messages/:roomId # Get chat messages
+GET    /api/aquaos-v10/ai/predictions        # AI predictions list
+POST   /api/aquaos-v10/ai/predict            # Request AI prediction
+GET    /api/aquaos-v10/growth/dashboard      # Growth metrics dashboard
+POST   /api/aquaos-v10/iot/readings          # Ingest IoT sensor data
+GET    /api/aquaos-v10/iot/readings/:pondId  # Pond sensor history
+GET    /api/aquaos-v10/system/health         # System health status
+GET    /api/aquaos-v10/platform/info         # Platform positioning & capabilities
 ```
 
 #### KisanConnect

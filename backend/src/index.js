@@ -23,6 +23,7 @@ const { auditMiddleware } = require('./services/audit');
 const { requestId } = require('./middleware/requestId');
 const { sanitize } = require('./middleware/sanitize');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { marketplaceWriteLimiter, auctionBidLimiter, paymentLimiter, negotiationLimiter, searchLimiter, iotIngestionLimiter } = require('./middleware/rateLimiters');
 
 // Routes
 const authRouter = require('./routes/auth');
@@ -87,6 +88,24 @@ const vehiclesRouter = require('./routes/vehicles');
 const deliveryRouter = require('./routes/delivery');
 const gigworkersRouter = require('./routes/gigworkers');
 const transportRouter = require('./routes/transport');
+// Phase 6 — AquaOS V2 Full Ecosystem
+const aquaosV2Router = require('./routes/aquaos-v2');
+// Phase 7 — AquaOS V3 RFQ + Escrow + Forecasting
+const aquaosV3Router = require('./routes/aquaos-v3');
+// Phase 8 — AquaOS V4 Culture Units + Harvest Optimizer + IoT + Trust
+const aquaosV4Router = require('./routes/aquaos-v4');
+// Phase 9 — AquaOS V5 Advanced KPI Engine + Predictive Models + Supply Marketplace
+const aquaosV5Router = require('./routes/aquaos-v5');
+// Phase 10 — AquaOS V6 Fish Marketplace + Cold Chain + Traceability + PMMSY DPR + Supplier Directory
+const aquaosV6Router = require('./routes/aquaos-v6');
+// Phase 11 — AquaOS V7 Reviews + Logistics+ + Training + ODR + Trade Credit + VMS
+const aquaosV7Router = require('./routes/aquaos-v7');
+// Phase 12 — AquaOS V8 Role-Based Ecosystem (Crop Posts + Community + Supply Forecast + Leads)
+const aquaosV8Router = require('./routes/aquaos-v8');
+// Phase 13 — AquaOS V9 Privacy + Admin Panel + Negotiation + Insights + Security
+const aquaosV9Router = require('./routes/aquaos-v9');
+// Phase 14 — AquaOS V10 Analytics + Search + Payments + Pricing + Chat + AI + Growth + IoT
+const aquaosV10Router = require('./routes/aquaos-v10');
 
 const app = express();
 const server = http.createServer(app);
@@ -151,6 +170,14 @@ const authLimiter = rateLimit({
 app.use('/api/auth/send-otp', authLimiter);
 app.use('/api/auth/verify-otp', authLimiter);
 
+// Per-route rate limits for AquaOS sensitive endpoints
+app.use('/api/aquaos-v6/listings', marketplaceWriteLimiter);
+app.use('/api/aquaos-v6/auctions', auctionBidLimiter);
+app.use('/api/aquaos-v9/negotiations', negotiationLimiter);
+app.use('/api/aquaos-v10/payments', paymentLimiter);
+app.use('/api/aquaos-v10/search', searchLimiter);
+app.use('/api/aquaos-v10/iot', iotIngestionLimiter);
+
 // ─── Health Check ────────────────────────────────────────────
 app.get('/health', async (req, res) => {
   try {
@@ -184,6 +211,15 @@ app.get('/health', async (req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/agriflow', agriflowRouter);
 app.use('/api/aquaos', aquaosRouter);
+app.use('/api/aquaos-v2', aquaosV2Router);
+app.use('/api/aquaos-v3', aquaosV3Router);
+app.use('/api/aquaos-v4', aquaosV4Router);
+app.use('/api/aquaos-v5', aquaosV5Router);
+app.use('/api/aquaos-v6', aquaosV6Router);
+app.use('/api/aquaos-v7', aquaosV7Router);
+app.use('/api/aquaos-v8', aquaosV8Router);
+app.use('/api/aquaos-v9', aquaosV9Router);
+app.use('/api/aquaos-v10', aquaosV10Router);
 app.use('/api/farmerconnect', farmerconnectRouter);
 app.use('/api/kisanconnect', kisanconnectRouter);
 app.use('/api/intelligence', intelligenceRouter);
@@ -280,6 +316,16 @@ async function start() {
     await migrateV9();
     const { migrateV10ROS } = require('./db/migrate-v10-ros');
     await migrateV10ROS();
+    const { migrateV15AquaOSV6 } = require('./db/migrate-v15-aquaos-v6');
+    await migrateV15AquaOSV6();
+    const { migrateV16AquaOSV7 } = require('./db/migrate-v16-aquaos-v7');
+    await migrateV16AquaOSV7();
+    const { migrateV17AquaOSV8 } = require('./db/migrate-v17-aquaos-v8');
+    await migrateV17AquaOSV8();
+    const { migrateV18AquaOSV9 } = require('./db/migrate-v18-aquaos-v9');
+    await migrateV18AquaOSV9();
+    const { migrateV19AquaOSV10 } = require('./db/migrate-v19-aquaos-v10');
+    await migrateV19AquaOSV10();
     logger.info('Database migrations applied');
 
     // Recover any pending jobs from previous crash
