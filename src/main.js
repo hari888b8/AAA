@@ -37,6 +37,8 @@ import { renderTickets } from './screens/TicketsScreen.js';
 import { renderEscrow } from './screens/EscrowScreen.js';
 import { renderWatchlists } from './screens/WatchlistsScreen.js';
 import { renderFPODashboard } from './screens/FPODashboardScreen.js';
+import { renderFPOGalaxy } from './screens/FPOGalaxyScreen.js';
+import { renderFPOPortfolio } from './screens/FPOPortfolioScreen.js';
 import { renderCart } from './screens/CartScreen.js';
 import { renderLivestock } from './screens/LivestockScreen.js';
 import { renderLogistics } from './screens/LogisticsScreen.js';
@@ -105,6 +107,8 @@ const ROUTES = {
   escrow:        { title: 'Escrow',        icon: '🔐', render: renderEscrow,       back: 'orders'  },
   watchlists:    { title: 'Watchlists',    icon: '👁️', render: renderWatchlists,   back: 'home'    },
   fpodashboard:  { title: 'FPO Hub',       icon: '🏢', render: renderFPODashboard, back: 'home'    },
+  fpogalaxy:     { title: 'FPO Galaxy',    icon: '🌐', render: renderFPOGalaxy,    back: 'home'    },
+  fpoportfolio:  { title: 'FPO Portfolio', icon: '🏢', render: renderFPOPortfolio, back: 'fpogalaxy' },
   cart:          { title: 'Cart',          icon: '🛒', render: renderCart,          back: 'home'    },
   livestock:     { title: 'Livestock',     icon: '🐄', render: renderLivestock,     back: 'agriflow'},
   logistics:     { title: 'Logistics',     icon: '🚚', render: renderLogistics,    back: 'home'    },
@@ -155,7 +159,11 @@ import { _registerNavigator } from './app-shell.js';
 
 export function navigate(route) {
   if (!getState().isLoggedIn && route !== 'login') route = 'login';
-  currentRoute = route;
+  // Support route params: "fpoportfolio?id=123"
+  const [routeName, queryStr] = route.split('?');
+  if (queryStr) window._routeParams = queryStr;
+  else window._routeParams = '';
+  currentRoute = routeName;
   renderApp();
 }
 _registerNavigator(navigate);
