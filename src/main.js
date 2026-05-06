@@ -62,6 +62,22 @@ import { renderTradeOrders } from './screens/TradeOrdersScreen.js';
 import { renderVehicles } from './screens/VehiclesScreen.js';
 import { renderDelivery } from './screens/DeliveryScreen.js';
 import { renderGigWorkers } from './screens/GigWorkersScreen.js';
+// Galaxy screens
+import { renderFarmerGalaxy } from './screens/FarmerGalaxyScreen.js';
+import { renderFarmerPortfolio } from './screens/FarmerPortfolioScreen.js';
+import { renderAquaGalaxy } from './screens/AquaGalaxyScreen.js';
+import { renderAquaPortfolio } from './screens/AquaPortfolioScreen.js';
+import { renderInputsGalaxy } from './screens/InputsGalaxyScreen.js';
+import { renderInputsPortfolio } from './screens/InputsPortfolioScreen.js';
+import { renderLivestockGalaxy } from './screens/LivestockGalaxyScreen.js';
+import { renderLivestockPortfolio } from './screens/LivestockPortfolioScreen.js';
+import { renderContractsGalaxy } from './screens/ContractsGalaxyScreen.js';
+import { renderExporterGalaxy } from './screens/ExporterGalaxyScreen.js';
+import { renderMandiGalaxy } from './screens/MandiGalaxyScreen.js';
+import { renderMandiPortfolio } from './screens/MandiPortfolioScreen.js';
+import { renderTrainingGalaxy } from './screens/TrainingGalaxyScreen.js';
+import { renderSchemesGalaxy } from './screens/SchemesGalaxyScreen.js';
+import { renderKisanGalaxy } from './screens/KisanGalaxyScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -132,6 +148,27 @@ const ROUTES = {
   vehicles:      { title: 'Vehicles',     icon: '🚗', render: renderVehicles,    back: 'kisan'    },
   delivery:      { title: 'Delivery',     icon: '📦', render: renderDelivery,    back: 'kisan'    },
   gigworkers:    { title: 'Gig Workers',  icon: '👨‍🔧', render: renderGigWorkers,  back: 'kisan'    },
+  // Galaxy routes
+  farmergalaxy:  { title: 'Farmer Galaxy', icon: '👨‍🌾', render: renderFarmerGalaxy, back: 'home'   },
+  farmerportfolio:{ title: 'Farmer Profile',icon: '👨‍🌾', render: renderFarmerPortfolio, back: 'farmergalaxy' },
+  aquagalaxy:    { title: 'Aqua Galaxy',   icon: '🐟', render: renderAquaGalaxy,   back: 'home'    },
+  aquaportfolio: { title: 'Aqua Farm',     icon: '🐟', render: renderAquaPortfolio, back: 'aquagalaxy' },
+  inputsgalaxy:  { title: 'Inputs Galaxy', icon: '🌱', render: renderInputsGalaxy, back: 'home'    },
+  inputsportfolio:{ title: 'Supplier',     icon: '🏪', render: renderInputsPortfolio, back: 'inputsgalaxy' },
+  livestockgalaxy:{ title: 'Livestock Galaxy',icon:'🐄', render: renderLivestockGalaxy, back: 'home' },
+  livestockportfolio:{ title: 'Breeder',   icon: '🐄', render: renderLivestockPortfolio, back: 'livestockgalaxy' },
+  contractsgalaxy:{ title: 'Contracts',    icon: '📝', render: renderContractsGalaxy, back: 'home'  },
+  contractdetail:{ title: 'Contract',      icon: '📝', render: renderContractsGalaxy, back: 'contractsgalaxy' },
+  exportergalaxy:{ title: 'Exporter Galaxy',icon:'🌍', render: renderExporterGalaxy, back: 'home'  },
+  exporterportfolio:{ title: 'Exporter',   icon: '🌍', render: renderExporterGalaxy, back: 'exportergalaxy' },
+  mandigalaxy:   { title: 'Mandi Galaxy',  icon: '📍', render: renderMandiGalaxy,  back: 'home'    },
+  mandiportfolio:{ title: 'Mandi',         icon: '📍', render: renderMandiPortfolio, back: 'mandigalaxy' },
+  traininggalaxy:{ title: 'Training Galaxy',icon:'🎓', render: renderTrainingGalaxy, back: 'home'  },
+  trainingdetail:{ title: 'Course',        icon: '🎓', render: renderTrainingGalaxy, back: 'traininggalaxy' },
+  schemesgalaxy: { title: 'Schemes Galaxy',icon: '🏛️', render: renderSchemesGalaxy, back: 'home'   },
+  schemedetail:  { title: 'Scheme',        icon: '🏛️', render: renderSchemesGalaxy, back: 'schemesgalaxy' },
+  kisangalaxy:   { title: 'Kisan Galaxy',  icon: '🚜', render: renderKisanGalaxy,  back: 'home'    },
+  kisanportfolio:{ title: 'Vehicle',       icon: '🚜', render: renderKisanGalaxy,  back: 'kisangalaxy' },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────
