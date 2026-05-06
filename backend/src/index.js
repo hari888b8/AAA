@@ -113,6 +113,9 @@ const complianceRouter = require('./routes/compliance');
 const kycRouter = require('./routes/kyc');
 const aiPredictionsRouter = require('./routes/ai-predictions');
 const enamRouter = require('./routes/enam');
+// Phase 17 — AquaOS V11 Supply Chain + Warehouse Management
+const aquaosV11Router = require('./routes/aquaos-v11');
+const warehouseRouter = require('./routes/warehouse');
 
 const app = express();
 const server = http.createServer(app);
@@ -293,6 +296,9 @@ app.use('/api/compliance', complianceRouter);
 app.use('/api/kyc', kycRouter);
 app.use('/api/ai', aiPredictionsRouter);
 app.use('/api/enam', enamRouter);
+// Phase 17 — AquaOS V11 + Warehouse
+app.use('/api/aquaos-v11', aquaosV11Router);
+app.use('/api/warehouse', warehouseRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -344,6 +350,10 @@ async function start() {
     await migrateV21Galaxy();
     const { migrateV22PlatformReadiness } = require('./db/migrate-v22-platform-readiness');
     await migrateV22PlatformReadiness();
+    const { migrateV23AquaOSV11 } = require('./db/migrate-v23-aquaos-v11');
+    await migrateV23AquaOSV11();
+    const { migrateV24Warehouse } = require('./db/migrate-v24-warehouse');
+    await migrateV24Warehouse();
     logger.info('Database migrations applied');
 
     // Recover any pending jobs from previous crash
