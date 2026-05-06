@@ -50,7 +50,7 @@ export function renderFPOGalaxy(container) {
       params.set('sort_by', sortBy);
       params.set('limit', '100');
 
-      const res = await api(`fpo/public/directory?${params.toString()}`).catch(() => ({ fpos: [], stats: {} }));
+      const res = await api(`fpo/public/directory?${params.toString()}`);
       fpos = res.fpos || [];
       stats = res.stats || { total_fpos: 0, total_farmers: 0, total_active_farmers: 0 };
     } catch (err) {

@@ -158,11 +158,15 @@ export { showToast, showModal, closeModal } from './app-shell.js';
 import { _registerNavigator } from './app-shell.js';
 
 export function navigate(route) {
-  if (!getState().isLoggedIn && route !== 'login') route = 'login';
   // Support route params: "fpoportfolio?id=123"
   const [routeName, queryStr] = route.split('?');
   if (queryStr) window._routeParams = queryStr;
   else window._routeParams = '';
+  if (!getState().isLoggedIn && routeName !== 'login') {
+    currentRoute = 'login';
+    renderApp();
+    return;
+  }
   currentRoute = routeName;
   renderApp();
 }

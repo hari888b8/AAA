@@ -47,7 +47,7 @@ export function renderFPOPortfolio(container) {
     isLoading = true;
     render();
     try {
-      portfolio = await api(`fpo/public/${fpoId}/portfolio`).catch(() => null);
+      portfolio = await api(`fpo/public/${fpoId}/portfolio`);
     } catch (err) {
       showToast('Failed to load FPO portfolio', 'error');
     }
