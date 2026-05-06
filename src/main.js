@@ -78,6 +78,8 @@ import { renderMandiPortfolio } from './screens/MandiPortfolioScreen.js';
 import { renderTrainingGalaxy } from './screens/TrainingGalaxyScreen.js';
 import { renderSchemesGalaxy } from './screens/SchemesGalaxyScreen.js';
 import { renderKisanGalaxy } from './screens/KisanGalaxyScreen.js';
+// Platform readiness
+import { renderCompliance } from './screens/ComplianceScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -169,6 +171,8 @@ const ROUTES = {
   schemedetail:  { title: 'Scheme',        icon: '🏛️', render: renderSchemesGalaxy, back: 'schemesgalaxy' },
   kisangalaxy:   { title: 'Kisan Galaxy',  icon: '🚜', render: renderKisanGalaxy,  back: 'home'    },
   kisanportfolio:{ title: 'Vehicle',       icon: '🚜', render: renderKisanGalaxy,  back: 'kisangalaxy' },
+  // Platform Readiness
+  compliance:    { title: 'Compliance',    icon: '🛡️', render: renderCompliance,   back: 'profile' },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────

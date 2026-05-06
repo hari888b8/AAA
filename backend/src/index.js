@@ -108,6 +108,11 @@ const aquaosV9Router = require('./routes/aquaos-v9');
 const aquaosV10Router = require('./routes/aquaos-v10');
 // Phase 15 — Galaxy Discovery Module
 const galaxyRouter = require('./routes/galaxy');
+// Phase 16 — Platform Readiness (DPDP + KYC + AI + eNAM/NABARD/SFAC)
+const complianceRouter = require('./routes/compliance');
+const kycRouter = require('./routes/kyc');
+const aiPredictionsRouter = require('./routes/ai-predictions');
+const enamRouter = require('./routes/enam');
 
 const app = express();
 const server = http.createServer(app);
@@ -283,6 +288,11 @@ app.use('/api/gigworkers', gigworkersRouter);
 app.use('/api/transport', transportRouter);
 // Phase 15 — Galaxy Discovery (public, no auth)
 app.use('/api/galaxy', galaxyRouter);
+// Phase 16 — Platform Readiness Layer
+app.use('/api/compliance', complianceRouter);
+app.use('/api/kyc', kycRouter);
+app.use('/api/ai', aiPredictionsRouter);
+app.use('/api/enam', enamRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -332,6 +342,8 @@ async function start() {
     await migrateV19AquaOSV10();
     const { migrateV21Galaxy } = require('./db/migrate-v21-galaxy');
     await migrateV21Galaxy();
+    const { migrateV22PlatformReadiness } = require('./db/migrate-v22-platform-readiness');
+    await migrateV22PlatformReadiness();
     logger.info('Database migrations applied');
 
     // Recover any pending jobs from previous crash
