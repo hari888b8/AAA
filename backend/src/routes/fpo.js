@@ -3,6 +3,192 @@ const router = express.Router();
 const { pool } = require('../db/pool');
 const { authMiddleware } = require('../middleware/auth');
 
+// ══════════════════════════════════════════════════════════════
+// PUBLIC ENDPOINTS (no auth required) — FPO Galaxy for Buyers
+// ══════════════════════════════════════════════════════════════
+
+// GET /fpo/public/directory — list all FPOs with summary stats
+router.get('/public/directory', async (req, res) => {
+  try {
+    const { state, district, crop, search, sort_by = 'member_count', order = 'desc', limit = 50, offset = 0 } = req.query;
+
+    let query = `
+      SELECT fp.id, fp.fpo_name, fp.fpo_type, fp.state, fp.district_id, fp.block,
+             fp.ceo_name, fp.primary_crops, fp.year_established, fp.member_count,
+             fp.active_member_count, fp.registration_number,
+             d.name as district_name, d.state_name,
+             COALESCE(acreage.total_acres, 0) as total_acres,
+             COALESCE(listings.active_count, 0) as active_listings,
+             COALESCE(inventory.total_stock_kg, 0) as total_stock_kg
+      FROM fpo_profiles fp
+      LEFT JOIN districts d ON fp.district_id = d.id
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(SUM(fpr.total_land_acres), 0) as total_acres
+        FROM fpo_memberships fm
+        JOIN farmer_profiles fpr ON fpr.user_id = fm.farmer_id
+        WHERE fm.fpo_id = fp.id AND fm.status = 'active'
+      ) acreage ON true
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*) as active_count
+        FROM fpo_supply_listings fsl
+        WHERE fsl.fpo_id = fp.id AND fsl.status = 'active'
+      ) listings ON true
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(SUM(fi.quantity_kg), 0) as total_stock_kg
+        FROM fpo_inventory fi
+        WHERE fi.fpo_id = fp.id
+      ) inventory ON true
+      WHERE 1=1`;
+
+    const params = [];
+    if (state) { params.push(state); query += ` AND fp.state = $${params.length}`; }
+    if (district) { params.push(district); query += ` AND d.name ILIKE $${params.length}`; }
+    if (crop) { params.push(`%${crop}%`); query += ` AND array_to_string(fp.primary_crops, ',') ILIKE $${params.length}`; }
+    if (search) {
+      params.push(`%${search}%`);
+      query += ` AND (fp.fpo_name ILIKE $${params.length} OR d.name ILIKE $${params.length} OR fp.block ILIKE $${params.length} OR array_to_string(fp.primary_crops, ',') ILIKE $${params.length})`;
+    }
+
+    // Sort
+    const allowedSorts = { member_count: 'fp.member_count', acreage: 'total_acres', listings: 'active_listings', name: 'fp.fpo_name', year: 'fp.year_established' };
+    const sortCol = allowedSorts[sort_by] || 'fp.member_count';
+    const sortOrder = order === 'asc' ? 'ASC' : 'DESC';
+    query += ` ORDER BY ${sortCol} ${sortOrder} NULLS LAST`;
+
+    params.push(parseInt(limit));
+    query += ` LIMIT $${params.length}`;
+    params.push(parseInt(offset));
+    query += ` OFFSET $${params.length}`;
+
+    const { rows } = await pool.query(query, params);
+
+    // Quick aggregate stats
+    const statsResult = await pool.query(`
+      SELECT COUNT(*) as total_fpos,
+             COALESCE(SUM(member_count), 0) as total_farmers,
+             COALESCE(SUM(active_member_count), 0) as total_active_farmers
+      FROM fpo_profiles
+    `);
+
+    res.json({
+      fpos: rows,
+      stats: statsResult.rows[0],
+      pagination: { limit: parseInt(limit), offset: parseInt(offset), count: rows.length }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /fpo/public/:fpoId/portfolio — full portfolio for a single FPO
+router.get('/public/:fpoId/portfolio', async (req, res) => {
+  try {
+    const { fpoId } = req.params;
+
+    // FPO Profile
+    const profileResult = await pool.query(
+      `SELECT fp.*, d.name as district_name, d.state_name
+       FROM fpo_profiles fp
+       LEFT JOIN districts d ON fp.district_id = d.id
+       WHERE fp.id = $1`,
+      [fpoId]
+    );
+    if (profileResult.rows.length === 0) return res.status(404).json({ error: 'FPO not found' });
+    const profile = profileResult.rows[0];
+
+    // Member stats + total acreage
+    const memberStats = await pool.query(
+      `SELECT COUNT(*) as total_members,
+              SUM(CASE WHEN fm.status = 'active' THEN 1 ELSE 0 END) as active_members,
+              SUM(CASE WHEN fm.joined_at > NOW() - INTERVAL '90 days' THEN 1 ELSE 0 END) as new_joiners,
+              COALESCE(SUM(fpr.total_land_acres), 0) as total_acres
+       FROM fpo_memberships fm
+       LEFT JOIN farmer_profiles fpr ON fpr.user_id = fm.farmer_id
+       WHERE fm.fpo_id = $1`,
+      [fpoId]
+    );
+
+    // Procurement history — crop-wise yield
+    const procHistory = await pool.query(
+      `SELECT c.name as crop_name,
+              COUNT(*) as procurement_count,
+              COALESCE(SUM(pr.quantity_kg), 0) as total_kg,
+              ROUND(AVG(pr.price_per_kg), 2) as avg_price,
+              MAX(pr.procurement_date) as last_procurement
+       FROM procurement_records pr
+       LEFT JOIN crop_catalog c ON pr.crop_id = c.id
+       WHERE pr.fpo_id = $1
+       GROUP BY c.name ORDER BY total_kg DESC`,
+      [fpoId]
+    );
+
+    // Current inventory
+    const inventoryResult = await pool.query(
+      `SELECT fi.*, c.name as crop_name
+       FROM fpo_inventory fi
+       LEFT JOIN crop_catalog c ON fi.crop_id = c.id
+       WHERE fi.fpo_id = $1
+       ORDER BY fi.quantity_kg DESC`,
+      [fpoId]
+    );
+
+    // Active supply listings
+    const listingsResult = await pool.query(
+      `SELECT fl.*, c.name as crop_name
+       FROM fpo_supply_listings fl
+       LEFT JOIN crop_catalog c ON fl.crop_id = c.id
+       WHERE fl.fpo_id = $1 AND fl.status = 'active'
+       ORDER BY fl.created_at DESC`,
+      [fpoId]
+    );
+
+    // Expected yield from active listings
+    const yieldExpected = await pool.query(
+      `SELECT c.name as crop_name,
+              SUM(fl.quantity_available) as expected_quantity_kg,
+              MIN(fl.harvest_from_date) as harvest_from,
+              MAX(fl.harvest_to_date) as harvest_to,
+              ROUND(AVG(fl.price_per_kg), 2) as indicative_price
+       FROM fpo_supply_listings fl
+       LEFT JOIN crop_catalog c ON fl.crop_id = c.id
+       WHERE fl.fpo_id = $1 AND fl.status = 'active'
+       GROUP BY c.name ORDER BY expected_quantity_kg DESC`,
+      [fpoId]
+    );
+
+    res.json({
+      profile: {
+        id: profile.id,
+        fpo_name: profile.fpo_name,
+        fpo_type: profile.fpo_type,
+        registration_number: profile.registration_number,
+        state: profile.state,
+        district_name: profile.district_name,
+        state_name: profile.state_name,
+        block: profile.block,
+        office_address: profile.office_address,
+        ceo_name: profile.ceo_name,
+        whatsapp_number: profile.whatsapp_number,
+        primary_crops: profile.primary_crops,
+        year_established: profile.year_established,
+        member_count: profile.member_count,
+        active_member_count: profile.active_member_count,
+      },
+      farmer_stats: memberStats.rows[0] || {},
+      land: { total_acres: parseFloat(memberStats.rows[0]?.total_acres || 0) },
+      procurement_history: procHistory.rows,
+      yield_expected: yieldExpected.rows,
+      inventory: inventoryResult.rows,
+      active_listings: listingsResult.rows,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// AUTHENTICATED ENDPOINTS (below this line)
+// ══════════════════════════════════════════════════════════════
 router.use(authMiddleware);
 
 // ── FPO Profile ──────────────────────────────────────────────
