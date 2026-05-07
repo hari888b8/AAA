@@ -2342,3 +2342,1507 @@ This project is licensed under the **ISC License** — see the [LICENSE](LICENSE
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=120&section=footer" width="100%"/>
 
 </div>
+
+---
+
+---
+
+<div align="center">
+
+# 📋 PROJECT MASTER AUDIT DOCUMENT
+
+**Complete Platform Analysis & Audit Report — v1.0 (May 2026)**
+
+</div>
+
+---
+
+# 1. PROJECT OVERVIEW
+
+## App / Platform Name
+**AgriHub** — India's Agriculture Operating System
+
+## Tagline
+A unified Agriculture Operating System connecting 145M+ farmers, 10,000+ FPOs, traders, exporters, input suppliers, banks, and logistics providers on ONE digital platform.
+
+## Problem Statement
+India's agricultural ecosystem is fragmented — farmers lack access to fair markets, real-time intelligence, financial services, and modern logistics. Multiple disconnected apps serve individual needs (mandis, weather, schemes) but no unified platform connects all stakeholders (farmers, FPOs, buyers, exporters, logistics, banks) end-to-end. AgriHub solves this by creating a single operating system for the entire agriculture value chain.
+
+## Industry / Domain
+- **Primary:** Agriculture / AgriTech
+- **Sub-domains:** Aquaculture, Logistics, Marketplace, Fintech, PropTech, SaaS
+- **Cross-cutting:** AI/ML, IoT, Government Integration, Supply Chain
+
+## Business Type
+- **B2B2C** (Farmers ↔ FPOs ↔ Buyers/Exporters)
+- **Marketplace** (AgriFlow trade engine)
+- **SaaS** (AquaOS for aquaculture farmers)
+- **Commission model** (Trade escrow, payments)
+- **Subscription** (Premium features, analytics)
+
+## Target Users
+
+| User Type | Description | Count (India) |
+|-----------|-------------|---------------|
+| **Farmers** | Smallholder & commercial farmers | 145M+ |
+| **FPOs** | Farmer Producer Organizations | 10,000+ |
+| **Aquaculture Farmers** | Shrimp/fish farmers (Andhra Pradesh focus) | 1M+ |
+| **Buyers/Traders** | Wholesale buyers, commission agents | 500K+ |
+| **Exporters** | Agricultural commodity exporters | 50K+ |
+| **Input Suppliers** | Seeds, feed, fertilizer sellers | 200K+ |
+| **Logistics Providers** | Cold chain, transport operators | 100K+ |
+| **Banks/NBFCs** | Agricultural lenders | 500+ |
+| **Government** | NABARD, SFAC, eNAM officials | — |
+| **Gig Workers** | Delivery partners, field agents | 50K+ |
+| **Admins** | Platform administrators | — |
+
+## Countries / Regions Targeted
+- **Current:** India (Andhra Pradesh — pilot state)
+- **Phase 2:** All Indian coastal states (aquaculture)
+- **Phase 3:** Pan-India (all agriculture)
+- **Future:** South-East Asia, Africa (emerging markets)
+
+## Current Project Status
+**MVP → Beta** — Feature-complete platform with 76+ API routes, 72+ screens, native Android app, 25 database migrations, 130+ tables. Ready for pilot deployment.
+
+## Main Business Goals
+1. Become India's default agriculture operating system
+2. Digitize 10,000+ FPOs in Year 1
+3. Enable ₹10,000 Cr+ GMV through trade engine
+4. Reduce post-harvest losses by 30% through intelligence
+5. Achieve 1M+ active farmers in pilot state
+6. Government scheme delivery through digital rails
+
+## Main Revenue Model
+| Revenue Stream | Model | Target |
+|---------------|-------|--------|
+| Trade commission | 1-2% per transaction | ₹100 Cr/year at scale |
+| SaaS subscriptions | ₹99-999/month | Aquaculture, FPO tools |
+| Financial services | Lead gen + commission | Insurance, credit |
+| Data/Intelligence | Enterprise API access | Exporters, FMCG |
+| Input marketplace | Seller commission | Seeds, feed, chemicals |
+| Warehouse fees | Storage + quality testing | Per-quintal charges |
+| Premium features | Freemium upgrade | Advanced analytics |
+
+## Core USP (Unique Selling Point)
+1. **Only unified platform** connecting ALL agriculture stakeholders end-to-end
+2. **AquaOS** — World's most comprehensive aquaculture management system (11 versions)
+3. **Full trade state machine** — escrow-protected B2B commerce
+4. **AI/ML intelligence** — Price forecasting, disease detection, yield prediction
+5. **Government integration** — eNAM, NABARD, MPEDA, PMMSY built-in
+6. **Multi-language** — Telugu, Hindi, English (12 planned)
+7. **Offline-first** — Works in rural areas with poor connectivity
+
+---
+
+# 2. COMPLETE FEATURE LIST
+
+## Existing Features
+
+### User/Farmer Features
+- Phone OTP signup/login with role selection
+- Multi-language interface (Telugu, Hindi, English)
+- Farm diary with activity logging, expense tracking, yield recording
+- Crop lifecycle management and planning
+- Weather forecasts with alerts
+- Government scheme discovery with auto-eligibility matching
+- Marketplace listings (create, browse, negotiate)
+- Wallet with transactions history
+- Order tracking with status updates
+- Community posts, Q&A, knowledge sharing
+- Voice assistant (planned)
+- Satellite-based crop monitoring
+- Training modules and certifications
+- Trust score system
+- Favorites and watchlists
+- Push notifications
+- Referral system
+
+### Vendor/Seller/Buyer Features
+- Buyer discovery and advanced search
+- Trade order flow (bid → accept → escrow → verify → deliver → pay)
+- Quality verification with photo/GPS evidence
+- Watchlists for crops/regions
+- Demand posting and price alerts
+- Exporter compliance dashboard
+- Contract farming agreements
+- Bulk order management
+- Cold chain logistics booking
+
+### FPO Features
+- Member management
+- Collective procurement
+- Inventory management
+- Financial tracking
+- Compliance dashboard
+- Training management
+- Market intelligence dashboard
+- Portfolio analytics
+
+### AquaOS (Aquaculture) Features
+- Pond/farm management (culture units: pond, RAS, cage, biofloc, hatchery)
+- Water quality monitoring with IoT integration
+- Feed management with FCR calculation
+- Harvest optimization with price-size models
+- Disease detection and reporting
+- Financial tracking per-pond
+- PMMSY scheme integration
+- Fish marketplace (auction, RFQ, fixed-price)
+- Cold chain logistics with temperature monitoring
+- Farm-to-fork traceability (QR + blockchain CTEs)
+- Supplier directory (27+ national suppliers)
+- B2B supply marketplace
+- Von Bertalanffy growth predictions
+- Advanced KPI engine (SGR, ADG, FCR)
+- Alert engine (water/growth/mortality/feed thresholds)
+- Verified seller reviews with badges
+- Logistics providers with IoT temp monitoring
+- Online dispute resolution (3-tier)
+- Trade credit with net terms
+- Training library (multi-language, ICAR-CIFA/ASCI)
+- Vessel monitoring (VMS for IUU compliance)
+- Role-based ecosystem (farmer, buyer, agent)
+- Community discussions
+- Market prices (multi-district)
+- Supply forecasting
+- Expert advisory directory
+- 7-step workflow tracking
+- Privacy controls (per-field visibility)
+- Real-time negotiation rooms
+- Production data insights
+- Admin panel with full analytics
+- Razorpay payment integration
+- Pricing intelligence (14 AP markets)
+- Chat rooms/messaging
+- AI prediction engine (disease, yield, feed, price)
+- Growth metrics targeting 4 districts
+- IoT sensor data ingestion
+- Monetization configuration
+- Contract aquaculture (sign/status)
+- Labor management (attendance/costs)
+- Insurance products/policies/claims
+- Export compliance (MPEDA/EU/FDA)
+- Multi-farm portfolio management
+- Aqua input supply chain
+- Harvest planning/scheduling
+
+### KisanConnect (Rural OS) Features
+- Vehicle marketplace (rent/buy/sell)
+- Transport booking and tracking
+- Delivery management
+- Gig worker marketplace
+- Equipment matching service
+- Rural services hub
+
+### FarmerConnect (PropTech) Features
+- Agricultural land marketplace
+- Property listings with geo-tagging
+- Buyer-seller matching
+- Land lease management
+
+### Admin Features
+- User management
+- Verification queue
+- Fraud detection and alerts
+- Platform analytics dashboard
+- Content moderation
+- Scheme management
+- Rate limiting controls
+- Audit logging
+- System health monitoring
+- Revenue analytics
+
+### AI/ML Features
+- Price prediction (ARIMA-based)
+- Disease detection (crop + aqua)
+- Yield forecasting
+- Demand analysis
+- Feed optimization (aquaculture)
+- Scheme matching engine
+- Smart notifications
+- Satellite imagery analysis (NDVI)
+- Supply-demand forecasting
+- Crop planning recommendations
+
+### Delivery/Agent Features
+- Gig worker profiles
+- Job matching algorithm
+- Route optimization
+- Delivery status tracking
+- Earnings dashboard
+- Rating system
+
+---
+
+## Feature Status
+
+| Feature | Status | Platform | Notes |
+|---------|--------|----------|-------|
+| Phone OTP Login | Working | All | JWT + bcrypt auth |
+| User Onboarding | Working | All | Role-based flow |
+| Farm Diary | Working | Web + Android | Full CRUD |
+| Crop Planning | Working | Web | AI-assisted |
+| Weather | Working | All | OpenWeatherMap API |
+| Scheme Discovery | Working | Web | Auto-eligibility |
+| AgriFlow Marketplace | Working | Web | Full trade FSM |
+| Trade Escrow | Working | Backend | 8-state machine |
+| Wallet | Working | Web | Full transaction history |
+| Order Tracking | Working | Web + Android | Real-time status |
+| Community | Working | Web | Posts, Q&A |
+| AquaOS Core | Working | Web + Android | V1-V11 complete |
+| AquaOS Payments | Working | Backend | Razorpay integrated |
+| AquaOS AI Predictions | Working | Backend | 4 models |
+| Fish Marketplace | Working | Web | Auction + RFQ |
+| Cold Chain Monitoring | Working | Backend | IoT + alerts |
+| KisanConnect | Working | Web | Vehicles + transport |
+| FarmerConnect | Working | Web | Land marketplace |
+| Notifications | Working | Backend | FCM + SMS |
+| Admin Panel | Working | Web | Full dashboard |
+| Satellite Monitoring | Working | Backend | NDVI analysis |
+| Warehouse Management | Working | Backend | Booking + quality |
+| Export Compliance | Working | Backend | MPEDA/EU/FDA |
+| Voice Assistant | Planned | — | Telugu/Hindi STT |
+| Offline Mode | Partial | Android | Room DB caching |
+| Video Consultations | Planned | — | Expert advisory |
+| WhatsApp Commerce | Planned | — | Bot integration |
+| Multi-language | Partial | Web | EN/TE/HI done, 9 more planned |
+| Payment Gateway (User) | Working | Backend | Razorpay |
+| Insurance Claims | Working | Backend | AquaOS V11 |
+| Blockchain Traceability | Partial | Backend | CTE structure ready |
+| Analytics Dashboard | Working | Web + Backend | Multiple views |
+| CI/CD Pipeline | Working | GitHub Actions | Auto-deploy |
+
+---
+
+# 3. COMPLETE USER FLOW
+
+## Farmer Journey
+
+```
+User opens app (PWA or Android)
+→ Language selection (Telugu/Hindi/English)
+→ Phone number entry
+→ OTP verification (MSG91/Fast2SMS)
+→ Role selection (Farmer/Buyer/FPO/Agent)
+→ Profile setup (name, village, district, land details)
+→ Crop selection & farm mapping
+→ Homepage (personalized dashboard)
+  → Weather widget (7-day forecast + alerts)
+  → Market prices (nearby mandis)
+  → Scheme recommendations
+  → Community feed
+→ Farm Diary (log activities, expenses, yields)
+→ Crop Planning (AI recommendations based on soil, weather, market)
+→ Marketplace
+  → Create listing (crop, quantity, quality, price, photos)
+  → Receive inquiries from buyers
+  → Negotiate (counter-offer)
+  → Accept trade order
+  → Escrow funded by buyer
+  → Quality verification (photos + GPS)
+  → Dispatch & delivery
+  → Payment released to wallet
+→ Wallet → Bank withdrawal
+→ Training modules
+→ Scheme applications
+→ Community engagement
+→ Trust score improves over time
+```
+
+## Buyer/Trader Journey
+
+```
+Buyer registration → Phone OTP → Role: Buyer
+→ KYC verification (GST, FSSAI, trade license)
+→ Homepage (supply intelligence dashboard)
+→ Search/Browse listings
+  → Filter by crop, district, quantity, quality
+  → View farmer trust scores
+→ Express interest / Place bid
+→ Negotiate (real-time room)
+→ Create trade order
+→ Fund escrow
+→ Await quality verification
+→ Confirm receipt
+→ Payment auto-released
+→ Rate farmer
+→ Watchlists for future procurement
+→ Demand posting (what they need)
+→ Analytics (price trends, supply forecasts)
+```
+
+## FPO Journey
+
+```
+FPO admin registration → Verification (SFAC/NABARD)
+→ Organization setup (members, villages, crops)
+→ Member management (add/remove farmers)
+→ Collective procurement planning
+→ Aggregate supply from members
+→ Create bulk listings
+→ Negotiate with multiple buyers
+→ Contract farming agreements
+→ Financial management (member payouts)
+→ Compliance reporting
+→ Training coordination
+→ Scheme facilitation
+→ Portfolio analytics
+```
+
+## Aquaculture Farmer Journey
+
+```
+Registration → Role: Aqua Farmer
+→ Farm setup (location, water source, area)
+→ Pond/Unit creation (pond, RAS, cage, biofloc)
+→ Production cycle start
+  → Species selection + stocking
+  → Daily feed logging
+  → Water quality recording (DO, pH, ammonia, temp)
+  → Growth sampling
+→ IoT sensor integration (auto-logging)
+→ AI alerts (disease risk, water quality issues)
+→ Harvest planning (optimal size-price timing)
+→ Create marketplace listing
+→ Receive buyer offers
+→ Quality grading (BIS standards)
+→ Cold chain booking
+→ Traceability QR generation
+→ Export compliance (if applicable)
+→ Payment + financial tracking
+→ Insurance claims (if loss)
+→ PMMSY DPR submission (subsidy)
+```
+
+## Admin Workflow
+
+```
+Admin login → Dashboard (KPIs overview)
+→ User management (approve, suspend, verify)
+→ Verification queue (documents, KYC)
+→ Content moderation (flagged posts)
+→ Fraud detection alerts
+→ Platform analytics (users, trades, revenue)
+→ Scheme management (create, update)
+→ Rate limit monitoring
+→ System health checks
+→ Revenue tracking
+→ Support ticket management
+→ Audit log review
+```
+
+## Delivery/Gig Worker Journey
+
+```
+Registration → Role: Gig Worker
+→ Profile setup (vehicle type, service area)
+→ Job matching (algorithm assigns nearby jobs)
+→ Accept delivery request
+→ Navigate to pickup (GPS)
+→ Confirm pickup (photo + signature)
+→ Transit tracking (live location)
+→ Deliver to buyer
+→ Confirm delivery (OTP + photo)
+→ Payment credited
+→ Rating received
+```
+
+---
+
+# 4. APP PLATFORMS
+
+## Available Platforms
+
+| Platform | Status | Technology | Notes |
+|----------|--------|-----------|-------|
+| **Web (PWA)** | ✅ Production | Vite 6 + Vanilla JS | Offline-capable, installable |
+| **Android** | ✅ Production | Kotlin + Jetpack Compose | Native Material 3 |
+| **iOS** | 🔄 Planned | — | Will share Kotlin Multiplatform |
+| **Desktop** | ✅ Via PWA | Same as Web | Installable PWA |
+
+## Android App Details
+- **Type:** Native Android (Kotlin)
+- **UI:** Jetpack Compose + Material 3
+- **Architecture:** MVVM + Clean Architecture
+- **DI:** Hilt
+- **Local DB:** Room (offline support)
+- **Networking:** Retrofit + OkHttp
+- **Navigation:** Compose Navigation
+
+## Web App Details
+- **Type:** Progressive Web App (PWA)
+- **Build Tool:** Vite 6.3
+- **Language:** Vanilla JavaScript (ES6+)
+- **Styling:** CSS Custom Properties
+- **State:** URL-based routing, module-scoped
+- **Offline:** Service Worker + IndexedDB
+
+---
+
+# 5. COMPLETE TECH STACK
+
+## Frontend (Web)
+- **Framework:** Vanilla JavaScript (ES6 modules) — No React/Vue dependency
+- **Build:** Vite 6.3+ with HMR
+- **Styling:** CSS Custom Properties (design tokens), no framework
+- **Fonts:** Inter (Google Fonts)
+- **PWA:** Service Worker, Web App Manifest
+- **APIs:** Fetch API, Web APIs
+- **Screens:** 72+ feature screens
+
+## Frontend (Android)
+- **Language:** Kotlin
+- **UI:** Jetpack Compose
+- **Design:** Material 3 / Material You
+- **DI:** Hilt (Dagger)
+- **Architecture:** MVVM
+- **Local DB:** Room
+- **Build:** Gradle KTS
+
+## Backend
+- **Runtime:** Node.js 18+
+- **Framework:** Express.js 4.21
+- **Language:** JavaScript (CommonJS)
+- **Auth:** JWT + bcryptjs
+- **Validation:** express-validator
+- **Logging:** Pino + pino-http + Morgan
+- **Security:** Helmet, HPP, express-rate-limit, CORS
+- **WebSocket:** ws (native WebSocket)
+- **API Docs:** OpenAPI/Swagger
+- **Process:** Single process (Docker)
+
+## Database
+- **Primary:** PostgreSQL 15+ (Supabase hosted)
+- **Cache:** Redis 7.x (session, rate limiting, pub/sub)
+- **Search:** PostgreSQL GIN indexes (full-text)
+- **Migrations:** 25 versioned migration files
+- **Tables:** 130+ tables
+- **ORM:** Raw SQL (pg driver) — no ORM overhead
+
+## Authentication
+- **Method:** Phone OTP (SMS) → JWT token
+- **Token:** JWT with role claims
+- **Password:** bcryptjs hashed (fallback)
+- **Sessions:** Stateless (JWT) + Redis for revocation
+- **Roles:** farmer, buyer, fpo, admin, agent, gig_worker, exporter
+
+## Hosting / Infrastructure
+| Component | Provider | Notes |
+|-----------|----------|-------|
+| Frontend | Vercel + Netlify | CDN, auto-deploy from GitHub |
+| Backend | Docker / Railway | Containerized Express |
+| Database | Supabase (PostgreSQL) | Managed, auto-backups |
+| Cache | Redis (Upstash/Railway) | Serverless Redis |
+| Storage | Cloudflare R2 | S3-compatible, zero egress |
+| CDN | Vercel Edge | Global distribution |
+| DNS | Cloudflare | DDoS protection |
+| CI/CD | GitHub Actions | Auto-build + deploy |
+| Monitoring | Sentry + custom | Error tracking |
+| Analytics | Firebase + custom | User analytics |
+
+## Storage
+- **File Storage:** Cloudflare R2 (S3-compatible)
+- **Images:** Cloudflare R2 + CDN
+- **Documents:** Cloudflare R2 (KYC, agreements)
+- **Backups:** Supabase automated daily
+
+## APIs & External Services
+
+| Service | Purpose | Status |
+|---------|---------|--------|
+| **Razorpay** | Payment processing | ✅ Integrated |
+| **Mapbox** | Maps, geocoding, routing | ✅ Integrated |
+| **OpenWeatherMap** | Weather forecasts | ✅ Integrated |
+| **MSG91** | SMS OTP delivery | ✅ Integrated |
+| **Fast2SMS** | Backup SMS provider | ✅ Integrated |
+| **Firebase** | Push notifications, analytics | ✅ Integrated |
+| **Google Translate** | Multi-language translation | ✅ Integrated |
+| **data.gov.in** | Government data APIs | ✅ Integrated |
+| **eNAM** | National agriculture market | ✅ Integrated |
+| **NABARD** | Financial scheme data | ✅ Integrated |
+| **MPEDA** | Export compliance | ✅ Integrated |
+| **APEDA** | Export certification | ✅ Integrated |
+| **Supabase** | Auth + Database + Storage | ✅ Integrated |
+| **Sentry** | Error monitoring | ✅ Integrated |
+| **Resend** | Transactional emails | ✅ Integrated |
+| **WhatsApp API** | Notifications (planned) | 🔄 Planned |
+| **OpenAI** | AI features (planned) | 🔄 Planned |
+
+---
+
+# 6. PROJECT STRUCTURE
+
+```
+AAA/
+├── backend/                     # Express.js API server
+│   ├── src/
+│   │   ├── index.js            # App entry point + middleware
+│   │   ├── routes/             # 76 route files
+│   │   │   ├── auth.js         # Authentication
+│   │   │   ├── agriflow.js     # Core marketplace
+│   │   │   ├── trade.js        # Trade state machine
+│   │   │   ├── aquaos.js       # AquaOS V1
+│   │   │   ├── aquaos-v2.js    # ... through V11
+│   │   │   ├── aquaos-v11.js   # Contract + Enterprise
+│   │   │   ├── warehouse.js    # Warehouse management
+│   │   │   ├── intelligence.js # AI/ML endpoints
+│   │   │   ├── satellite.js    # Remote sensing
+│   │   │   ├── payments.js     # Razorpay integration
+│   │   │   └── ... (76 total)
+│   │   ├── services/           # Business logic services
+│   │   │   ├── payments.js     # Payment processing
+│   │   │   ├── fraudDetection.js # Fraud AI
+│   │   │   ├── matching.js     # Gig worker matching
+│   │   │   ├── weather.js      # Weather aggregation
+│   │   │   ├── eventBus.js     # Event-driven comms
+│   │   │   ├── push.js         # Push notifications
+│   │   │   ├── sms.js          # SMS service
+│   │   │   ├── cache.js        # Redis caching
+│   │   │   ├── queue.js        # Job queue
+│   │   │   ├── translate.js    # Translation service
+│   │   │   ├── websocket.js    # Real-time comms
+│   │   │   └── audit.js        # Audit logging
+│   │   ├── middleware/         # Express middleware
+│   │   │   ├── auth.js         # JWT verification
+│   │   │   ├── rateLimiters.js # Rate limiting
+│   │   │   ├── dpdp.js         # Data privacy (India DPDP)
+│   │   │   ├── sanitize.js     # Input sanitization
+│   │   │   ├── validate.js     # Request validation
+│   │   │   └── errorHandler.js # Global error handling
+│   │   ├── db/                 # Database layer
+│   │   │   ├── pool.js         # Connection pool
+│   │   │   ├── migrate.js      # V1 migration
+│   │   │   ├── migrate-v2.js   # ... through V24
+│   │   │   └── seed.js         # Seed data
+│   │   └── lib/                # Shared utilities
+│   ├── Dockerfile
+│   └── package.json
+├── src/                        # Frontend PWA
+│   ├── main.js                 # Router + app shell
+│   ├── screens/                # 72+ screen modules
+│   ├── components/             # Reusable UI components
+│   ├── integrations/           # API clients
+│   ├── utils/                  # Utilities
+│   └── styles/                 # CSS modules
+├── android/                    # Native Android app
+│   ├── app/src/main/java/com/agrihub/app/
+│   │   ├── MainActivity.kt
+│   │   ├── ui/                 # Compose screens
+│   │   │   ├── auth/
+│   │   │   ├── home/
+│   │   │   ├── agriflow/
+│   │   │   ├── aquaos/
+│   │   │   ├── farmer/
+│   │   │   ├── buyer/
+│   │   │   ├── fpo/
+│   │   │   ├── intelligence/
+│   │   │   ├── kisanconnect/
+│   │   │   ├── farmerconnect/
+│   │   │   ├── navigation/
+│   │   │   └── components/
+│   │   └── data/               # Room DB + API
+│   └── build.gradle.kts
+├── tests/                      # Frontend tests (Vitest)
+├── docs/                       # Documentation
+├── plans/                      # Implementation plans
+├── supabase/                   # Supabase config
+├── docker-compose.yml          # Full stack Docker
+├── vite.config.js              # Vite configuration
+├── index.html                  # SPA entry point
+├── vercel.json                 # Vercel deployment
+├── netlify.toml                # Netlify deployment
+└── package.json                # Frontend dependencies
+```
+
+## Architecture Pattern
+- **Backend:** Modular Monolith (route-based modules, shared DB)
+- **Frontend (Web):** Component-based SPA (vanilla JS modules)
+- **Frontend (Android):** Clean Architecture + MVVM
+- **Communication:** REST API + WebSocket (real-time)
+- **Events:** Internal Event Bus (pub/sub)
+- **Data:** Repository pattern (services → DB pool)
+
+## State Management
+- **Web:** URL-based routing + module-scoped state (no global store)
+- **Android:** ViewModel + StateFlow (Compose state)
+- **Backend:** Stateless (JWT) + Redis for ephemeral state
+- **Real-time:** WebSocket rooms for live data
+
+---
+
+# 7. DATABASE STRUCTURE
+
+## Database Design
+- **Type:** Relational (PostgreSQL 15+)
+- **Migrations:** 25 versioned files (incremental schema evolution)
+- **Approach:** Raw SQL migrations (no ORM)
+- **Extensions:** pg_trgm (fuzzy search), PostGIS (geo), uuid-ossp
+
+## Important Tables (130+ total)
+
+### Core Tables
+| Table | Purpose |
+|-------|---------|
+| users | All user accounts with roles |
+| user_profiles | Extended profile data |
+| farms | Farm registrations |
+| crops | Crop catalog |
+| listings | Marketplace listings |
+| trade_orders | Trade state machine |
+| trade_bids | Bid tracking |
+| escrow_transactions | Payment escrow |
+| wallets | User wallets |
+| notifications | Push notification log |
+| audit_log | All platform actions |
+
+### AquaOS Tables (80+)
+| Category | Tables |
+|----------|--------|
+| Core | aqua_farms, aqua_ponds, aqua_species, production_cycles |
+| Water | water_quality_logs, water_alerts, iot_sensors |
+| Feed | feed_logs, feed_inventory, fcr_calculations |
+| Health | disease_reports, mortality_logs, treatments |
+| Finance | aqua_expenses, aqua_revenue, aqua_loans |
+| Market | fish_listings, fish_auctions, rfq_requests |
+| Trade | aqua_orders, aqua_escrow, quality_grades |
+| Logistics | cold_chain_shipments, temperature_logs |
+| Compliance | export_certifications, lab_results |
+| Insurance | insurance_products, policies, claims |
+| Labor | labor_records, attendance_logs |
+| Analytics | aqua_kpis, production_insights, predictions |
+
+### Trade Tables
+| Table | Purpose |
+|-------|---------|
+| trade_orders | Order state machine |
+| trade_bids | Bid management |
+| trade_timeline | Status history |
+| escrow_transactions | Fund holding |
+| quality_verifications | Proof records |
+
+### Infrastructure Tables
+| Table | Purpose |
+|-------|---------|
+| sessions | Active sessions |
+| rate_limits | API rate tracking |
+| webhooks | Callback registry |
+| jobs_queue | Async job processing |
+| file_uploads | Media metadata |
+
+## Current Database Strengths
+- ✅ Well-normalized schema
+- ✅ Proper foreign keys and constraints
+- ✅ GIN indexes for full-text search
+- ✅ UUID primary keys (distributed-ready)
+- ✅ Timestamp tracking (created_at, updated_at)
+- ✅ Soft deletes where appropriate
+- ✅ Proper ENUM types for statuses
+
+## Current Database Concerns
+- ⚠️ No read replicas configured yet
+- ⚠️ Some large tables lack partitioning (will need at scale)
+- ⚠️ Missing composite indexes on some query patterns
+- ⚠️ No database-level audit triggers (app-level only)
+- ⚠️ Connection pooling needs tuning for production load
+
+---
+
+# 8. API STRUCTURE
+
+## API Architecture
+- **Style:** RESTful (resource-oriented)
+- **Auth:** Bearer JWT in Authorization header
+- **Format:** JSON request/response
+- **Errors:** Standardized error envelope `{ success, error, message }`
+- **Pagination:** Offset-based (`?page=1&limit=20`)
+- **Versioning:** Route-based (implicit via module)
+- **Docs:** OpenAPI 3.0 spec at `/api/docs`
+- **Real-time:** WebSocket at `/ws` for live updates
+
+## Major API Categories (76 route files)
+
+### Authentication & Users
+```
+POST   /api/auth/register          # Phone + OTP registration
+POST   /api/auth/login             # Login with JWT
+POST   /api/auth/verify-otp        # OTP verification
+GET    /api/auth/profile           # Current user profile
+PUT    /api/auth/profile           # Update profile
+POST   /api/auth/refresh           # Token refresh
+```
+
+### AgriFlow Marketplace
+```
+GET    /api/agriflow/listings      # Browse listings
+POST   /api/agriflow/listings      # Create listing
+GET    /api/agriflow/listings/:id  # Listing detail
+POST   /api/agriflow/inquiries     # Express interest
+```
+
+### Trade Engine (State Machine)
+```
+POST   /api/trade/orders                    # Create order
+POST   /api/trade/orders/:id/place-bid      # Place bid
+POST   /api/trade/orders/:id/accept-bid     # Accept bid
+POST   /api/trade/orders/:id/fund-escrow    # Fund escrow
+POST   /api/trade/orders/:id/verify-quality # Quality check
+POST   /api/trade/orders/:id/dispatch       # Mark dispatched
+POST   /api/trade/orders/:id/in-transit     # In transit
+POST   /api/trade/orders/:id/deliver        # Mark delivered
+POST   /api/trade/orders/:id/release-payment # Release funds
+```
+
+### AquaOS (V1-V11)
+```
+GET    /api/aquaos/farms           # List farms
+POST   /api/aquaos/ponds           # Create pond
+POST   /api/aquaos/water-quality   # Log water data
+GET    /api/aquaos/analytics       # Farm analytics
+POST   /api/aquaos/harvest         # Record harvest
+GET    /api/aquaos/market-prices   # Price intelligence
+POST   /api/aquaos/predictions     # AI predictions
+POST   /api/aquaos/payments        # Process payment
+GET    /api/aquaos/compliance      # Export compliance
+... (200+ aquaos endpoints across V1-V11)
+```
+
+### Intelligence & AI
+```
+GET    /api/intelligence/prices        # Price analytics
+GET    /api/intelligence/demand        # Demand forecast
+GET    /api/intelligence/supply        # Supply analysis
+POST   /api/ai-predictions/disease     # Disease detection
+POST   /api/ai-predictions/yield       # Yield forecast
+POST   /api/ai-predictions/price       # Price prediction
+GET    /api/satellite/ndvi/:farmId     # NDVI analysis
+```
+
+### Finance & Payments
+```
+POST   /api/payments/create-order      # Razorpay order
+POST   /api/payments/verify            # Verify payment
+GET    /api/wallet/balance             # Wallet balance
+POST   /api/wallet/withdraw            # Bank transfer
+GET    /api/subscriptions/plans        # Available plans
+POST   /api/subscriptions/subscribe    # Subscribe
+```
+
+## API Performance Characteristics
+- ✅ Rate limiting on all routes (configurable per-role)
+- ✅ Input sanitization middleware
+- ✅ Request validation with express-validator
+- ✅ Structured logging (Pino) for all requests
+- ✅ Error boundary with standardized responses
+- ⚠️ Some complex queries need optimization at scale
+- ⚠️ No API response caching layer yet (Redis planned)
+- ⚠️ No request deduplication
+
+---
+
+# 9. AUTHENTICATION & SECURITY
+
+## Authentication Flow
+
+```
+1. User enters phone number
+2. Backend sends OTP via MSG91/Fast2SMS
+3. User enters OTP
+4. Backend verifies OTP
+5. If new user → create account + issue JWT
+6. If existing → issue JWT
+7. JWT contains: { userId, role, iat, exp }
+8. Token expires in 7 days
+9. Refresh token flow available
+10. All API calls require Bearer token
+```
+
+## Security Features
+
+| Feature | Implementation | Status |
+|---------|---------------|--------|
+| JWT Authentication | jsonwebtoken library | ✅ Active |
+| Password Hashing | bcryptjs (12 rounds) | ✅ Active |
+| Rate Limiting | express-rate-limit | ✅ Active |
+| Input Sanitization | Custom middleware | ✅ Active |
+| Request Validation | express-validator | ✅ Active |
+| CORS Protection | cors middleware | ✅ Active |
+| Helmet Headers | helmet middleware | ✅ Active |
+| HPP Protection | hpp middleware | ✅ Active |
+| SQL Injection | Parameterized queries | ✅ Active |
+| XSS Prevention | Input sanitization | ✅ Active |
+| DPDP Compliance | Custom middleware | ✅ Active |
+| Audit Logging | All mutations logged | ✅ Active |
+| Fraud Detection | AI-based service | ✅ Active |
+| Role-Based Access | Middleware guards | ✅ Active |
+| Request ID Tracking | UUID per request | ✅ Active |
+| Error Masking | No stack traces in production | ✅ Active |
+
+## Current Security Strengths
+- Multi-layered middleware security chain
+- India DPDP (Data Protection) compliance built-in
+- Comprehensive audit trail
+- Role-based access on every route
+- Parameterized SQL (no injection possible)
+
+## Areas for Hardening
+- ⚠️ Implement CAPTCHA for high-risk endpoints
+- ⚠️ Add WAF rules (Cloudflare)
+- ⚠️ Implement API key rotation
+- ⚠️ Add device fingerprinting for fraud
+- ⚠️ Penetration testing needed
+- ⚠️ SOC2/ISO27001 compliance (future)
+
+---
+
+# 10. UI/UX ANALYSIS
+
+## Current UI Strengths
+- ✅ Clean, modern design with CSS custom properties
+- ✅ Consistent color system (design tokens)
+- ✅ Inter font family (professional, readable)
+- ✅ Mobile-first responsive layout
+- ✅ Tab-based navigation for complex modules
+- ✅ Card-based content presentation
+- ✅ Status indicators with color coding
+- ✅ Empty state handling
+
+## Current UI Areas for Improvement
+- ⚠️ Onboarding flow could be more guided
+- ⚠️ Some screens have dense information
+- ⚠️ Data visualization needs chart library
+- ⚠️ Loading states inconsistent across screens
+- ⚠️ Dark mode not implemented
+- ⚠️ Accessibility (a11y) needs audit
+- ⚠️ Animation/micro-interactions minimal
+
+## UX Observations
+- ⚠️ Some multi-step flows lack progress indicators
+- ⚠️ Search results could have better filtering UX
+- ⚠️ Notification center needs categorization
+- ⚠️ Complex forms need better validation feedback
+- ⚠️ First-time user guidance (tooltips/coach marks) missing
+
+## Pages Needing Enhancement
+1. Analytics Dashboard — needs charts (Chart.js/D3)
+2. AquaOS Feed Management — dense data, needs better visualization
+3. Trade Order Flow — needs visual pipeline/kanban
+4. FPO Member Management — needs bulk actions
+5. Notification Center — needs priority/categories
+6. Settings — needs better organization
+
+## UI Inspiration
+- **Swiggy** — Smooth onboarding, micro-interactions
+- **PhonePe** — Financial dashboard clarity
+- **Zerodha** — Data-heavy but clean
+- **Ninjacart** — B2B agriculture UX
+- **Freshworks** — SaaS dashboard patterns
+
+---
+
+# 11. ANDROID APP ANALYSIS
+
+## Current Android Strengths
+- ✅ Native Kotlin (not WebView)
+- ✅ Modern Jetpack Compose UI
+- ✅ Material 3 design system
+- ✅ Proper navigation architecture
+- ✅ Room DB for offline capability
+- ✅ SharedViewModel for cross-screen state
+- ✅ Hilt dependency injection
+- ✅ Multiple feature screens implemented
+
+## Android Screens Implemented
+- Auth (Login, OTP, Registration)
+- Home Dashboard
+- AgriFlow Marketplace
+- AquaOS Management
+- Farmer Tools
+- Buyer Interface
+- FPO Dashboard
+- Intelligence/Analytics
+- KisanConnect
+- FarmerConnect
+- Weather
+- Orders
+- Profile
+- Notifications
+- Onboarding
+
+## Known Android Issues
+- ⚠️ Offline-to-online sync needs improvement
+- ⚠️ Image caching strategy needs optimization
+- ⚠️ Deep linking not fully configured
+- ⚠️ Push notification channels need refinement
+- ⚠️ Large list performance (need LazyColumn optimization)
+- ⚠️ ProGuard rules need review for release builds
+- ⚠️ Crash reporting (Firebase Crashlytics) integration pending
+
+## Android Performance
+- ⚠️ Cold start time needs optimization (Baseline Profiles)
+- ⚠️ APK size needs reduction (R8 + resource shrinking)
+- ⚠️ Memory usage in image-heavy screens
+- ⚠️ Network retry strategy needs improvement
+
+## Play Store Status
+- **Status:** Internal Testing
+- **Target:** Open Beta → Production
+- **Package:** com.agrihub.app
+
+---
+
+# 12. PERFORMANCE ANALYSIS
+
+## Current Performance Profile
+
+| Area | Status | Details |
+|------|--------|---------|
+| Frontend Load | Good | Vite bundle splitting, <2s FCP |
+| API Response (simple) | Good | <100ms for basic CRUD |
+| API Response (complex) | Fair | 200-500ms for analytics queries |
+| Database Queries | Good | Indexed queries <50ms |
+| WebSocket | Good | <50ms message delivery |
+| Image Loading | Fair | CDN helps, but no lazy loading yet |
+| Android Launch | Fair | ~2s cold start |
+
+## Performance Bottlenecks
+- ⚠️ Complex analytics queries (multi-join) can be slow
+- ⚠️ No query result caching (Redis planned)
+- ⚠️ Large listing searches need Elasticsearch/Meilisearch
+- ⚠️ Image optimization pipeline missing
+- ⚠️ Frontend bundle could be further split
+
+## Caching Strategy
+- **Current:** Redis for sessions, rate limiting
+- **Planned:** Redis for API response caching, query caching
+- **CDN:** Vercel Edge for static assets
+- **Browser:** Service Worker cache for offline
+
+## Offline Support
+- **Web:** Service Worker + IndexedDB (basic)
+- **Android:** Room DB for local data, sync queue
+- **Status:** Partial — read works offline, write queues for sync
+
+---
+
+# 13. SCALABILITY & FUTURE GROWTH
+
+## Current Capacity
+- **Users:** Designed for 100K concurrent
+- **Database:** Single instance (Supabase Pro)
+- **API:** Single container (can horizontal scale)
+- **WebSocket:** Single node (Redis pub/sub ready for multi-node)
+
+## Expected Growth
+
+| Timeline | Users | Transactions/day | Data |
+|----------|-------|-------------------|------|
+| Month 1-3 | 10K | 1K | 10GB |
+| Month 3-6 | 100K | 10K | 100GB |
+| Month 6-12 | 1M | 100K | 1TB |
+| Year 2 | 10M | 1M | 10TB |
+
+## Expansion Plans
+1. **Phase 1:** Andhra Pradesh (aquaculture focus)
+2. **Phase 2:** All coastal states (Tamil Nadu, Kerala, Odisha, West Bengal)
+3. **Phase 3:** Pan-India (all agriculture)
+4. **Phase 4:** South-East Asia (Vietnam, Thailand, Indonesia)
+
+## Scaling Architecture (Planned)
+
+```
+                    ┌─── CDN (Cloudflare) ───┐
+                    │                         │
+Users ──→ Load Balancer ──→ API Cluster (K8s)
+                    │              │
+                    ├── Redis Cluster (Cache + Queue)
+                    │              │
+                    └── PostgreSQL (Primary + Read Replicas)
+                                   │
+                              Supabase Realtime
+```
+
+## Scaling Concerns
+- ⚠️ Single DB instance → Need read replicas at 100K+ users
+- ⚠️ WebSocket → Need Redis adapter for multi-node
+- ⚠️ File uploads → Need queue + worker separation
+- ⚠️ Search → Need dedicated search engine at scale
+- ⚠️ Analytics → Need data warehouse (ClickHouse/BigQuery)
+- ⚠️ Notifications → Need dedicated notification service
+
+---
+
+# 14. KNOWN BUGS & BLOCKERS
+
+| Issue | Severity | Platform | Status | Notes |
+|-------|----------|----------|--------|-------|
+| Offline sync conflict resolution | Medium | Android | In Progress | Need conflict merge strategy |
+| Large image upload on slow network | Low | Web | Known | Need chunked upload |
+| WebSocket reconnection | Low | Web | Known | Auto-reconnect exists but can lag |
+| Complex filter combinations | Low | Backend | Known | Some filter combos return empty |
+| Notification delivery on Xiaomi/Oppo | Medium | Android | Known | OEM battery optimization kills FCM |
+| Date timezone display | Low | Web | Known | UTC vs local inconsistency |
+
+**Critical blockers: NONE** — Platform is functional end-to-end.
+
+---
+
+# 15. BUSINESS LOGIC
+
+## Pricing Logic
+- **Listings:** Farmer sets base price per unit (kg/quintal/ton)
+- **Negotiation:** Counter-offers allowed, minimum 5% below base
+- **Market reference:** Live mandi prices shown during pricing
+- **Auction:** Time-bound, highest bidder wins
+- **RFQ:** Buyer posts need, farmers quote
+
+## Commission Logic
+- **Trade platform fee:** 1-2% of transaction value
+- **Split:** 60% platform, 40% for ecosystem development
+- **Aqua marketplace:** 1.5% buyer side, 0.5% seller side
+- **Input marketplace:** 5-10% seller commission
+- **Financial services:** Lead-gen fee to partners
+
+## Vendor Approval Logic
+```
+Registration → Document Upload (GST/FSSAI/Trade License)
+→ Auto-verification (API check)
+→ If failed → Manual review queue
+→ Admin approves/rejects
+→ Trust score initialized at 50/100
+→ Score improves with successful transactions
+```
+
+## Subscription Logic
+- **Free tier:** Basic listing, limited analytics, 5 listings/month
+- **Pro (₹499/mo):** Unlimited listings, advanced analytics, priority support
+- **Enterprise (₹2999/mo):** API access, white-label, dedicated support
+- **FPO plans:** Custom pricing based on member count
+
+## Refund Logic
+- **Before escrow funded:** Instant cancellation, no charge
+- **After escrow funded, before dispatch:** 100% refund, small processing fee
+- **After dispatch:** Quality dispute → ODR → partial/full refund based on evidence
+- **Auto-refund:** If seller doesn't dispatch within 48 hours
+
+## Payout Logic
+- **Escrow release:** Funds held until buyer confirms delivery
+- **Settlement:** T+1 to wallet, T+2 to bank account
+- **Commission deducted:** Before payout to seller
+- **Minimum payout:** ₹100 to bank account
+
+---
+
+# 16. PAYMENT SYSTEM
+
+## Payment Providers
+| Provider | Purpose | Status |
+|----------|---------|--------|
+| **Razorpay** | Primary payment gateway | ✅ Integrated |
+| **UPI** | Via Razorpay | ✅ Supported |
+| **Net Banking** | Via Razorpay | ✅ Supported |
+| **Cards** | Via Razorpay | ✅ Supported |
+| **Wallet** | Internal platform wallet | ✅ Built |
+
+## Payment Flow
+```
+1. Buyer selects trade → Creates order
+2. System calculates amount + commission
+3. Razorpay order created (backend)
+4. Buyer completes payment (frontend)
+5. Webhook confirms payment
+6. Funds held in escrow
+7. Quality verification + delivery
+8. Buyer confirms receipt
+9. Platform deducts commission
+10. Seller wallet credited
+11. Seller requests bank payout
+12. T+2 bank settlement
+```
+
+## Current Payment Status
+- ✅ Razorpay integration complete
+- ✅ Escrow logic implemented
+- ✅ Commission calculation working
+- ✅ Wallet system functional
+- ⚠️ Reconciliation dashboard needed
+- ⚠️ Auto-retry for failed webhooks needed
+- ⚠️ Multi-currency support (future)
+
+---
+
+# 17. NOTIFICATIONS & COMMUNICATION
+
+## Push Notifications
+- **Service:** Firebase Cloud Messaging (FCM)
+- **Platforms:** Android (native) + Web (Service Worker)
+- **Types:** Transactional, promotional, alerts
+
+## SMS
+- **Primary:** MSG91
+- **Backup:** Fast2SMS
+- **Use:** OTP, order updates, price alerts
+
+## Email
+- **Provider:** Resend
+- **Use:** Receipts, reports, marketing (future)
+
+## Real-time
+- **WebSocket:** Native ws library
+- **Use:** Chat, live prices, order updates, notifications
+
+## Notification Categories
+| Type | Channel | Priority |
+|------|---------|----------|
+| OTP | SMS | Critical |
+| Order updates | Push + SMS | High |
+| Price alerts | Push | Medium |
+| Community | Push | Low |
+| Weather alerts | Push | High |
+| Scheme deadlines | Push + SMS | Medium |
+
+## Known Issues
+- ⚠️ OEM battery optimization kills background FCM (Xiaomi, Oppo, Vivo)
+- ⚠️ Web push permission UX needs improvement
+- ⚠️ SMS cost optimization needed (batch + priority)
+- ⚠️ WhatsApp Business API integration pending
+
+---
+
+# 18. ADMIN PANEL ANALYSIS
+
+## Current Admin Features
+- ✅ User management (list, search, suspend, verify)
+- ✅ Verification queue (document review)
+- ✅ Platform analytics (users, trades, revenue)
+- ✅ Content moderation (flagged items)
+- ✅ Fraud detection alerts
+- ✅ System health monitoring
+- ✅ Audit log viewer
+- ✅ Rate limit monitoring
+- ✅ Scheme management
+- ✅ Support tickets
+
+## Missing Admin Features
+- ❌ Bulk operations (mass approve, mass notify)
+- ❌ Advanced reporting (custom date ranges, exports)
+- ❌ Revenue analytics dashboard
+- ❌ A/B testing configuration
+- ❌ Feature flags management
+- ❌ CMS for content (training, guides)
+- ❌ Push notification composer
+- ❌ API health dashboard with alerting
+- ❌ User journey funnel analytics
+
+## Admin Pain Points
+- Manual verification is time-consuming (need AI-assisted)
+- No bulk export to CSV/Excel
+- Dashboard refresh is manual (needs real-time)
+- No role-based admin access (all admins see everything)
+
+---
+
+# 19. ANALYTICS & TRACKING
+
+## Analytics Tools
+| Tool | Purpose | Status |
+|------|---------|--------|
+| Firebase Analytics | User events, screens | ✅ Active |
+| Custom Analytics | Platform-specific metrics | ✅ Active |
+| Pino Logging | Server-side event tracking | ✅ Active |
+| Sentry | Error tracking | ✅ Active |
+| PostgreSQL | Business metrics (raw data) | ✅ Active |
+
+## Metrics Currently Tracked
+- User registrations (daily/weekly/monthly)
+- Active users (DAU/WAU/MAU)
+- Trade volume (count + value)
+- Listing creation rate
+- OTP success/failure rate
+- API response times
+- Error rates by endpoint
+- WebSocket connection stats
+- Revenue (commissions collected)
+
+## Missing Analytics
+- ❌ User journey funnels (drop-off points)
+- ❌ Cohort analysis (retention)
+- ❌ Feature usage heatmaps
+- ❌ A/B test results
+- ❌ Revenue per user (ARPU)
+- ❌ Customer acquisition cost (CAC)
+- ❌ Lifetime value (LTV)
+- ❌ Geographic distribution maps
+- ❌ Real-time dashboard (currently batch)
+- ❌ Predictive churn analytics
+
+---
+
+# 20. DEVOPS & DEPLOYMENT
+
+## Deployment Process
+```
+Developer pushes to GitHub
+→ GitHub Actions CI triggered
+→ Lint + test + build
+→ If main branch → auto-deploy
+  → Frontend → Vercel (automatic)
+  → Backend → Docker build → Railway/Cloud
+→ Database migrations run separately
+→ Slack/Discord notification on deploy
+```
+
+## CI/CD
+- **Platform:** GitHub Actions
+- **Frontend:** Auto-deploy to Vercel on push
+- **Backend:** Docker build + deploy
+- **Tests:** Vitest (16 frontend tests), Node.js test runner (backend)
+- **Lint:** ESLint (configured but minimal rules)
+
+## Backup Strategy
+- **Database:** Supabase automatic daily backups + point-in-time recovery
+- **Files:** Cloudflare R2 (inherently durable, 11 nines)
+- **Code:** Git (GitHub, multiple contributors have access)
+- **Config:** Environment variables in deployment platform
+
+## Monitoring
+| Tool | Monitors | Status |
+|------|----------|--------|
+| Sentry | Errors, crashes | ✅ Active |
+| Supabase Dashboard | DB metrics | ✅ Active |
+| Vercel Analytics | Frontend performance | ✅ Active |
+| Custom Health Check | API uptime | ✅ Active |
+| UptimeRobot (planned) | Endpoint monitoring | 🔄 Planned |
+| Grafana (planned) | Custom dashboards | 🔄 Planned |
+
+## Current Deployment Concerns
+- ⚠️ No staging environment (deploy directly to production)
+- ⚠️ Database migrations need automated rollback
+- ⚠️ No blue/green or canary deployments
+- ⚠️ Secrets rotation not automated
+- ⚠️ No load testing before deploy
+
+---
+
+# 21. LEGAL & COMPLIANCE
+
+| Requirement | Status | Notes |
+|-------------|--------|-------|
+| **Privacy Policy** | ✅ Required | Draft needed |
+| **Terms & Conditions** | ✅ Required | Draft needed |
+| **India DPDP Act** | ✅ Built-in | DPDP middleware active |
+| **GST Invoicing** | 🔄 Planned | Auto-generate on transactions |
+| **User Consent** | ✅ Active | OTP = implicit consent |
+| **Data Deletion** | ✅ Built | User can request deletion |
+| **FSSAI Compliance** | ✅ Verified | Buyer KYC checks |
+| **MPEDA Compliance** | ✅ Built | Export module |
+| **NABARD Guidelines** | ✅ Followed | Scheme disbursement |
+| **SEBI (if payments)** | 🔄 Review | Escrow may need PA license |
+| **RBI Guidelines** | 🔄 Review | Wallet may need PPI license |
+| **Play Store Policies** | ✅ Followed | Standard compliance |
+| **Apple App Store** | 🔄 Future | Will comply when building iOS |
+
+---
+
+# 22. AI FEATURES & AUTOMATION
+
+## Existing AI Features
+| Feature | Model/Approach | Status |
+|---------|---------------|--------|
+| Price Prediction | ARIMA + seasonal decomposition | ✅ Active |
+| Disease Detection | Rule-based + pattern matching | ✅ Active |
+| Yield Forecasting | Von Bertalanffy growth model | ✅ Active |
+| Demand Analysis | Historical trend analysis | ✅ Active |
+| Feed Optimization | FCR-based recommendations | ✅ Active |
+| Scheme Matching | Rule-based eligibility engine | ✅ Active |
+| Fraud Detection | Anomaly scoring | ✅ Active |
+| Crop Planning | Soil + weather + market analysis | ✅ Active |
+| Satellite NDVI | Remote sensing analysis | ✅ Active |
+| Gig Worker Matching | Location + rating algorithm | ✅ Active |
+
+## Planned AI Features
+| Feature | Technology | Priority |
+|---------|-----------|----------|
+| AI Chatbot | OpenAI GPT / custom LLM | High |
+| Voice Assistant | Whisper + custom NLU (Telugu/Hindi) | High |
+| Image Recognition | Crop disease from photos | Medium |
+| Smart Notifications | ML-based timing optimization | Medium |
+| Price Negotiation AI | RL-based counter-offer suggestions | Low |
+| Crop Recommendation | Multi-factor ML model | Medium |
+| Supply Chain Optimization | Graph-based routing | Low |
+| Credit Scoring | Alternative data ML model | Medium |
+| Quality Grading (Auto) | Computer vision | Medium |
+| Market Trend Analysis | LLM summarization | Low |
+| Document OCR | Government doc processing | Medium |
+| Satellite Pest Detection | Deep learning on imagery | Low |
+
+---
+
+# 23. SIMILAR PLATFORMS / COMPETITOR ANALYSIS
+
+## Direct Competitors
+
+| Platform | Focus | Strengths | Weaknesses |
+|----------|-------|-----------|------------|
+| **Ninjacart** | B2B produce | Large network, funding | Only fresh produce, no farmer tools |
+| **DeHaat** | Full stack agri | Input + advisory + market | Limited aquaculture |
+| **AgroStar** | Input marketplace | Strong brand, advisory | No trade/marketplace |
+| **BigHaat** | Agri inputs | Good content, advisory | No output marketplace |
+| **FreshToHome** | Fish marketplace | Consumer brand, cold chain | Only B2C, no farmer tools |
+| **Aquaconnect** | Aquaculture | Farm management, market | Limited to aqua only |
+| **Arya.ag** | Post-harvest | Warehouse, finance | No farm management |
+| **Bijak** | Agri trading | Large trader network | Only trading, no farmer tools |
+| **eNAM** | Government mandi | Nationwide, govt backed | Poor UX, limited features |
+| **ONDC** | Open commerce | Open network | Generic, not agri-focused |
+
+## Features We Have That Competitors Don't
+1. **Unified platform** — No one else connects ALL stakeholders
+2. **AquaOS (V1-V11)** — Most comprehensive aqua platform globally
+3. **Trade state machine** — Full escrow-protected commerce
+4. **Government integration** — eNAM, NABARD, PMMSY built-in
+5. **Multi-role ecosystem** — Farmer + Buyer + FPO + Agent + Gig in one app
+6. **Satellite monitoring** — NDVI analysis built-in
+7. **Export compliance** — MPEDA/EU/FDA in platform
+
+## Features Missing (vs Best Competitors)
+- ❌ Consumer-facing app (B2C like FreshToHome)
+- ❌ Input credit line (like DeHaat)
+- ❌ Video consultations (like Krishify)
+- ❌ Hardware/IoT devices (like CropIn)
+- ❌ Drone services integration
+- ❌ Carbon credit marketplace
+- ❌ International commodity trading
+
+## Competitor Weaknesses We Exploit
+- **Most are single-purpose** — We're comprehensive
+- **Most ignore aquaculture** — We dominate it
+- **Most lack escrow** — We have secure trade
+- **Most are B2C only** — We're B2B2C
+- **Government apps have poor UX** — We modernize access
+
+---
+
+# 24. FUTURE FEATURE WISHLIST
+
+### Priority 1 (Next 3 months)
+- [ ] AI chatbot (multilingual)
+- [ ] Voice assistant (Telugu, Hindi)
+- [ ] WhatsApp commerce integration
+- [ ] Enhanced offline mode
+- [ ] iOS app launch
+- [ ] Video consultations with experts
+- [ ] Crop insurance integration
+- [ ] Advanced analytics dashboard with charts
+
+### Priority 2 (3-6 months)
+- [ ] Carbon credit marketplace
+- [ ] Drone services marketplace
+- [ ] Input credit line (BNPL for farmers)
+- [ ] Automated quality grading (CV)
+- [ ] Social features (farmer stories, reels)
+- [ ] B2C module (consumer ordering)
+- [ ] Multi-tenant white-label
+- [ ] Hardware IoT device partnerships
+
+### Priority 3 (6-12 months)
+- [ ] International expansion (SE Asia)
+- [ ] Commodity futures integration
+- [ ] Blockchain provenance
+- [ ] AR/VR farm planning
+- [ ] Agricultural insurance underwriting
+- [ ] Open API marketplace
+- [ ] Developer SDK
+- [ ] Data marketplace (anonymized insights)
+
+---
+
+# 25. SCREENSHOTS & RECORDINGS
+
+Screenshots are available in the repository:
+- `screenshots/` — App UI screenshots
+- `screen_01_boot.png` — Boot screen
+- `screenshot_1_home.png` — Home screen
+- `screenshot_home.png` — Dashboard view
+
+For video recordings and live demo, contact the team.
+
+---
+
+# 26. ACCESS DETAILS
+
+## Demo Access
+- **Web PWA:** Deployed on Vercel (URL in repo settings)
+- **API:** Backend on Railway/Docker
+- **Admin:** Admin role credentials available on request
+
+## Testing
+- **Frontend tests:** `npm run test` (Vitest, 16 tests)
+- **Backend check:** `cd backend && node --check src/index.js`
+- **Docker:** `docker-compose up` for full stack
+
+---
+
+# 27. MAIN EXPECTATIONS FROM ANALYSIS
+
+This platform seeks:
+
+1. **Architecture improvement** — Microservices readiness, event-driven
+2. **Scalability planning** — 10M user architecture
+3. **Android optimization** — Performance, Play Store readiness
+4. **UI/UX redesign** — Modern, accessible, delightful
+5. **Feature roadmap** — Prioritized execution plan
+6. **AI integration** — LLM chatbot, voice, computer vision
+7. **Performance optimization** — Sub-100ms APIs at scale
+8. **Production readiness** — Monitoring, alerting, DR
+9. **DevOps maturity** — GitOps, staging, canary deploys
+10. **Monetization strategy** — Revenue optimization
+11. **Competitor differentiation** — Unique features roadmap
+12. **Security hardening** — Pen-test ready
+13. **Go-to-market strategy** — Pilot state launch
+14. **Team structure** — Engineering team scaling
+
+---
+
+# 28. SPECIAL NOTES
+
+1. **Andhra Pradesh pilot focus** — India's largest aquaculture state, natural starting point
+2. **Government relationships** — NABARD, SFAC, MPEDA partnerships in progress
+3. **FPO aggregation** — Key distribution strategy (1 FPO = 500+ farmers)
+4. **Offline-first critical** — Rural India has 2G/3G in many areas
+5. **Multi-language essential** — Telugu first, then Hindi/English
+6. **Trust is everything** — Escrow + verification builds farmer confidence
+7. **Data is moat** — Farm-level data becomes strategic asset over time
+8. **Platform play** — Not transactional; building ecosystem network effects
+9. **Existing PRD documents** — Multiple detailed PRDs available (AgriFlow, AquaOS, KisanConnect, FarmerConnect, Architecture Blueprint, Intelligence Report)
+10. **Implementation plans created** — Detailed sprint execution plans in `/plans` directory
+
+---
+
+# 29. FINAL ANALYSIS REQUEST
+
+This platform represents India's most ambitious Agriculture Operating System. Analyze comprehensively for:
+
+1. ✅ Complete architecture review (modular monolith → microservices path)
+2. ✅ UI/UX audit (72+ screens, design system consistency)
+3. ✅ Android app audit (Kotlin + Compose, performance)
+4. ✅ Security audit (OWASP Top 10, India DPDP)
+5. ✅ Performance audit (API latency, DB query optimization)
+6. ✅ Scalability audit (10M user readiness)
+7. ✅ Feature gap analysis (vs DeHaat, Ninjacart, Aquaconnect)
+8. ✅ Missing features roadmap (priority + timeline)
+9. ✅ Production readiness checklist
+10. ✅ Cost optimization (hosting, SMS, storage)
+11. ✅ Future-proof architecture (event-driven, CQRS ready)
+12. ✅ Database optimization (partitioning, indexes, read replicas)
+13. ✅ API optimization (caching, pagination, GraphQL consideration)
+14. ✅ Monetization improvements (subscription tiers, value-add)
+15. ✅ AI feature opportunities (LLM, CV, voice)
+16. ✅ User retention strategies (engagement loops, gamification)
+17. ✅ DevOps maturity (GitOps, observability, chaos engineering)
+18. ✅ Play Store optimization (ASO, rating strategy)
+19. ✅ Complete execution strategy (next 12 months)
+20. ✅ Team hiring plan (engineering + product + ops)
+
+---
+
+**END OF AUDIT DOCUMENT**
+
