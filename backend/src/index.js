@@ -125,6 +125,10 @@ const ruralCrmRouter = require('./routes/rural-crm');
 const voiceAiRouter = require('./routes/voice-ai');
 const dynamicPricingRouter = require('./routes/dynamic-pricing');
 const creditGraphRouter = require('./routes/credit-graph');
+// Phase 19 — Advanced Platform Intelligence
+const financeOsRouter = require('./routes/finance-os');
+const warehouseOsRouter = require('./routes/warehouse-os');
+const aiAdvisoryRouter = require('./routes/ai-advisory');
 
 const app = express();
 const server = http.createServer(app);
@@ -317,6 +321,10 @@ app.use('/api/crm', ruralCrmRouter);
 app.use('/api/voice-ai', voiceAiRouter);
 app.use('/api/dynamic-pricing', dynamicPricingRouter);
 app.use('/api/credit-graph', creditGraphRouter);
+// Phase 19 — Advanced Platform Intelligence
+app.use('/api/finance-os', financeOsRouter);
+app.use('/api/warehouse-os', warehouseOsRouter);
+app.use('/api/ai-advisory', aiAdvisoryRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
