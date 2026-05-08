@@ -8,12 +8,9 @@ const MIGRATION = `
 -- V26: Multi-Role Support — Unified App Architecture
 -- Users can have multiple roles (buyer + farmer, agri + aqua, etc.)
 -- One "active_role" at a time for UI, but access to all added roles
+-- Note: user_roles.role uses VARCHAR for flexibility (supports custom roles);
+--       users.role continues to use the user_role ENUM for backward compat.
 -- ============================================================
-
--- Add supplier to user_role enum if not present
-DO $$ BEGIN
-  ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'supplier';
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- TABLE: user_roles — stores all roles a user has opted into
 CREATE TABLE IF NOT EXISTS user_roles (

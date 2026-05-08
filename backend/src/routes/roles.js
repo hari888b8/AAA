@@ -44,7 +44,7 @@ router.get('/', authMiddleware, async (req, res) => {
         [uuidv4(), req.user.id, primaryRole]
       );
       return res.json({
-        roles: [{ role: primaryRole, sub_type: null, is_active: true }],
+        roles: [{ role: primaryRole, sub_type: null, is_active: true, added_at: new Date().toISOString() }],
         active_role: primaryRole,
         available_roles: VALID_ROLES.filter(r => r !== primaryRole),
         modules: ROLE_MODULES[primaryRole] || [],

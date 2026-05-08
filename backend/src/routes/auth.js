@@ -103,7 +103,7 @@ router.post('/verify-otp', async (req, res) => {
 
     // Seed user_roles table on login (async, non-blocking)
     query(`INSERT INTO user_roles (id, user_id, role, is_active) VALUES ($1, $2, $3, true) ON CONFLICT (user_id, role) DO NOTHING`,
-      [uuidv4(), user.id, user.role]).catch(() => {});
+      [uuidv4(), user.id, user.role]).catch(e => logger.warn({ err: e }, 'Role seeding on login failed'));
   } catch (err) {
     logger.error({ err }, 'OTP verification failed');
     res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Verification failed' } });
