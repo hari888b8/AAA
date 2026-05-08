@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { getState, setState, getRole, getRoles, hasRole } from '../store.js';
-import { showToast } from '../app-shell.js';
+import { showToast, showModal, closeModal } from '../app-shell.js';
 
 const ROLE_META = {
   farmer:           { icon: '👨‍🌾', color: '#4CAF50', label: 'Farmer',          desc: 'Crop & Aqua farming' },
@@ -95,7 +95,6 @@ export function renderRoleSwitcher(container, onSwitch) {
  * Shows modal to add a new role
  */
 function showAddRoleModal(onSwitch) {
-  const { showModal, closeModal } = require('../app-shell.js');
   const userRoles = getRoles();
   const existingRoles = userRoles.map(r => r.role);
   const available = ALL_ROLES.filter(r => !existingRoles.includes(r));
