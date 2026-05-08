@@ -80,6 +80,13 @@ import { renderSchemesGalaxy } from './screens/SchemesGalaxyScreen.js';
 import { renderKisanGalaxy } from './screens/KisanGalaxyScreen.js';
 // Platform readiness
 import { renderCompliance } from './screens/ComplianceScreen.js';
+// Phase 18 — Next-Level Platform
+import { renderFPOStorefront } from './screens/FPOStorefrontScreen.js';
+import { renderDigitalTwin } from './screens/DigitalTwinScreen.js';
+import { renderExportIntelligence } from './screens/ExportIntelligenceScreen.js';
+import { renderRuralCRM } from './screens/RuralCRMScreen.js';
+import { renderCreditGraph } from './screens/CreditGraphScreen.js';
+import { renderDynamicPricing } from './screens/DynamicPricingScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -173,6 +180,13 @@ const ROUTES = {
   kisanportfolio:{ title: 'Vehicle',       icon: '🚜', render: renderKisanGalaxy,  back: 'kisangalaxy' },
   // Platform Readiness
   compliance:    { title: 'Compliance',    icon: '🛡️', render: renderCompliance,   back: 'profile' },
+  // Phase 18 — Next-Level Platform
+  fpostorefront: { title: 'FPO Store',     icon: '🏪', render: renderFPOStorefront, back: 'fpodashboard' },
+  digitaltwin:   { title: 'Farm Twin',     icon: '🔮', render: renderDigitalTwin,  back: 'farmdiary'    },
+  exportintel:   { title: 'Export Intel',  icon: '🌍', render: renderExportIntelligence, back: 'exporter' },
+  ruralcrm:      { title: 'Rural CRM',    icon: '📇', render: renderRuralCRM,     back: 'home'         },
+  creditgraph:   { title: 'Credit Graph',  icon: '💳', render: renderCreditGraph,  back: 'finance'      },
+  dynamicpricing:{ title: 'Live Prices',   icon: '📈', render: renderDynamicPricing, back: 'home'       },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────
