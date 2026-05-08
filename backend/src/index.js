@@ -116,6 +116,8 @@ const enamRouter = require('./routes/enam');
 // Phase 17 — AquaOS V11 Supply Chain + Warehouse Management
 const aquaosV11Router = require('./routes/aquaos-v11');
 const warehouseRouter = require('./routes/warehouse');
+// Phase 18 — Farm Digital Twin
+const digitalTwinRouter = require('./routes/digital-twin');
 
 const app = express();
 const server = http.createServer(app);
@@ -299,6 +301,8 @@ app.use('/api/enam', enamRouter);
 // Phase 17 — AquaOS V11 + Warehouse
 app.use('/api/aquaos-v11', aquaosV11Router);
 app.use('/api/warehouse', warehouseRouter);
+// Phase 18 — Farm Digital Twin
+app.use('/api/digital-twin', digitalTwinRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
