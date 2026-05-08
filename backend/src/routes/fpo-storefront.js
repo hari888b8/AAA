@@ -439,9 +439,12 @@ router.post('/certifications', async (req, res) => {
 // 15. Remove certification
 router.delete('/certifications/:id', async (req, res) => {
   try {
+    const { fpo_id } = req.body;
+    if (!fpo_id) return res.status(400).json({ error: 'fpo_id is required' });
+
     const result = await pool.query(
-      'DELETE FROM fpo_certifications WHERE id = $1 RETURNING *',
-      [req.params.id]
+      'DELETE FROM fpo_certifications WHERE id = $1 AND fpo_id = $2 RETURNING *',
+      [req.params.id, fpo_id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Certification not found' });
     res.json({ message: 'Certification removed', certification: result.rows[0] });
