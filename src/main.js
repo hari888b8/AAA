@@ -1,7 +1,7 @@
 import './styles/app.css';
 
 import { api } from './api.js';
-import { getState, setState, subscribe, getRole } from './store.js';
+import { getState, setState, subscribe, getRole, getRoles, hasRole } from './store.js';
 import { t, getLang, setLang, LANGUAGES } from './i18n.js';
 import { activateLazyImages } from './utils/perf.js';
 import { attachPullToRefresh } from './utils/pullRefresh.js';
@@ -176,14 +176,31 @@ const ROUTES = {
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────
+//  Multi-role aware: if user has both farmer + buyer roles, they see an expanded nav
+//  Primary role drives the 5-tab layout; secondary roles add items to hamburger menu
+//
 //  Farmer           → Home | AgriGalaxy | Agri | Kisan | Bhoomi
 //  FPO              → Home | Agri | Kisan | Bhoomi | Community
 //  Buyer            → Home | AquaOS | Agri | Kisan | Profile
 //  Input Supplier   → Home | AgriGalaxy | AquaOS | Community | Profile
 //  Service Provider → Home | Agri | Kisan | Community | Profile
+//
+//  Multi-role combos:
+//  Farmer + Buyer   → Home | AgriGalaxy | AquaOS | Agri | Profile
+//  Farmer + FPO     → Home | AgriGalaxy | Agri | Kisan | Community
 // ─────────────────────────────────────────────────────────────────────
 function getNavTabs() {
   const role = getRole();
+  const hasBuyer = hasRole('buyer');
+  const hasFarmer = hasRole('farmer');
+  const hasFpo = hasRole('fpo');
+
+  // Multi-role combinations
+  if (role === 'farmer' && hasBuyer) return ['home', 'agrigalaxy', 'aquaos', 'agri', 'profile'];
+  if (role === 'buyer' && hasFarmer) return ['home', 'agrigalaxy', 'aquaos', 'agri', 'profile'];
+  if (role === 'farmer' && hasFpo)   return ['home', 'agrigalaxy', 'agri', 'kisan', 'community'];
+
+  // Single-role defaults
   if (role === 'fpo')              return ['home', 'agri',       'kisan',    'bhoomios',   'community'];
   if (role === 'supplier')         return ['home', 'agrigalaxy', 'aquaos',   'community',  'profile'];
   if (role === 'service_provider') return ['home', 'agri',       'kisan',    'community',  'profile'];
@@ -413,10 +430,20 @@ async function init() {
       const res = await api.getMe();
       const user = res.user || res;
       setState({ user, isLoggedIn: true });
+
+      // Load roles (set from /me response or fetch separately)
+      if (res.roles && res.roles.length) {
+        setState({ roles: res.roles, activeRole: res.active_role || user.role });
+      } else {
+        // Fetch roles async
+        api.getRoles().then(rolesRes => {
+          if (rolesRes.roles) setState({ roles: rolesRes.roles, activeRole: rolesRes.active_role });
+        }).catch(() => {});
+      }
     } catch (e) {
       // Token expired
       api.setToken(null);
-      setState({ user: null, isLoggedIn: false });
+      setState({ user: null, isLoggedIn: false, roles: [], activeRole: null });
     }
   }
 

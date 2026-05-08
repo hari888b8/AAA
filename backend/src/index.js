@@ -116,6 +116,8 @@ const enamRouter = require('./routes/enam');
 // Phase 17 — AquaOS V11 Supply Chain + Warehouse Management
 const aquaosV11Router = require('./routes/aquaos-v11');
 const warehouseRouter = require('./routes/warehouse');
+// Phase 19 — Unified App: Multi-Role Architecture
+const rolesRouter = require('./routes/roles');
 
 const app = express();
 const server = http.createServer(app);
@@ -299,6 +301,8 @@ app.use('/api/enam', enamRouter);
 // Phase 17 — AquaOS V11 + Warehouse
 app.use('/api/aquaos-v11', aquaosV11Router);
 app.use('/api/warehouse', warehouseRouter);
+// Phase 19 — Unified App: Multi-Role Management
+app.use('/api/roles', rolesRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -354,6 +358,8 @@ async function start() {
     await migrateV23AquaOSV11();
     const { migrateV24Warehouse } = require('./db/migrate-v24-warehouse');
     await migrateV24Warehouse();
+    const { migrateV26Roles } = require('./db/migrate-v26-roles');
+    await migrateV26Roles();
     logger.info('Database migrations applied');
 
     // Recover any pending jobs from previous crash
