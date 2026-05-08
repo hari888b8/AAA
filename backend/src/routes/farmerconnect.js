@@ -7,7 +7,9 @@ const router = express.Router();
 // GET /api/farmerconnect/properties
 router.get('/properties', optionalAuth, async (req, res) => {
   try {
-    const { type, district_id, min_rent, max_rent, search, limit = 20, offset = 0 } = req.query;
+    const { type, district_id, min_rent, max_rent, search, limit = 20, offset = 0,
+            bhk, min_deposit, max_deposit, pet_friendly, parking_available, facing,
+            survey_number, soil_type, has_photos, radius_km, lat, lng } = req.query;
     let conditions = [`p.is_available = true`];
     let params = [];
     let i = 1;
@@ -16,15 +18,45 @@ router.get('/properties', optionalAuth, async (req, res) => {
     if (district_id) { conditions.push(`p.district_id = $${i++}`); params.push(district_id); }
     if (min_rent) { conditions.push(`p.rent_amount >= $${i++}`); params.push(min_rent); }
     if (max_rent) { conditions.push(`p.rent_amount <= $${i++}`); params.push(max_rent); }
+    if (bhk) { conditions.push(`p.bhk = $${i++}`); params.push(parseInt(bhk)); }
+    if (min_deposit) { conditions.push(`p.deposit_amount >= $${i++}`); params.push(min_deposit); }
+    if (max_deposit) { conditions.push(`p.deposit_amount <= $${i++}`); params.push(max_deposit); }
+    if (pet_friendly === 'true') { conditions.push(`p.pet_friendly = true`); }
+    if (parking_available === 'true') { conditions.push(`p.parking_available = true`); }
+    if (facing) { conditions.push(`p.facing = $${i++}`); params.push(facing); }
+    if (survey_number) { conditions.push(`p.survey_number ILIKE $${i++}`); params.push(`%${survey_number}%`); }
+    if (soil_type) { conditions.push(`p.soil_type = $${i++}`); params.push(soil_type); }
+    if (has_photos === 'true') { conditions.push(`p.photos != '{}'`); }
     if (search) {
       conditions.push(`(p.title ILIKE $${i} OR p.location_label ILIKE $${i})`);
       params.push(`%${search}%`); i++;
     }
+
+    // Haversine distance filter
+    let distanceExpr = '';
+    if (radius_km && lat && lng) {
+      const latF = parseFloat(lat), lngF = parseFloat(lng), kmF = parseFloat(radius_km);
+      conditions.push(`p.lat IS NOT NULL AND p.lng IS NOT NULL AND (
+        6371 * acos(GREATEST(-1, LEAST(1,
+          cos(radians($${i++})) * cos(radians(p.lat)) * cos(radians(p.lng) - radians($${i++}))
+          + sin(radians($${i++})) * sin(radians(p.lat))
+        )))
+      ) <= $${i++}`);
+      params.push(latF, lngF, latF, kmF);
+      // Parameterized SELECT expression — push lat/lng again before limit/offset
+      const selLatIdx = i++, selLngIdx = i++;
+      params.push(latF, lngF);
+      distanceExpr = `, 6371 * acos(GREATEST(-1, LEAST(1,
+        cos(radians($${selLatIdx})) * cos(radians(p.lat)) * cos(radians(p.lng) - radians($${selLngIdx}))
+        + sin(radians($${selLatIdx})) * sin(radians(p.lat))
+      ))) AS distance_km`;
+    }
+
     params.push(parseInt(limit), parseInt(offset));
 
     const result = await query(`
       SELECT p.*, d.name AS district_name, d.state_name,
-             u.name AS owner_name, u.phone AS owner_phone
+             u.name AS owner_name${distanceExpr}
       FROM properties p
       LEFT JOIN districts d ON d.id = p.district_id
       JOIN users u ON u.id = p.owner_id
@@ -43,7 +75,9 @@ router.get('/properties', optionalAuth, async (req, res) => {
 router.post('/properties', authMiddleware, async (req, res) => {
   try {
     const { title, property_type, location_label, district_id, area, rent_amount,
-            rent_period = 'month', furnishing, floor_info, description, amenities } = req.body;
+            rent_period = 'month', furnishing, floor_info, description, amenities,
+            lat, lng, photos, bhk, deposit_amount, facing, pet_friendly, parking_available,
+            survey_number, total_acres, soil_type, irrigation_type, water_source, road_frontage_ft } = req.body;
 
     if (!title || !property_type || !rent_amount) {
       return res.status(400).json({ error: 'title, property_type, rent_amount required' });
@@ -51,10 +85,16 @@ router.post('/properties', authMiddleware, async (req, res) => {
 
     const result = await query(`
       INSERT INTO properties (id, owner_id, title, property_type, location_label, district_id,
-        area, rent_amount, rent_period, furnishing, floor_info, description, amenities)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *
+        area, rent_amount, rent_period, furnishing, floor_info, description, amenities,
+        lat, lng, photos, bhk, deposit_amount, facing, pet_friendly, parking_available,
+        survey_number, total_acres, soil_type, irrigation_type, water_source, road_frontage_ft)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27) RETURNING *
     `, [uuidv4(), req.user.id, title, property_type, location_label, district_id,
-        area, rent_amount, rent_period, furnishing, floor_info, description, amenities]);
+        area, rent_amount, rent_period, furnishing, floor_info, description, amenities,
+        lat, lng, photos || [], bhk, deposit_amount, facing,
+        pet_friendly === true || pet_friendly === 'true',
+        parking_available === true || parking_available === 'true',
+        survey_number, total_acres, soil_type, irrigation_type, water_source, road_frontage_ft]);
 
     res.status(201).json({ property: result.rows[0] });
   } catch (err) {
@@ -380,6 +420,102 @@ router.get('/match-score', authMiddleware, async (req, res) => {
     if (p.amenities?.length > 3) score += 5;
     score = Math.min(99, score);
     res.json({ match_score: score, property_id });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Contact Unlock ────────────────────────────────────
+// GET /api/farmerconnect/properties/:id/contact
+router.get('/properties/:id/contact', authMiddleware, async (req, res) => {
+  try {
+    const prop = await query(`SELECT p.*, u.phone AS owner_phone FROM properties p JOIN users u ON u.id = p.owner_id WHERE p.id=$1`, [req.params.id]);
+    if (!prop.rows.length) return res.status(404).json({ error: 'Property not found' });
+    const p = prop.rows[0];
+    if (p.owner_id === req.user.id) return res.json({ phone: p.owner_phone, unlocked: true });
+
+    // Check if already unlocked
+    const existing = await query(`SELECT * FROM contact_unlocks WHERE user_id=$1 AND property_id=$2`, [req.user.id, req.params.id]);
+    if (existing.rows.length) return res.json({ phone: p.owner_phone, unlocked: true });
+
+    // Check monthly free unlock quota (3 per month)
+    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+    const monthlyCount = await query(
+      `SELECT COUNT(*) AS cnt FROM contact_unlocks WHERE user_id=$1 AND unlocked_at >= $2`,
+      [req.user.id, monthStart.toISOString()]
+    );
+    if (parseInt(monthlyCount.rows[0].cnt) >= 3) {
+      return res.status(402).json({ error: 'Monthly free unlock limit (3) reached. Upgrade to Premium for unlimited unlocks.', phone: null });
+    }
+
+    // Record unlock
+    await query(`INSERT INTO contact_unlocks (id, user_id, property_id) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING`,
+      [uuidv4(), req.user.id, req.params.id]);
+
+    res.json({ phone: p.owner_phone, unlocked: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Visit Scheduling ──────────────────────────────────
+// POST /api/farmerconnect/properties/:id/visit
+router.post('/properties/:id/visit', authMiddleware, async (req, res) => {
+  try {
+    const { proposed_times, notes } = req.body;
+    if (!proposed_times || !Array.isArray(proposed_times) || proposed_times.length === 0) {
+      return res.status(400).json({ error: 'proposed_times (array) required' });
+    }
+    const prop = await query(`SELECT * FROM properties WHERE id=$1`, [req.params.id]);
+    if (!prop.rows.length) return res.status(404).json({ error: 'Property not found' });
+    if (prop.rows[0].owner_id === req.user.id) return res.status(400).json({ error: 'Cannot visit your own property' });
+
+    const result = await query(`
+      INSERT INTO property_visits (id, property_id, buyer_id, proposed_times, notes)
+      VALUES ($1,$2,$3,$4,$5) RETURNING *
+    `, [uuidv4(), req.params.id, req.user.id, JSON.stringify(proposed_times), notes]);
+
+    res.status(201).json({ visit: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/farmerconnect/visits — my visit requests (as buyer or owner)
+router.get('/visits', authMiddleware, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT pv.*, p.title AS property_title, p.location_label,
+             u_buyer.name AS buyer_name, u_owner.name AS owner_name
+      FROM property_visits pv
+      JOIN properties p ON p.id = pv.property_id
+      JOIN users u_buyer ON u_buyer.id = pv.buyer_id
+      JOIN users u_owner ON u_owner.id = p.owner_id
+      WHERE pv.buyer_id = $1 OR p.owner_id = $1
+      ORDER BY pv.created_at DESC
+    `, [req.user.id]);
+    res.json({ visits: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/farmerconnect/visits/:id — confirm/cancel visit
+router.patch('/visits/:id', authMiddleware, async (req, res) => {
+  try {
+    const { status, confirmed_time } = req.body;
+    if (!['confirmed','cancelled'].includes(status)) return res.status(400).json({ error: 'status must be confirmed or cancelled' });
+
+    const visit = await query(`
+      SELECT pv.*, p.owner_id FROM property_visits pv JOIN properties p ON p.id = pv.property_id WHERE pv.id=$1
+    `, [req.params.id]);
+    if (!visit.rows.length) return res.status(404).json({ error: 'Visit not found' });
+    const v = visit.rows[0];
+
+    // Owner confirms, either party can cancel
+    if (status === 'confirmed' && v.owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only property owner can confirm visit' });
+    }
+    if (v.owner_id !== req.user.id && v.buyer_id !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const result = await query(`
+      UPDATE property_visits SET status=$1, confirmed_time=$2::timestamptz, updated_at=NOW() WHERE id=$3 RETURNING *
+    `, [status, confirmed_time || null, req.params.id]);
+    res.json({ visit: result.rows[0] });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

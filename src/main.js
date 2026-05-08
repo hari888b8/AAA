@@ -62,6 +62,7 @@ import { renderTradeOrders } from './screens/TradeOrdersScreen.js';
 import { renderVehicles } from './screens/VehiclesScreen.js';
 import { renderDelivery } from './screens/DeliveryScreen.js';
 import { renderGigWorkers } from './screens/GigWorkersScreen.js';
+import { renderCalculators } from './screens/CalculatorsScreen.js';
 // Galaxy screens
 import { renderFarmerGalaxy } from './screens/FarmerGalaxyScreen.js';
 import { renderFarmerPortfolio } from './screens/FarmerPortfolioScreen.js';
@@ -80,6 +81,13 @@ import { renderSchemesGalaxy } from './screens/SchemesGalaxyScreen.js';
 import { renderKisanGalaxy } from './screens/KisanGalaxyScreen.js';
 // Platform readiness
 import { renderCompliance } from './screens/ComplianceScreen.js';
+// Phase 18 — Next-Level Platform
+import { renderFPOStorefront } from './screens/FPOStorefrontScreen.js';
+import { renderDigitalTwin } from './screens/DigitalTwinScreen.js';
+import { renderExportIntelligence } from './screens/ExportIntelligenceScreen.js';
+import { renderRuralCRM } from './screens/RuralCRMScreen.js';
+import { renderCreditGraph } from './screens/CreditGraphScreen.js';
+import { renderDynamicPricing } from './screens/DynamicPricingScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -150,6 +158,7 @@ const ROUTES = {
   vehicles:      { title: 'Vehicles',     icon: '🚗', render: renderVehicles,    back: 'kisan'    },
   delivery:      { title: 'Delivery',     icon: '📦', render: renderDelivery,    back: 'kisan'    },
   gigworkers:    { title: 'Gig Workers',  icon: '👨‍🔧', render: renderGigWorkers,  back: 'kisan'    },
+  calculators:   { title: 'Calculators', icon: '🧮', render: renderCalculators, back: 'home'     },
   // Galaxy routes
   farmergalaxy:  { title: 'Farmer Galaxy', icon: '👨‍🌾', render: renderFarmerGalaxy, back: 'home'   },
   farmerportfolio:{ title: 'Farmer Profile',icon: '👨‍🌾', render: renderFarmerPortfolio, back: 'farmergalaxy' },
@@ -173,6 +182,13 @@ const ROUTES = {
   kisanportfolio:{ title: 'Vehicle',       icon: '🚜', render: renderKisanGalaxy,  back: 'kisangalaxy' },
   // Platform Readiness
   compliance:    { title: 'Compliance',    icon: '🛡️', render: renderCompliance,   back: 'profile' },
+  // Phase 18 — Next-Level Platform
+  fpostorefront: { title: 'FPO Store',     icon: '🏪', render: renderFPOStorefront, back: 'fpodashboard' },
+  digitaltwin:   { title: 'Farm Twin',     icon: '🔮', render: renderDigitalTwin,  back: 'farmdiary'    },
+  exportintel:   { title: 'Export Intel',  icon: '🌍', render: renderExportIntelligence, back: 'exporter' },
+  ruralcrm:      { title: 'Rural CRM',    icon: '📇', render: renderRuralCRM,     back: 'home'         },
+  creditgraph:   { title: 'Credit Graph',  icon: '💳', render: renderCreditGraph,  back: 'finance'      },
+  dynamicpricing:{ title: 'Live Prices',   icon: '📈', render: renderDynamicPricing, back: 'home'       },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────

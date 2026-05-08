@@ -106,6 +106,8 @@ const aquaosV8Router = require('./routes/aquaos-v8');
 const aquaosV9Router = require('./routes/aquaos-v9');
 // Phase 14 — AquaOS V10 Analytics + Search + Payments + Pricing + Chat + AI + Growth + IoT
 const aquaosV10Router = require('./routes/aquaos-v10');
+// Calculators — Aqua Calculator + Crop Calculator (real-time problem solvers)
+const calculatorsRouter = require('./routes/calculators');
 // Phase 15 — Galaxy Discovery Module
 const galaxyRouter = require('./routes/galaxy');
 // Phase 16 — Platform Readiness (DPDP + KYC + AI + eNAM/NABARD/SFAC)
@@ -116,7 +118,20 @@ const enamRouter = require('./routes/enam');
 // Phase 17 — AquaOS V11 Supply Chain + Warehouse Management
 const aquaosV11Router = require('./routes/aquaos-v11');
 const warehouseRouter = require('./routes/warehouse');
-// Phase 19 — Unified App: Multi-Role Architecture
+// Phase 18 — Next-Level Platform Modules
+const fpoStorefrontRouter = require('./routes/fpo-storefront');
+const digitalTwinRouter = require('./routes/digital-twin');
+const exportIntelligenceRouter = require('./routes/export-intelligence');
+const whatsappRouter = require('./routes/whatsapp-workflows');
+const ruralCrmRouter = require('./routes/rural-crm');
+const voiceAiRouter = require('./routes/voice-ai');
+const dynamicPricingRouter = require('./routes/dynamic-pricing');
+const creditGraphRouter = require('./routes/credit-graph');
+// Phase 19 — Advanced Platform Intelligence
+const financeOsRouter = require('./routes/finance-os');
+const warehouseOsRouter = require('./routes/warehouse-os');
+const aiAdvisoryRouter = require('./routes/ai-advisory');
+// Phase 20 — Unified App: Multi-Role Architecture
 const rolesRouter = require('./routes/roles');
 
 const app = express();
@@ -291,6 +306,8 @@ app.use('/api/vehicles', vehiclesRouter);
 app.use('/api/delivery', deliveryRouter);
 app.use('/api/gigworkers', gigworkersRouter);
 app.use('/api/transport', transportRouter);
+// Calculators — Aqua + Crop
+app.use('/api/calculators', calculatorsRouter);
 // Phase 15 — Galaxy Discovery (public, no auth)
 app.use('/api/galaxy', galaxyRouter);
 // Phase 16 — Platform Readiness Layer
@@ -301,7 +318,20 @@ app.use('/api/enam', enamRouter);
 // Phase 17 — AquaOS V11 + Warehouse
 app.use('/api/aquaos-v11', aquaosV11Router);
 app.use('/api/warehouse', warehouseRouter);
-// Phase 19 — Unified App: Multi-Role Management
+// Phase 18 — Next-Level Platform
+app.use('/api/fpo-storefront', fpoStorefrontRouter);
+app.use('/api/digital-twin', digitalTwinRouter);
+app.use('/api/export-intelligence', exportIntelligenceRouter);
+app.use('/api/whatsapp', whatsappRouter);
+app.use('/api/crm', ruralCrmRouter);
+app.use('/api/voice-ai', voiceAiRouter);
+app.use('/api/dynamic-pricing', dynamicPricingRouter);
+app.use('/api/credit-graph', creditGraphRouter);
+// Phase 19 — Advanced Platform Intelligence
+app.use('/api/finance-os', financeOsRouter);
+app.use('/api/warehouse-os', warehouseOsRouter);
+app.use('/api/ai-advisory', aiAdvisoryRouter);
+// Phase 20 — Unified App: Multi-Role Management
 app.use('/api/roles', rolesRouter);
 
 // Serve uploaded images
@@ -350,6 +380,10 @@ async function start() {
     await migrateV18AquaOSV9();
     const { migrateV19AquaOSV10 } = require('./db/migrate-v19-aquaos-v10');
     await migrateV19AquaOSV10();
+    const { migrateV21Sprint1 } = require('./db/migrate-v21-sprint1');
+    await migrateV21Sprint1();
+    const { migrateV22BhoomiOsGalaxy } = require('./db/migrate-v22-bhoomios-galaxy');
+    await migrateV22BhoomiOsGalaxy();
     const { migrateV21Galaxy } = require('./db/migrate-v21-galaxy');
     await migrateV21Galaxy();
     const { migrateV22PlatformReadiness } = require('./db/migrate-v22-platform-readiness');
@@ -358,6 +392,8 @@ async function start() {
     await migrateV23AquaOSV11();
     const { migrateV24Warehouse } = require('./db/migrate-v24-warehouse');
     await migrateV24Warehouse();
+    const { migrateV25NextLevel } = require('./db/migrate-v25-next-level');
+    await migrateV25NextLevel();
     const { migrateV26Roles } = require('./db/migrate-v26-roles');
     await migrateV26Roles();
     logger.info('Database migrations applied');

@@ -29,6 +29,15 @@ router.post('/send-otp', async (req, res) => {
     const code = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
+    // Rate limiting: max 5 OTP requests per phone per 10 minutes
+    const recentCount = await query(
+      `SELECT COUNT(*) AS cnt FROM otps WHERE phone = $1 AND created_at >= NOW() - INTERVAL '10 minutes'`,
+      [phone]
+    );
+    if (parseInt(recentCount.rows[0].cnt) >= 5) {
+      return res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many OTP requests. Please try again in 10 minutes.' } });
+    }
+
     await query(`DELETE FROM otps WHERE phone = $1`, [phone]);
     await query(
       `INSERT INTO otps (id, phone, code, expires_at) VALUES ($1, $2, $3, $4)`,
