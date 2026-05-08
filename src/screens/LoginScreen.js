@@ -110,11 +110,21 @@ export function renderLogin(container) {
       <p style="text-align:center;margin-top:16px;font-size:11px;color:var(--text3)">By continuing, you agree to our Terms of Service</p>`;
   }
 
+  let farmerType = 'both'; // agri_farmer, aqua_farmer, both
+  let buyerType = 'trader'; // trader, exporter, processor, retailer
+
   function renderOtpStep() {
     const rm = ROLES.find(r => r.id === role) || ROLES[0];
     return `
       <h2>Verify & Select Role</h2>
       <p class="sub">+91 ${phone}</p>
+      <div style="background:linear-gradient(135deg,#E8F5E9,#E3F2FD);padding:10px 14px;border-radius:10px;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">📱</span>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#1B5E20">One App for Everyone</div>
+          <div style="font-size:11px;color:#37474F">Pick your primary role — you can add more roles later from Settings</div>
+        </div>
+      </div>
       ${devOtp ? `<p style="background:var(--success-bg);color:var(--success);padding:8px 12px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px">🔑 Dev OTP: ${devOtp}</p>` : ''}
       <div class="form-group">
         <label>OTP Code</label>
@@ -142,6 +152,49 @@ export function renderLogin(container) {
           `).join('')}
         </div>
       </div>
+
+      ${role === 'farmer' ? `
+      <div class="form-group" id="farmerSubType">
+        <label style="font-size:12px;font-weight:700;color:var(--text2)">What type of farming?</label>
+        <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+          <button class="sub-type-btn ${farmerType==='agri_farmer'?'active':''}" data-ftype="agri_farmer" style="flex:1;min-width:80px;padding:10px;border-radius:10px;border:2px solid ${farmerType==='agri_farmer'?'#4CAF50':'var(--border)'};background:${farmerType==='agri_farmer'?'#E8F5E9':'var(--bg)'};cursor:pointer;text-align:center">
+            <div style="font-size:20px">🌾</div>
+            <div style="font-size:12px;font-weight:700;color:${farmerType==='agri_farmer'?'#2E7D32':'var(--text2)'}">Agri</div>
+            <div style="font-size:10px;color:var(--text3)">Crops</div>
+          </button>
+          <button class="sub-type-btn ${farmerType==='aqua_farmer'?'active':''}" data-ftype="aqua_farmer" style="flex:1;min-width:80px;padding:10px;border-radius:10px;border:2px solid ${farmerType==='aqua_farmer'?'#0277BD':'var(--border)'};background:${farmerType==='aqua_farmer'?'#E3F2FD':'var(--bg)'};cursor:pointer;text-align:center">
+            <div style="font-size:20px">🐟</div>
+            <div style="font-size:12px;font-weight:700;color:${farmerType==='aqua_farmer'?'#0277BD':'var(--text2)'}">Aqua</div>
+            <div style="font-size:10px;color:var(--text3)">Shrimp · Fish</div>
+          </button>
+          <button class="sub-type-btn ${farmerType==='both'?'active':''}" data-ftype="both" style="flex:1;min-width:80px;padding:10px;border-radius:10px;border:2px solid ${farmerType==='both'?'#6A1B9A':'var(--border)'};background:${farmerType==='both'?'#F3E5F5':'var(--bg)'};cursor:pointer;text-align:center">
+            <div style="font-size:20px">🌾🐟</div>
+            <div style="font-size:12px;font-weight:700;color:${farmerType==='both'?'#6A1B9A':'var(--text2)'}">Both</div>
+            <div style="font-size:10px;color:var(--text3)">Agri + Aqua</div>
+          </button>
+        </div>
+      </div>
+      ` : ''}
+
+      ${role === 'buyer' ? `
+      <div class="form-group" id="buyerSubType">
+        <label style="font-size:12px;font-weight:700;color:var(--text2)">What type of buyer?</label>
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+          ${[
+            { id:'trader', icon:'📦', label:'Trader' },
+            { id:'exporter', icon:'🌍', label:'Exporter' },
+            { id:'processor', icon:'🏭', label:'Processor' },
+            { id:'retailer', icon:'🏪', label:'Retailer' },
+          ].map(bt => `
+            <button class="buyer-type-btn ${buyerType===bt.id?'active':''}" data-btype="${bt.id}" style="flex:1;min-width:70px;padding:8px 4px;border-radius:8px;border:2px solid ${buyerType===bt.id?'#E65100':'var(--border)'};background:${buyerType===bt.id?'#FFF3E0':'var(--bg)'};cursor:pointer;text-align:center">
+              <div style="font-size:16px">${bt.icon}</div>
+              <div style="font-size:11px;font-weight:${buyerType===bt.id?'700':'500'};color:${buyerType===bt.id?'#E65100':'var(--text2)'}">${bt.label}</div>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+      ` : ''}
+
       <button class="btn btn-primary" id="verifyOtp" ${loading ? 'disabled' : ''}>
         ${loading ? '<span class="spinner" style="width:20px;height:20px;border-width:2px;"></span>' : `Continue as ${rm.icon} ${rm.label} →`}
       </button>
@@ -183,6 +236,14 @@ export function renderLogin(container) {
       container.querySelectorAll('input[name="roleSelect"]').forEach(r => {
         r.addEventListener('change', () => { role = r.value; render(); });
       });
+      // Farmer sub-type buttons
+      container.querySelectorAll('.sub-type-btn').forEach(b => {
+        b.addEventListener('click', (e) => { e.preventDefault(); farmerType = b.dataset.ftype; render(); });
+      });
+      // Buyer sub-type buttons
+      container.querySelectorAll('.buyer-type-btn').forEach(b => {
+        b.addEventListener('click', (e) => { e.preventDefault(); buyerType = b.dataset.btype; render(); });
+      });
       container.querySelector('#verifyOtp')?.addEventListener('click', handleVerify);
       container.querySelector('#changePhone')?.addEventListener('click', () => { step = 'phone'; render(); });
     }
@@ -207,7 +268,20 @@ export function renderLogin(container) {
       const res = await api.verifyOtp(phone, otp, name.trim(), role);
       api.setToken(res.token);
       if (res.refreshToken) localStorage.setItem('agrihub_refresh', res.refreshToken);
-      setState({ user: res.user, isLoggedIn: true });
+      
+      // Set up multi-role state
+      const subType = role === 'farmer' ? farmerType : role === 'buyer' ? buyerType : null;
+      const initialRoles = [{ role, sub_type: subType, is_active: true }];
+      setState({
+        user: res.user,
+        isLoggedIn: true,
+        roles: initialRoles,
+        activeRole: role,
+      });
+
+      // Async: seed roles in backend (non-blocking)
+      api.addRole(role, subType).catch(() => {});
+
       showToast(`Welcome, ${res.user.name}!`, 'success');
       navigate('home');
     } catch(e) { showToast(e.message, 'error'); loading = false; render(); }

@@ -131,6 +131,8 @@ const creditGraphRouter = require('./routes/credit-graph');
 const financeOsRouter = require('./routes/finance-os');
 const warehouseOsRouter = require('./routes/warehouse-os');
 const aiAdvisoryRouter = require('./routes/ai-advisory');
+// Phase 20 — Unified App: Multi-Role Architecture
+const rolesRouter = require('./routes/roles');
 
 const app = express();
 const server = http.createServer(app);
@@ -329,6 +331,8 @@ app.use('/api/credit-graph', creditGraphRouter);
 app.use('/api/finance-os', financeOsRouter);
 app.use('/api/warehouse-os', warehouseOsRouter);
 app.use('/api/ai-advisory', aiAdvisoryRouter);
+// Phase 20 — Unified App: Multi-Role Management
+app.use('/api/roles', rolesRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -390,6 +394,8 @@ async function start() {
     await migrateV24Warehouse();
     const { migrateV25NextLevel } = require('./db/migrate-v25-next-level');
     await migrateV25NextLevel();
+    const { migrateV26Roles } = require('./db/migrate-v26-roles');
+    await migrateV26Roles();
     logger.info('Database migrations applied');
 
     // Recover any pending jobs from previous crash

@@ -109,6 +109,10 @@ router.post('/verify-otp', async (req, res) => {
         onboarding_completed: user.onboarding_completed,
       },
     });
+
+    // Seed user_roles table on login (async, non-blocking)
+    query(`INSERT INTO user_roles (id, user_id, role, is_active) VALUES ($1, $2, $3, true) ON CONFLICT (user_id, role) DO NOTHING`,
+      [uuidv4(), user.id, user.role]).catch(e => logger.warn({ err: e }, 'Role seeding on login failed'));
   } catch (err) {
     logger.error({ err }, 'OTP verification failed');
     res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Verification failed' } });
@@ -141,7 +145,19 @@ router.get('/me', require('../middleware/auth').authMiddleware, async (req, res)
       'SELECT id, phone, name, role, is_verified, onboarding_completed, created_at FROM users WHERE id = $1',
       [req.user.id]
     );
-    res.json({ user: result.rows[0] || req.user });
+    const user = result.rows[0] || req.user;
+
+    // Fetch all user roles
+    const rolesResult = await query(
+      'SELECT role, sub_type, is_active FROM user_roles WHERE user_id = $1 ORDER BY added_at',
+      [req.user.id]
+    );
+
+    res.json({
+      user,
+      roles: rolesResult.rows,
+      active_role: rolesResult.rows.find(r => r.is_active)?.role || user.role,
+    });
   } catch (err) {
     res.json({ user: req.user });
   }

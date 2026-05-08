@@ -1,8 +1,9 @@
 import { api } from '../api.js';
-import { getState, logout as logoutStore, getRole } from '../store.js';
+import { getState, logout as logoutStore, getRole, getRoles } from '../store.js';
 import { navigate, showToast, showModal, closeModal } from '../app-shell.js';
 import { t, getLang, setLang, LANGUAGES } from '../i18n.js';
 import { getMyLocation } from '../integrations/maps.js';
+import { renderRoleSwitcher } from '../components/RoleSwitcher.js';
 
 export function renderProfile(container) {
   const user = getState().user || {};
@@ -38,6 +39,12 @@ export function renderProfile(container) {
       <button id="startOnboardingBtn" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF6F00,#FF9800);color:white;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(255,111,0,0.3)">
         🌾 Complete Your Profile — Get Better Prices & Advisories
       </button>
+    </div>
+
+    <!-- ROLE MANAGEMENT -->
+    <div style="padding:8px 0">
+      <div style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px" aria-hidden="true">🔄 Role Management</div>
+      <div id="roleSwitcherContainer"></div>
     </div>
 
     <!-- ROLE-SPECIFIC PROFILE SETTINGS -->
@@ -121,6 +128,15 @@ export function renderProfile(container) {
   `;
 
   container.querySelectorAll('[data-nav]').forEach(el => el.addEventListener('click', () => navigate(el.dataset.nav)));
+
+  // ─── Role Switcher ───────────────────────────────────────────────
+  const roleSwitcherEl = container.querySelector('#roleSwitcherContainer');
+  if (roleSwitcherEl) {
+    renderRoleSwitcher(roleSwitcherEl, () => {
+      // Re-render the profile screen after role switch
+      renderProfile(container);
+    });
+  }
 
   // ─── Onboarding Wizard CTA ─────────────────────────────────────
   const onboardingDone = localStorage.getItem('agrihub_onboarding_done');

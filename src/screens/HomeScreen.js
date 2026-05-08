@@ -1,8 +1,9 @@
 import { api } from '../api.js';
-import { getState, getRole } from '../store.js';
+import { getState, getRole, getRoles, hasRole } from '../store.js';
 import { navigate, showToast } from '../app-shell.js';
 import { t } from '../i18n.js';
 import { heroBanner, stickySearch, sectionTitle, ticker, platformTile, shortcut, actionCard, attachStickyShadow } from '../components/ui.js';
+import { renderRoleBadge } from '../components/RoleSwitcher.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  HOME SCREEN — Modern UI v2 (Mobile-first, hero, sticky, role-personalized)
@@ -122,7 +123,7 @@ export function renderHome(container) {
       icon: '🌾',
       greeting: `${greeting},`,
       title: `${user?.name?.split(' ')[0] || 'Welcome'} 👋`,
-      subtitle: `${theme.badge} · ${theme.sub}`,
+      subtitle: `${theme.badge} · ${theme.sub}${getRoles().length > 1 ? ' · 🔄 ' + getRoles().length + ' roles' : ''}`,
       actions: [
         { icon:'🔍', id:'heroSearchBtn' },
         { icon:'🔔', onClick:'notifications', badge: true },

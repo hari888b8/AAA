@@ -35,6 +35,13 @@ class ApiClient {
   updateMe(d) { return this.patch('/auth/me', d); }
   logout() { return this.post('/auth/logout', { refreshToken: localStorage.getItem('agrihub_refresh') }).catch(() => {}); }
 
+  // Roles — Multi-role management
+  getRoles() { return this.get('/roles'); }
+  addRole(role, sub_type) { return this.post('/roles', { role, sub_type }); }
+  switchRole(role) { return this.post('/roles/switch', { role }); }
+  removeRole(role) { return this.del(`/roles/${role}`); }
+  getRoleModules() { return this.get('/roles/modules'); }
+
   // AgriFlow
   getListings(params = '') { return this.get(`/agriflow/listings${params}`); }
   getListing(id) { return this.get(`/agriflow/listings/${id}`); }
