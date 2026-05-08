@@ -116,8 +116,15 @@ const enamRouter = require('./routes/enam');
 // Phase 17 — AquaOS V11 Supply Chain + Warehouse Management
 const aquaosV11Router = require('./routes/aquaos-v11');
 const warehouseRouter = require('./routes/warehouse');
-// Phase 18 — Farm Digital Twin
+// Phase 18 — Next-Level Platform Modules
+const fpoStorefrontRouter = require('./routes/fpo-storefront');
 const digitalTwinRouter = require('./routes/digital-twin');
+const exportIntelligenceRouter = require('./routes/export-intelligence');
+const whatsappRouter = require('./routes/whatsapp-workflows');
+const ruralCrmRouter = require('./routes/rural-crm');
+const voiceAiRouter = require('./routes/voice-ai');
+const dynamicPricingRouter = require('./routes/dynamic-pricing');
+const creditGraphRouter = require('./routes/credit-graph');
 
 const app = express();
 const server = http.createServer(app);
@@ -301,8 +308,15 @@ app.use('/api/enam', enamRouter);
 // Phase 17 — AquaOS V11 + Warehouse
 app.use('/api/aquaos-v11', aquaosV11Router);
 app.use('/api/warehouse', warehouseRouter);
-// Phase 18 — Farm Digital Twin
+// Phase 18 — Next-Level Platform
+app.use('/api/fpo-storefront', fpoStorefrontRouter);
 app.use('/api/digital-twin', digitalTwinRouter);
+app.use('/api/export-intelligence', exportIntelligenceRouter);
+app.use('/api/whatsapp', whatsappRouter);
+app.use('/api/crm', ruralCrmRouter);
+app.use('/api/voice-ai', voiceAiRouter);
+app.use('/api/dynamic-pricing', dynamicPricingRouter);
+app.use('/api/credit-graph', creditGraphRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -358,6 +372,8 @@ async function start() {
     await migrateV23AquaOSV11();
     const { migrateV24Warehouse } = require('./db/migrate-v24-warehouse');
     await migrateV24Warehouse();
+    const { migrateV25NextLevel } = require('./db/migrate-v25-next-level');
+    await migrateV25NextLevel();
     logger.info('Database migrations applied');
 
     // Recover any pending jobs from previous crash
