@@ -207,4 +207,216 @@ router.get('/stats', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ─── In-memory trending cache (1-hour TTL) ───────────────────────
+let trendingCache = null;
+let trendingCacheAt = 0;
+
+// ─── GET /trending — Trending products and stores ────────────────
+router.get('/trending', async (req, res) => {
+  try {
+    const now = Date.now();
+    if (trendingCache && now - trendingCacheAt < 3600000) {
+      return res.json(trendingCache);
+    }
+
+    const [trendingProducts, trendingStores, topCategories] = await Promise.all([
+      pool.query(
+        `SELECT p.*, s.name as store_name FROM agrigalaxy_products p
+         LEFT JOIN agrigalaxy_stores s ON p.store_id = s.id
+         WHERE p.status = 'active'
+         ORDER BY p.rating DESC, p.stock DESC LIMIT 8`
+      ),
+      pool.query(
+        `SELECT s.*, COUNT(p.id) as product_count
+         FROM agrigalaxy_stores s
+         LEFT JOIN agrigalaxy_products p ON p.store_id = s.id AND p.status = 'active'
+         WHERE s.is_active = true
+         GROUP BY s.id
+         ORDER BY s.rating DESC LIMIT 5`
+      ),
+      pool.query(
+        `SELECT category, COUNT(*) as product_count
+         FROM agrigalaxy_products WHERE status = 'active'
+         GROUP BY category ORDER BY product_count DESC LIMIT 6`
+      ),
+    ]);
+
+    const month = new Date().getMonth();
+    const seasonal_tip = month >= 5 && month <= 8
+      ? 'Kharif season: Stock up on paddy seeds, cotton seeds, and soybean inputs.'
+      : month >= 9 && month <= 11
+      ? 'Rabi season: Wheat seeds, mustard, and chickpea inputs are in high demand.'
+      : 'Off-season: Good time to buy fertilizers in bulk at lower prices.';
+
+    trendingCache = {
+      trending_products: trendingProducts.rows,
+      trending_stores: trendingStores.rows,
+      trending_categories: topCategories.rows,
+      seasonal_tip,
+    };
+    trendingCacheAt = now;
+
+    res.json(trendingCache);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── GET /search — Unified search (products + stores) ───────────
+router.get('/search', async (req, res) => {
+  try {
+    const { q, category, district, type = 'all', limit = 10 } = req.query;
+    if (!q || q.trim().length < 2) return res.status(400).json({ error: 'Query q must be at least 2 characters' });
+    const term = `%${q.trim()}%`;
+    const lim = Math.min(parseInt(limit) || 10, 50);
+
+    let stores = [], products = [];
+
+    if (type === 'all' || type === 'stores') {
+      let sq = `SELECT s.*, d.name as district_name FROM agrigalaxy_stores s
+                LEFT JOIN districts d ON s.district_id = d.id
+                WHERE s.is_active = true AND s.name ILIKE $1`;
+      const sp = [term];
+      let si = 2;
+      if (district) { sq += ` AND s.district_id = $${si++}`; sp.push(Number(district)); }
+      sq += ` ORDER BY s.rating DESC LIMIT $${si}`;
+      sp.push(lim);
+      const sr = await pool.query(sq, sp);
+      stores = sr.rows;
+    }
+
+    if (type === 'all' || type === 'products') {
+      let pq = `SELECT p.*, s.name as store_name FROM agrigalaxy_products p
+                LEFT JOIN agrigalaxy_stores s ON p.store_id = s.id
+                WHERE p.status = 'active' AND (p.name ILIKE $1 OR p.brand ILIKE $1)`;
+      const pp = [term];
+      let pi = 2;
+      if (category) { pq += ` AND p.category = $${pi++}`; pp.push(category); }
+      pq += ` ORDER BY p.rating DESC LIMIT $${pi}`;
+      pp.push(lim);
+      const pr = await pool.query(pq, pp);
+      products = pr.rows;
+    }
+
+    res.json({ stores, products, total_stores: stores.length, total_products: products.length });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── GET /platform-stats — Enhanced platform stats ──────────────
+router.get('/platform-stats', async (req, res) => {
+  try {
+    const [stores, products, orders, farmers, listings, topCat, stories] = await Promise.all([
+      pool.query('SELECT COUNT(*) FROM agrigalaxy_stores WHERE is_active=true'),
+      pool.query("SELECT COUNT(*) FROM agrigalaxy_products WHERE status='active'"),
+      pool.query("SELECT COUNT(*) FROM orders WHERE listing_type='agrigalaxy'"),
+      pool.query("SELECT COUNT(*) FROM users WHERE role='farmer'"),
+      pool.query("SELECT COUNT(*) FROM supply_listings WHERE status='active'").catch(() => ({ rows: [{ count: 0 }] })),
+      pool.query(
+        `SELECT category, COUNT(*) as cnt FROM agrigalaxy_products
+         WHERE status='active' GROUP BY category ORDER BY cnt DESC LIMIT 1`
+      ),
+      pool.query('SELECT COUNT(*) FROM platform_success_stories WHERE is_published=true').catch(() => ({ rows: [{ count: 0 }] })),
+    ]);
+
+    res.json({
+      total_stores: parseInt(stores.rows[0].count),
+      total_products: parseInt(products.rows[0].count),
+      total_orders: parseInt(orders.rows[0].count),
+      total_farmers: parseInt(farmers.rows[0].count),
+      active_listings: parseInt(listings.rows[0].count),
+      top_category: topCat.rows[0] || null,
+      success_stories_count: parseInt(stories.rows[0].count),
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── POST /products/:id/reviews — Add/update product review ─────
+router.post('/products/:id/reviews', auth, async (req, res) => {
+  try {
+    const { rating, review_text, crop_used_for } = req.body;
+    if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error: 'rating must be 1-5' });
+
+    const product = await pool.query('SELECT id FROM agrigalaxy_products WHERE id=$1', [req.params.id]);
+    if (!product.rows.length) return res.status(404).json({ error: 'Product not found' });
+
+    const verified = await pool.query(
+      "SELECT id FROM orders WHERE buyer_id=$1 AND listing_id=$2 AND listing_type='agrigalaxy'",
+      [req.user.id, req.params.id]
+    );
+
+    await pool.query(
+      `INSERT INTO agrigalaxy_reviews (product_id, reviewer_id, rating, review_text, crop_used_for, verified_purchase)
+       VALUES ($1,$2,$3,$4,$5,$6)
+       ON CONFLICT (product_id, reviewer_id) DO UPDATE SET
+         rating = EXCLUDED.rating, review_text = EXCLUDED.review_text,
+         crop_used_for = EXCLUDED.crop_used_for`,
+      [req.params.id, req.user.id, rating, review_text, crop_used_for, verified.rows.length > 0]
+    );
+
+    const avgResult = await pool.query(
+      'SELECT AVG(rating) FROM agrigalaxy_reviews WHERE product_id = $1', [req.params.id]
+    );
+    const avgRating = parseFloat(avgResult.rows[0].avg || 0).toFixed(2);
+    await pool.query('UPDATE agrigalaxy_products SET rating = $1 WHERE id = $2', [avgRating, req.params.id]);
+
+    res.status(201).json({ success: true, new_rating: avgRating });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── GET /products/:id/reviews — Get reviews for a product ──────
+router.get('/products/:id/reviews', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT r.id, r.rating, r.review_text, r.crop_used_for, r.verified_purchase, r.created_at,
+              CASE
+                WHEN STRPOS(u.name, ' ') > 0
+                THEN CONCAT(LEFT(u.name, STRPOS(u.name, ' ') - 1), ' ', LEFT(SUBSTRING(u.name FROM STRPOS(u.name, ' ') + 1), 1), '.')
+                ELSE u.name
+              END as reviewer_display
+       FROM agrigalaxy_reviews r
+       JOIN users u ON r.reviewer_id = u.id
+       WHERE r.product_id = $1
+       ORDER BY r.created_at DESC`,
+      [req.params.id]
+    );
+    res.json({ reviews: rows });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── GET /success-stories — Platform success stories ────────────
+router.get('/success-stories', async (req, res) => {
+  try {
+    const { module: mod, limit = 10, offset = 0 } = req.query;
+    let query = `SELECT * FROM platform_success_stories WHERE is_published = true`;
+    const params = [];
+    let idx = 1;
+    if (mod) { query += ` AND module = $${idx++}`; params.push(mod); }
+    query += ` ORDER BY is_verified DESC, created_at DESC LIMIT $${idx++} OFFSET $${idx++}`;
+    params.push(Number(limit), Number(offset));
+
+    const { rows } = await pool.query(query, params);
+    res.json({ stories: rows });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── GET /compare — Compare 2-4 products ────────────────────────
+router.get('/compare', async (req, res) => {
+  try {
+    const { ids } = req.query;
+    if (!ids) return res.status(400).json({ error: 'ids query param required (comma-separated)' });
+
+    const idList = ids.split(',').map(s => s.trim()).filter(Boolean).slice(0, 4);
+    if (idList.length < 2) return res.status(400).json({ error: 'Provide 2-4 product IDs' });
+
+    const placeholders = idList.map((_, i) => `$${i + 1}`).join(',');
+    const { rows } = await pool.query(
+      `SELECT p.*, s.name as store_name, s.district_id, d.name as district_name
+       FROM agrigalaxy_products p
+       LEFT JOIN agrigalaxy_stores s ON p.store_id = s.id
+       LEFT JOIN districts d ON s.district_id = d.id
+       WHERE p.id IN (${placeholders})`,
+      idList
+    );
+    res.json({ products: rows, count: rows.length });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;

@@ -103,6 +103,7 @@ export function renderAgriGalaxy(container) {
           <button role="tab" aria-selected="${tab==='products'}" class="tab-btn ${tab==='products'?'active':''}" data-tab="products">🌱 Products</button>
           <button role="tab" aria-selected="${tab==='bulk'}" class="tab-btn ${tab==='bulk'?'active':''}" data-tab="bulk">🏭 Bulk / B2B</button>
           <button role="tab" aria-selected="${tab==='orders'}" class="tab-btn ${tab==='orders'?'active':''}" data-tab="orders">📋 My Orders</button>
+          <button role="tab" aria-selected="${tab==='discover'}" class="tab-btn ${tab==='discover'?'active':''}" data-tab="discover">🔍 Discover</button>
         `}
       </div>
 
@@ -113,6 +114,7 @@ export function renderAgriGalaxy(container) {
           : tab === 'bulk' ? renderBulkOrder()
           : tab === 'orders' ? renderOrders()
           : tab === 'analytics' ? renderAnalytics()
+          : tab === 'discover' ? renderDiscover()
           : ''}
       </div>
     `;
@@ -810,22 +812,119 @@ export function renderAgriGalaxy(container) {
     });
   }
 
+  // ─── DISCOVER TAB — Trending, Stories, Stats ────────────────────────────
+  let trendingData = null;
+  let successStories = [];
+  let platformStats = null;
+
+  function renderDiscover() {
+    return `
+      <div style="padding:12px 14px 0">
+
+        <!-- Platform Stats Bar -->
+        ${platformStats ? `
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+          <div style="background:linear-gradient(135deg,#6A1B9A,#4A148C);border-radius:12px;padding:10px;text-align:center;color:white">
+            <div style="font-size:18px;font-weight:800">${platformStats.total_stores || 0}+</div>
+            <div style="font-size:10px;opacity:0.85">Stores</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#2E7D32,#1B5E20);border-radius:12px;padding:10px;text-align:center;color:white">
+            <div style="font-size:18px;font-weight:800">${platformStats.total_farmers || 0}+</div>
+            <div style="font-size:10px;opacity:0.85">Farmers</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#E65100,#BF360C);border-radius:12px;padding:10px;text-align:center;color:white">
+            <div style="font-size:18px;font-weight:800">${platformStats.total_products || 0}+</div>
+            <div style="font-size:10px;opacity:0.85">Products</div>
+          </div>
+        </div>` : '<div style="height:70px;background:#F5F5F5;border-radius:12px;margin-bottom:14px;animation:pulse 1.5s infinite"></div>'}
+
+        <!-- Trending Products -->
+        <div style="margin-bottom:16px">
+          <div style="font-weight:800;font-size:15px;color:#333;margin-bottom:10px">🔥 Trending Products</div>
+          ${trendingData?.trending_products?.length ? `
+          <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch">
+            ${trendingData.trending_products.slice(0,6).map(p=>`
+              <div style="min-width:150px;background:white;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,0.07);cursor:pointer" class="trending-prod-card" data-pid="${p.id}">
+                <div style="font-size:28px;text-align:center;margin-bottom:6px">🌱</div>
+                <div style="font-size:12px;font-weight:700;color:#333;line-height:1.3">${p.name}</div>
+                <div style="font-size:11px;color:#757575;margin-top:2px">${p.brand || ''}</div>
+                <div style="font-size:13px;font-weight:800;color:#6A1B9A;margin-top:6px">₹${Number(p.price||0).toLocaleString()}</div>
+                <div style="font-size:10px;color:#FFB300;margin-top:2px">⭐ ${p.rating ? Number(p.rating).toFixed(1) : '—'}</div>
+              </div>`).join('')}
+          </div>` : `
+          <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px">
+            ${SAMPLE_PRODUCTS.slice(0,5).map(p=>`
+              <div style="min-width:150px;background:white;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,0.07)">
+                <div style="font-size:12px;font-weight:700;color:#333;line-height:1.3">${p.name}</div>
+                <div style="font-size:11px;color:#757575;margin-top:2px">${p.brand}</div>
+                <div style="font-size:13px;font-weight:800;color:#6A1B9A;margin-top:6px">₹${p.price.toLocaleString()}</div>
+              </div>`).join('')}
+          </div>`}
+        </div>
+
+        <!-- Seasonal Tip -->
+        ${trendingData?.seasonal_tip ? `
+        <div style="background:#FFF8E1;border-left:4px solid #FFB300;border-radius:10px;padding:12px;margin-bottom:16px">
+          <div style="font-size:12px;font-weight:700;color:#E65100;margin-bottom:4px">🌾 Seasonal Advisory</div>
+          <div style="font-size:13px;color:#333">${trendingData.seasonal_tip}</div>
+        </div>` : ''}
+
+        <!-- Success Stories -->
+        <div style="margin-bottom:14px">
+          <div style="font-weight:800;font-size:15px;color:#333;margin-bottom:10px">🏆 Success Stories</div>
+          ${successStories.length ? successStories.slice(0,3).map(s=>`
+            <div style="background:white;border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.07);margin-bottom:10px">
+              <div style="display:flex;align-items:flex-start;gap:10px">
+                <div style="width:42px;height:42px;background:linear-gradient(135deg,#6A1B9A,#4A148C);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:16px;flex-shrink:0">${(s.farmer_name||'F')[0]}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:700;color:#333">${s.farmer_name || 'Farmer'}</div>
+                  <div style="font-size:11px;color:#757575">${s.district || ''} · ${s.module ? s.module.charAt(0).toUpperCase()+s.module.slice(1) : ''}</div>
+                </div>
+                ${s.is_verified ? '<div style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:3px 7px;border-radius:6px;font-weight:600;flex-shrink:0">✅ Verified</div>' : ''}
+              </div>
+              <div style="font-size:13px;font-weight:700;color:#1B5E20;margin:10px 0 6px;line-height:1.4">${s.title}</div>
+              <div style="font-size:12px;color:#555;line-height:1.6">${s.story?.slice(0,200)}${s.story?.length > 200 ? '...' : ''}</div>
+              ${(s.income_before != null && s.income_after != null && s.income_after > 0) ? `
+              <div style="display:flex;gap:8px;margin-top:10px">
+                <div style="flex:1;background:#FFEBEE;border-radius:8px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:#C62828">Before</div>
+                  <div style="font-size:13px;font-weight:800;color:#C62828">₹${Number(s.income_before).toLocaleString()}</div>
+                </div>
+                <div style="display:flex;align-items:center;color:#9E9E9E">→</div>
+                <div style="flex:1;background:#E8F5E9;border-radius:8px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:#2E7D32">After</div>
+                  <div style="font-size:13px;font-weight:800;color:#2E7D32">₹${Number(s.income_after).toLocaleString()}</div>
+                </div>
+              </div>` : ''}
+            </div>`).join('') : `
+          <div style="text-align:center;padding:20px;color:#9E9E9E;font-size:13px">Loading success stories...</div>`}
+        </div>
+
+      </div>`;
+  }
+
   // ─── DATA ────────────────────────────────────────────────────────────────
   async function loadData() {
     loading = true; render();
     try {
-      const [st, pr, ord, ms, mp] = await Promise.all([
+      const [st, pr, ord, ms, mp, trending, stories, stats] = await Promise.all([
         api.get('/agrigalaxy/stores?limit=50').catch(() => []),
         api.get('/agrigalaxy/products?limit=100').catch(() => []),
         api.get('/agrigalaxy/orders').catch(() => []),
         api.get('/agrigalaxy/my-store').catch(() => null),
         api.get('/agrigalaxy/my-products').catch(() => []),
+        api.get('/agrigalaxy/trending').catch(() => null),
+        api.get('/agrigalaxy/success-stories?limit=3').catch(() => ({ stories: [] })),
+        api.get('/agrigalaxy/platform-stats').catch(() => null),
       ]);
-      stores     = Array.isArray(st) ? st : (st.stores || []);
-      products   = Array.isArray(pr) ? pr : (pr.products || []);
-      orders     = Array.isArray(ord) ? ord : (ord.orders || []);
-      myStore    = ms?.store || ms || null;
-      myProducts = Array.isArray(mp) ? mp : (mp.products || []);
+      stores        = Array.isArray(st) ? st : (st.stores || []);
+      products      = Array.isArray(pr) ? pr : (pr.products || []);
+      orders        = Array.isArray(ord) ? ord : (ord.orders || []);
+      myStore       = ms?.store || ms || null;
+      myProducts    = Array.isArray(mp) ? mp : (mp.products || []);
+      trendingData  = trending;
+      successStories = Array.isArray(stories) ? stories : (stories.stories || []);
+      platformStats = stats;
       // Fallback to sample data if API returns empty
       if (stores.length === 0) stores = SAMPLE_STORES;
       if (products.length === 0) products = SAMPLE_PRODUCTS;

@@ -10,7 +10,7 @@ export function renderFarmerConnect(container) {
   let tab = mode === 'owner' ? 'listings' : 'browse';
   let properties = [], stats = {}, savedIds = new Set(), myInquiries = [], societies = [];
   let loading = true;
-  let search = '', filterType = '';
+  let search = '', filterType = '', filterBhk = '', filterPetFriendly = false, filterParking = false;
 
   function render() {
     container.innerHTML = `
@@ -150,6 +150,13 @@ export function renderFarmerConnect(container) {
         <button class="chip ${filterType === 'villa' ? 'active' : ''}" data-type="villa">🏡 Villa</button>
         <button class="chip ${filterType === 'warehouse' ? 'active' : ''}" data-type="warehouse">🏭 Warehouse</button>
       </div>
+      <div class="filter-chips" style="gap:6px;padding:4px 16px">
+        <button class="chip ${filterBhk === '1' ? 'active' : ''}" data-bhk="1" style="font-size:11px">1 BHK</button>
+        <button class="chip ${filterBhk === '2' ? 'active' : ''}" data-bhk="2" style="font-size:11px">2 BHK</button>
+        <button class="chip ${filterBhk === '3' ? 'active' : ''}" data-bhk="3" style="font-size:11px">3 BHK</button>
+        <button class="chip ${filterPetFriendly ? 'active' : ''}" id="petFriendlyChip" style="font-size:11px">🐾 Pet OK</button>
+        <button class="chip ${filterParking ? 'active' : ''}" id="parkingChip" style="font-size:11px">🅿️ Parking</button>
+      </div>
       ${loading ? '<div class="loading"><div class="spinner"></div></div>' : renderSeekerContent()}
     `;
   }
@@ -158,6 +165,9 @@ export function renderFarmerConnect(container) {
     const filtered = properties.filter(p => {
       if (search && !`${p.title} ${p.location_label} ${p.description || ''}`.toLowerCase().includes(search.toLowerCase())) return false;
       if (filterType && p.property_type !== filterType) return false;
+      if (filterBhk && String(p.bhk) !== filterBhk) return false;
+      if (filterPetFriendly && !p.pet_friendly) return false;
+      if (filterParking && !p.parking_available) return false;
       return true;
     });
 
@@ -175,11 +185,13 @@ export function renderFarmerConnect(container) {
               <div class="l-icon">${typeIcon(p.property_type)}</div>
               <div class="l-body">
                 <div class="l-title">${p.title}</div>
-                <div class="l-meta">${p.property_type?.replace('_', ' ') || ''} · ${p.location_label || p.district_name || ''}</div>
+                <div class="l-meta">${p.property_type?.replace('_', ' ') || ''} · ${p.location_label || p.district_name || ''}${p.bhk ? ` · ${p.bhk} BHK` : ''}</div>
                 <div class="l-meta">${p.area || 'N/A'} · ${p.furnishing || 'N/A'} · ${p.floor_info || ''}</div>
                 <div class="l-tags">
                   ${p.is_verified ? '<span class="tag tag-green">✅ Verified</span>' : ''}
                   ${p.is_available ? '<span class="tag tag-blue">Available</span>' : '<span class="tag tag-gray">Unavailable</span>'}
+                  ${p.pet_friendly ? '<span class="tag tag-green" style="font-size:10px">🐾 Pet OK</span>' : ''}
+                  ${p.parking_available ? '<span class="tag tag-blue" style="font-size:10px">🅿️ Parking</span>' : ''}
                 </div>
               </div>
               <div style="text-align:right">
@@ -196,6 +208,9 @@ export function renderFarmerConnect(container) {
     container.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; render(); }));
     container.querySelector('#searchProp')?.addEventListener('input', e => { search = e.target.value; render(); });
     container.querySelectorAll('.chip[data-type]').forEach(c => c.addEventListener('click', () => { filterType = c.dataset.type; render(); }));
+    container.querySelectorAll('.chip[data-bhk]').forEach(c => c.addEventListener('click', () => { filterBhk = filterBhk === c.dataset.bhk ? '' : c.dataset.bhk; render(); }));
+    container.querySelector('#petFriendlyChip')?.addEventListener('click', () => { filterPetFriendly = !filterPetFriendly; render(); });
+    container.querySelector('#parkingChip')?.addEventListener('click', () => { filterParking = !filterParking; render(); });
     // Disease advisor events
     container.querySelectorAll('[data-acrop]').forEach(b => b.addEventListener('click', () => { advisorCrop = b.dataset.acrop; render(); }));
     container.querySelectorAll('[data-symptom]').forEach(cb => cb.addEventListener('change', () => {
@@ -344,12 +359,20 @@ export function renderFarmerConnect(container) {
       ${mode === 'seeker' ? `
         <div style="display:flex;gap:8px;margin-top:12px">
           <button class="btn btn-small" id="savePropModalBtn" style="flex:0;border:none;background:none;font-size:22px">${savedIds.has(p.id) ? '❤️' : '🤍'}</button>
-          <button class="btn btn-primary" id="inquiryBtn" style="flex:1">📩 Send Inquiry</button>
+          <button class="btn btn-secondary" id="contactOwnerBtn" style="flex:1">📞 Contact Owner</button>
+          <button class="btn btn-primary" id="inquiryBtn" style="flex:1">📩 Inquiry</button>
         </div>
+        <button class="btn btn-small mt-sm" id="visitBtn" style="width:100%;background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7">🗓️ Schedule Visit</button>
         <div id="inquiryForm" style="display:none;margin-top:12px">
           <div class="form-group"><label>Your Message</label><textarea class="form-input" id="inqMsg" rows="3" placeholder="I'm interested in this property. Is it still available?"></textarea></div>
           <div class="form-group"><label>Preferred Move-in Date</label><input class="form-input" type="date" id="inqDate"></div>
           <button class="btn btn-primary" id="sendInquiryBtn" style="width:100%">Send Inquiry</button>
+        </div>
+        <div id="visitForm" style="display:none;margin-top:12px">
+          <div class="form-group"><label>Proposed Visit Time 1</label><input class="form-input" type="datetime-local" id="visitTime1"></div>
+          <div class="form-group"><label>Proposed Visit Time 2 (optional)</label><input class="form-input" type="datetime-local" id="visitTime2"></div>
+          <div class="form-group"><label>Notes</label><textarea class="form-input" id="visitNotes" rows="2" placeholder="Any preferences or questions…"></textarea></div>
+          <button class="btn btn-primary" id="submitVisitBtn" style="width:100%">Request Visit</button>
         </div>
         <div style="display:flex;gap:8px;margin-top:10px;padding:10px;background:var(--accent-light);border-radius:8px;border:1px solid var(--accent)">
           <span style="font-size:14px">🤖</span>
@@ -361,6 +384,31 @@ export function renderFarmerConnect(container) {
     document.querySelector('#inquiryBtn')?.addEventListener('click', () => {
       document.querySelector('#inquiryForm').style.display = 'block';
       document.querySelector('#inquiryBtn').style.display = 'none';
+    });
+    document.querySelector('#visitBtn')?.addEventListener('click', () => {
+      const vf = document.querySelector('#visitForm');
+      vf.style.display = vf.style.display === 'none' ? 'block' : 'none';
+    });
+    document.querySelector('#contactOwnerBtn')?.addEventListener('click', async () => {
+      try {
+        const res = await api.get(`/farmerconnect/properties/${p.id}/contact`);
+        if (res.phone) {
+          document.querySelector('#contactOwnerBtn').textContent = `📞 ${res.phone}`;
+        } else {
+          showToast(res.error || 'Contact limit reached. Upgrade to view.', 'info');
+        }
+      } catch(err) { showToast(err.message || 'Could not fetch contact', 'error'); }
+    });
+    document.querySelector('#submitVisitBtn')?.addEventListener('click', async () => {
+      const t1 = document.querySelector('#visitTime1')?.value;
+      const t2 = document.querySelector('#visitTime2')?.value;
+      const notes = document.querySelector('#visitNotes')?.value;
+      if (!t1) { showToast('Please select at least one visit time', 'error'); return; }
+      const times = [t1]; if (t2) times.push(t2);
+      try {
+        await api.post(`/farmerconnect/properties/${p.id}/visit`, { proposed_times: times, notes });
+        showToast('Visit request sent! Owner will confirm.', 'success'); closeModal();
+      } catch(err) { showToast(err.message, 'error'); }
     });
     document.querySelector('#sendInquiryBtn')?.addEventListener('click', async () => {
       try {

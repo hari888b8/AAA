@@ -660,4 +660,98 @@ router.get('/transport/match', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════════
+// LISTING OFFERS — Negotiation system
+// ═══════════════════════════════════════════════════════════════
+
+// POST /api/agriflow/listings/:id/offers — buyer makes an offer
+router.post('/listings/:id/offers', authMiddleware, async (req, res) => {
+  try {
+    const { offered_price, quantity_kg, message } = req.body;
+    if (!offered_price || !quantity_kg) return res.status(400).json({ error: 'offered_price and quantity_kg required' });
+
+    const listing = await query(`SELECT * FROM supply_listings WHERE id=$1 AND status='active'`, [req.params.id]);
+    if (!listing.rows.length) return res.status(404).json({ error: 'Listing not found or inactive' });
+    if (listing.rows[0].farmer_id === req.user.id) return res.status(400).json({ error: 'Cannot make offer on your own listing' });
+
+    const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72h
+    const result = await query(`
+      INSERT INTO listing_offers (id, listing_id, buyer_id, seller_id, offered_price, quantity_kg, message, expires_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *
+    `, [uuidv4(), req.params.id, req.user.id, listing.rows[0].farmer_id, offered_price, quantity_kg, message, expiresAt]);
+
+    res.status(201).json({ offer: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/agriflow/listings/:id/offers — get offers on a listing
+router.get('/listings/:id/offers', authMiddleware, async (req, res) => {
+  try {
+    const listing = await query(`SELECT * FROM supply_listings WHERE id=$1`, [req.params.id]);
+    if (!listing.rows.length) return res.status(404).json({ error: 'Listing not found' });
+
+    const isSeller = listing.rows[0].farmer_id === req.user.id;
+    let conditions = [`lo.listing_id = $1`];
+    let params = [req.params.id];
+    if (!isSeller) { conditions.push(`lo.buyer_id = $2`); params.push(req.user.id); }
+
+    const result = await query(`
+      SELECT lo.*, u_buyer.name AS buyer_name, u_seller.name AS seller_name
+      FROM listing_offers lo
+      JOIN users u_buyer ON u_buyer.id = lo.buyer_id
+      JOIN users u_seller ON u_seller.id = lo.seller_id
+      WHERE ${conditions.join(' AND ')}
+      ORDER BY lo.created_at DESC
+    `, params);
+    res.json({ offers: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/agriflow/offers/:id/respond — seller responds to offer
+router.patch('/offers/:id/respond', authMiddleware, async (req, res) => {
+  try {
+    const { action, counter_price, counter_message } = req.body;
+    if (!['accept','reject','counter'].includes(action)) return res.status(400).json({ error: 'action must be accept, reject, or counter' });
+    if (action === 'counter' && !counter_price) return res.status(400).json({ error: 'counter_price required for counter action' });
+
+    const offer = await query(`SELECT * FROM listing_offers WHERE id=$1 AND seller_id=$2`, [req.params.id, req.user.id]);
+    if (!offer.rows.length) return res.status(404).json({ error: 'Offer not found or not authorized' });
+
+    const newStatus = action === 'accept' ? 'accepted' : action === 'reject' ? 'rejected' : 'countered';
+    const result = await query(`
+      UPDATE listing_offers SET status=$1, counter_price=$2, counter_message=$3, updated_at=NOW() WHERE id=$4 RETURNING *
+    `, [newStatus, counter_price || null, counter_message || null, req.params.id]);
+    res.json({ offer: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/agriflow/offers/:id/accept-counter — buyer accepts counter offer
+router.patch('/offers/:id/accept-counter', authMiddleware, async (req, res) => {
+  try {
+    const offer = await query(`SELECT * FROM listing_offers WHERE id=$1 AND buyer_id=$2 AND status='countered'`, [req.params.id, req.user.id]);
+    if (!offer.rows.length) return res.status(404).json({ error: 'Countered offer not found' });
+
+    const result = await query(`UPDATE listing_offers SET status='accepted', updated_at=NOW() WHERE id=$1 RETURNING *`, [req.params.id]);
+    res.json({ offer: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/agriflow/my-offers — buyer's offers and statuses
+router.get('/my-offers', authMiddleware, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT lo.*, sl.description AS listing_description,
+             cc.name AS crop_name, cc.icon_emoji,
+             u_seller.name AS seller_name
+      FROM listing_offers lo
+      JOIN supply_listings sl ON sl.id = lo.listing_id
+      LEFT JOIN crop_catalog cc ON cc.id = sl.crop_id
+      JOIN users u_seller ON u_seller.id = lo.seller_id
+      WHERE lo.buyer_id = $1
+      ORDER BY lo.created_at DESC
+    `, [req.user.id]);
+    res.json({ offers: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

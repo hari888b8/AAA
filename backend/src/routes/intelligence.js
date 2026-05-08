@@ -482,4 +482,129 @@ router.get('/supply-heatmap', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════════
+// BEST TIME TO SELL — Seasonal price analysis
+// ═══════════════════════════════════════════════════════════════
+
+// GET /api/intelligence/best-sell-time/:cropId
+router.get('/best-sell-time/:cropId', async (req, res) => {
+  try {
+    const cacheKey = `best_sell_time:${req.params.cropId}`;
+    const cached = await getCache(cacheKey);
+    if (cached) return res.json(cached);
+
+    // Get current price (last 7 days avg)
+    const currentResult = await query(`
+      SELECT AVG(modal_price) AS avg_price
+      FROM price_feeds
+      WHERE crop_id = $1 AND recorded_at >= NOW() - INTERVAL '7 days'
+    `, [req.params.cropId]);
+
+    // Get 90-day average
+    const avg90Result = await query(`
+      SELECT AVG(modal_price) AS avg_price_90d
+      FROM price_feeds
+      WHERE crop_id = $1 AND recorded_at >= NOW() - INTERVAL '90 days'
+    `, [req.params.cropId]);
+
+    // Get trend: compare last 7d vs prior 7d
+    const priorResult = await query(`
+      SELECT AVG(modal_price) AS prior_avg
+      FROM price_feeds
+      WHERE crop_id = $1 AND recorded_at BETWEEN NOW() - INTERVAL '14 days' AND NOW() - INTERVAL '7 days'
+    `, [req.params.cropId]);
+
+    const currentPrice = parseFloat(currentResult.rows[0]?.avg_price) || 0;
+    const avg90d = parseFloat(avg90Result.rows[0]?.avg_price_90d) || currentPrice;
+    const priorAvg = parseFloat(priorResult.rows[0]?.prior_avg) || currentPrice;
+
+    let trend = 'stable';
+    if (priorAvg > 0) {
+      const changePct = ((currentPrice - priorAvg) / priorAvg) * 100;
+      trend = changePct > 3 ? 'rising' : changePct < -3 ? 'falling' : 'stable';
+    }
+
+    const priceChangePct = avg90d > 0 ? ((currentPrice - avg90d) / avg90d * 100).toFixed(1) : '0.0';
+    let recommendation, reason;
+    if (currentPrice >= avg90d * 1.05 || trend === 'falling') {
+      recommendation = 'sell_now';
+      reason = currentPrice >= avg90d * 1.05
+        ? `Current price is ${priceChangePct}% above 90-day average. Good time to sell.`
+        : 'Price trend is falling. Selling now avoids further loss.';
+    } else if (trend === 'rising') {
+      recommendation = 'hold_1_week';
+      reason = 'Price is rising. Holding for 1 week may yield better returns.';
+    } else {
+      recommendation = 'hold_1_month';
+      reason = `Current price is ${Math.abs(priceChangePct)}% below 90-day average. Consider holding.`;
+    }
+
+    const response = {
+      recommendation,
+      reason,
+      current_price: currentPrice,
+      avg_price_90d: Math.round(avg90d),
+      trend,
+      price_change_pct: parseFloat(priceChangePct),
+    };
+
+    await setCache(cacheKey, response, 300); // 5 min TTL
+    res.json(response);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// DEMAND SIGNALS — Crop demand scoring
+// ═══════════════════════════════════════════════════════════════
+
+// GET /api/intelligence/demand-signals
+router.get('/demand-signals', async (req, res) => {
+  try {
+    const { crop_id, district_id } = req.query;
+    const params = [];
+    let cropFilter = '';
+    let districtFilter = '';
+
+    if (crop_id) {
+      params.push(parseInt(crop_id));
+      cropFilter = `AND sl.crop_id = $${params.length}`;
+    }
+    if (district_id) {
+      params.push(parseInt(district_id));
+      districtFilter = `AND sl.district_id = $${params.length}`;
+    }
+
+    const result = await query(`
+      SELECT
+        cc.id AS crop_id, cc.name AS crop_name, cc.icon_emoji,
+        COUNT(DISTINCT sl.id) FILTER (WHERE sl.status = 'active') AS active_listings,
+        COALESCE(SUM(sl.quantity_kg) FILTER (WHERE sl.status = 'active'), 0) AS total_supply_kg,
+        COUNT(DISTINCT i.id) FILTER (WHERE i.created_at >= NOW() - INTERVAL '7 days') AS inquiries_7d,
+        COUNT(DISTINCT wl.id) AS watchlist_count
+      FROM crop_catalog cc
+      LEFT JOIN supply_listings sl ON sl.crop_id = cc.id ${cropFilter} ${districtFilter}
+      LEFT JOIN inquiries i ON i.listing_id = sl.id
+      LEFT JOIN watchlists wl ON wl.crop_id = cc.id
+      GROUP BY cc.id, cc.name, cc.icon_emoji
+      ORDER BY inquiries_7d DESC, watchlist_count DESC
+      LIMIT 20
+    `, params);
+
+    const signals = result.rows.map(r => {
+      const inquiries7d = parseInt(r.inquiries_7d) || 0;
+      const watchlistCount = parseInt(r.watchlist_count) || 0;
+      const activeListings = parseInt(r.active_listings) || 0;
+      const supplyScore = activeListings > 0 ? Math.min(10, Math.round(10 / activeListings)) : 10;
+      const score = inquiries7d * 3 + watchlistCount * 2 + supplyScore;
+      return {
+        ...r,
+        demand_score: score,
+        signal: score >= 15 ? 'high' : score >= 7 ? 'medium' : 'low',
+      };
+    }).sort((a, b) => b.demand_score - a.demand_score);
+
+    res.json({ signals });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

@@ -106,6 +106,8 @@ const aquaosV8Router = require('./routes/aquaos-v8');
 const aquaosV9Router = require('./routes/aquaos-v9');
 // Phase 14 — AquaOS V10 Analytics + Search + Payments + Pricing + Chat + AI + Growth + IoT
 const aquaosV10Router = require('./routes/aquaos-v10');
+// Calculators — Aqua Calculator + Crop Calculator (real-time problem solvers)
+const calculatorsRouter = require('./routes/calculators');
 // Phase 15 — Galaxy Discovery Module
 const galaxyRouter = require('./routes/galaxy');
 // Phase 16 — Platform Readiness (DPDP + KYC + AI + eNAM/NABARD/SFAC)
@@ -302,6 +304,8 @@ app.use('/api/vehicles', vehiclesRouter);
 app.use('/api/delivery', deliveryRouter);
 app.use('/api/gigworkers', gigworkersRouter);
 app.use('/api/transport', transportRouter);
+// Calculators — Aqua + Crop
+app.use('/api/calculators', calculatorsRouter);
 // Phase 15 — Galaxy Discovery (public, no auth)
 app.use('/api/galaxy', galaxyRouter);
 // Phase 16 — Platform Readiness Layer
@@ -372,6 +376,10 @@ async function start() {
     await migrateV18AquaOSV9();
     const { migrateV19AquaOSV10 } = require('./db/migrate-v19-aquaos-v10');
     await migrateV19AquaOSV10();
+    const { migrateV21Sprint1 } = require('./db/migrate-v21-sprint1');
+    await migrateV21Sprint1();
+    const { migrateV22BhoomiOsGalaxy } = require('./db/migrate-v22-bhoomios-galaxy');
+    await migrateV22BhoomiOsGalaxy();
     const { migrateV21Galaxy } = require('./db/migrate-v21-galaxy');
     await migrateV21Galaxy();
     const { migrateV22PlatformReadiness } = require('./db/migrate-v22-platform-readiness');

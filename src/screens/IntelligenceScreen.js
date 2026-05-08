@@ -552,8 +552,35 @@ export function renderIntelligence(container) {
   }
 
   // ═══ SHARED ANALYTICS ═══
+  let bestSellData = null, bestSellCropId = '', loadingBestSell = false;
+
   function renderPrices() {
     return `<div class="section" style="padding-top:8px">
+      <div class="section-title">⏰ Best Time to Sell</div>
+      <div class="card" style="padding:14px;margin-bottom:12px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Select a crop to see sell timing recommendation</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="bestSellCropSelect" class="form-input" style="flex:1;font-size:12px">
+            <option value="">-- Select crop --</option>
+            ${supplyDemand.slice(0,15).map(s => `<option value="${s.crop_id}" ${bestSellCropId==s.crop_id?'selected':''}>${s.icon_emoji||'🌾'} ${s.crop||s.name}</option>`).join('')}
+          </select>
+          <button id="bestSellBtn" style="padding:8px 12px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Analyze</button>
+        </div>
+        ${loadingBestSell ? '<div style="text-align:center;padding:12px"><div class="spinner" style="width:20px;height:20px"></div></div>' : ''}
+        ${bestSellData ? `
+          <div style="margin-top:12px;padding:12px;border-radius:10px;background:${bestSellData.recommendation==='sell_now'?'#E8F5E9':bestSellData.recommendation==='hold_1_week'?'#FFF3E0':'#E3F2FD'}">
+            <div style="font-weight:800;font-size:14px;color:${bestSellData.recommendation==='sell_now'?'#2E7D32':bestSellData.recommendation==='hold_1_week'?'#E65100':'#0277BD'}">
+              ${bestSellData.recommendation==='sell_now'?'🟢 SELL NOW':bestSellData.recommendation==='hold_1_week'?'🟡 HOLD 1 WEEK':'🔵 HOLD 1 MONTH'}
+            </div>
+            <div style="font-size:12px;color:var(--text2);margin-top:6px">${bestSellData.reason}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px">
+              <div style="text-align:center"><div style="font-size:11px;color:var(--text3)">Current</div><div style="font-weight:700">₹${bestSellData.current_price ? Math.round(bestSellData.current_price).toLocaleString() : '—'}/q</div></div>
+              <div style="text-align:center"><div style="font-size:11px;color:var(--text3)">90d Avg</div><div style="font-weight:700">₹${bestSellData.avg_price_90d ? Math.round(bestSellData.avg_price_90d).toLocaleString() : '—'}/q</div></div>
+              <div style="text-align:center"><div style="font-size:11px;color:var(--text3)">Trend</div><div style="font-weight:700;color:${bestSellData.trend==='rising'?'#4CAF50':bestSellData.trend==='falling'?'#F44336':'#757575'}">${bestSellData.trend==='rising'?'▲ Rising':bestSellData.trend==='falling'?'▼ Falling':'→ Stable'}</div></div>
+            </div>
+          </div>
+        ` : ''}
+      </div>
       <div class="section-title">💰 Live Mandi Prices</div>
       ${prices.length === 0 ? '<div class="text-sm text-muted">Loading…</div>' :
         prices.slice(0,30).map(p => {
@@ -666,6 +693,18 @@ export function renderIntelligence(container) {
     container.querySelector('#addInvBtn')?.addEventListener('click', showAddInventory);
     container.querySelector('#addFpoListBtn')?.addEventListener('click', showAddSupplyListing);
     container.querySelector('#exportFPOReport')?.addEventListener('click', exportFPOReport);
+
+    // Best time to sell
+    container.querySelector('#bestSellBtn')?.addEventListener('click', async () => {
+      const cropId = container.querySelector('#bestSellCropSelect')?.value;
+      if (!cropId) { showToast('Select a crop first', 'info'); return; }
+      bestSellCropId = cropId; loadingBestSell = true; bestSellData = null; render();
+      try {
+        const res = await api.get(`/intelligence/best-sell-time/${cropId}`);
+        bestSellData = res;
+      } catch(e) { bestSellData = null; showToast('Could not fetch data', 'error'); }
+      loadingBestSell = false; render();
+    });
     container.querySelector('#bsSearch')?.addEventListener('click', () => {
       searchFilters = {
         crop: document.querySelector('#bsCrop')?.value,

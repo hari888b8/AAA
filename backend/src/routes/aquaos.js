@@ -1229,4 +1229,177 @@ router.get('/daily-workflow', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ════════════════════════════════════════════════════════════════
+// BIOPRO SCORE — Composite pond health metric
+// ════════════════════════════════════════════════════════════════
+
+// GET /api/aquaos/ponds/:id/biopro-score
+router.get('/ponds/:id/biopro-score', authMiddleware, async (req, res) => {
+  try {
+    const pond = await query(`
+      SELECT p.*, f.farmer_id AS farm_farmer_id
+      FROM ponds p JOIN aqua_farms f ON f.id = p.farm_id
+      WHERE p.id = $1
+    `, [req.params.id]);
+    if (!pond.rows.length) return res.status(404).json({ error: 'Pond not found' });
+    const p = pond.rows[0];
+    if (p.farm_farmer_id !== req.user.id) return res.status(403).json({ error: 'Not your pond' });
+
+    // Water quality score (30%)
+    const lastWater = await query(
+      `SELECT ph, dissolved_o2, temperature_c FROM water_logs WHERE pond_id=$1 ORDER BY logged_at DESC LIMIT 1`,
+      [req.params.id]
+    );
+    let wqScore = 50;
+    if (lastWater.rows.length) {
+      const w = lastWater.rows[0];
+      const ph = parseFloat(w.ph) || 7.5;
+      const doVal = parseFloat(w.dissolved_o2) || 5;
+      const temp = parseFloat(w.temperature_c) || 28;
+      const phScore = (ph >= 7.5 && ph <= 8.5) ? 100 : (ph >= 7.0 && ph <= 9.0) ? 60 : 30;
+      const doScore = doVal >= 5 ? 100 : doVal >= 3 ? Math.round((doVal - 3) / 2 * 100) : 0;
+      const tempScore = (temp >= 26 && temp <= 32) ? 100 : (temp >= 22 && temp <= 35) ? 60 : 30;
+      wqScore = Math.round((phScore + doScore + tempScore) / 3);
+    }
+
+    // Survival rate score (25%)
+    const survivalScore = Math.min(100, Math.round((parseFloat(p.survival_pct) || 80)));
+
+    // FCR score (20%)
+    const cycleData = await query(
+      `SELECT total_feed_kg, biomass_kg FROM crop_cycles WHERE pond_id=$1 AND status='active' LIMIT 1`,
+      [req.params.id]
+    );
+    let fcrScore = 60;
+    if (cycleData.rows.length) {
+      const c = cycleData.rows[0];
+      const feed = parseFloat(c.total_feed_kg) || 0;
+      const biomass = parseFloat(c.biomass_kg) || 1;
+      const fcr = feed > 0 ? feed / biomass : 1.5;
+      fcrScore = fcr <= 1.2 ? 100 : fcr <= 1.5 ? 80 : fcr <= 2.0 ? 60 : 40;
+    }
+
+    // Growth rate score (15%)
+    const lastSample = await query(
+      `SELECT avg_weight_g FROM growth_samples WHERE pond_id=$1 ORDER BY sampled_at DESC LIMIT 1`,
+      [req.params.id]
+    );
+    let growthScore = 70;
+    if (lastSample.rows.length && p.stocking_date) {
+      const doc = Math.max(1, Math.round((Date.now() - new Date(p.stocking_date).getTime()) / 86400000));
+      const speciesRates = { vannamei: 0.14, shrimp: 0.14, tiger: 0.1, crab: 0.08, default: 0.08 };
+      const s = (p.species || '').toLowerCase();
+      let rate = speciesRates.default;
+      for (const [k, v] of Object.entries(speciesRates)) {
+        if (k !== 'default' && s.includes(k)) { rate = v; break; }
+      }
+      const expectedWeight = doc * rate;
+      const actualWeight = parseFloat(lastSample.rows[0].avg_weight_g) || 0;
+      growthScore = expectedWeight > 0 ? Math.min(100, Math.round((actualWeight / expectedWeight) * 100)) : 70;
+    }
+
+    // Stocking density score (10%)
+    const area = parseFloat(p.area_acres) || 1;
+    const stocked = parseFloat(p.stocked_count) || 0;
+    let densityScore = 80;
+    if (stocked > 0 && area > 0) {
+      const density = stocked / (area * 4047); // per m²
+      densityScore = density <= 50 ? 100 : density <= 100 ? 80 : density <= 150 ? 60 : 40;
+    }
+
+    const bioproScore = Math.round(
+      wqScore * 0.30 + survivalScore * 0.25 + fcrScore * 0.20 + growthScore * 0.15 + densityScore * 0.10
+    );
+    const grade = bioproScore >= 85 ? 'A' : bioproScore >= 70 ? 'B' : bioproScore >= 55 ? 'C' : 'D';
+
+    res.json({
+      biopro_score: bioproScore,
+      grade,
+      components: {
+        water_quality: { score: wqScore, weight: '30%' },
+        survival_rate: { score: survivalScore, weight: '25%' },
+        fcr: { score: fcrScore, weight: '20%' },
+        growth_rate: { score: growthScore, weight: '15%' },
+        stocking_density: { score: densityScore, weight: '10%' },
+      }
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ════════════════════════════════════════════════════════════════
+// HARVEST LISTING OFFERS — Bid/offer system
+// ════════════════════════════════════════════════════════════════
+
+// POST /api/aquaos/harvest-listings/:id/offers
+router.post('/harvest-listings/:id/offers', authMiddleware, async (req, res) => {
+  try {
+    const { offered_price, quantity_kg, message } = req.body;
+    if (!offered_price || !quantity_kg) return res.status(400).json({ error: 'offered_price and quantity_kg required' });
+
+    const listing = await query(`SELECT * FROM harvest_listings WHERE id=$1`, [req.params.id]);
+    if (!listing.rows.length) return res.status(404).json({ error: 'Listing not found' });
+    if (listing.rows[0].farmer_id === req.user.id) return res.status(400).json({ error: 'Cannot bid on your own listing' });
+
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48h
+    const result = await query(`
+      INSERT INTO aqua_listing_offers (id, listing_id, buyer_id, offered_price, quantity_kg, message, expires_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *
+    `, [uuidv4(), req.params.id, req.user.id, offered_price, quantity_kg, message, expiresAt]);
+
+    res.status(201).json({ offer: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GET /api/aquaos/harvest-listings/:id/offers
+router.get('/harvest-listings/:id/offers', authMiddleware, async (req, res) => {
+  try {
+    const listing = await query(`SELECT * FROM harvest_listings WHERE id=$1 AND farmer_id=$2`, [req.params.id, req.user.id]);
+    if (!listing.rows.length) return res.status(403).json({ error: 'Not your listing' });
+
+    const result = await query(`
+      SELECT alo.*, u.name AS buyer_name, u.phone AS buyer_phone
+      FROM aqua_listing_offers alo
+      JOIN users u ON u.id = alo.buyer_id
+      WHERE alo.listing_id = $1
+      ORDER BY alo.created_at DESC
+    `, [req.params.id]);
+    res.json({ offers: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/aquaos/harvest-listings/offers/:offerId/accept
+router.patch('/harvest-listings/offers/:offerId/accept', authMiddleware, async (req, res) => {
+  try {
+    const offer = await query(`
+      SELECT alo.*, hl.farmer_id FROM aqua_listing_offers alo
+      JOIN harvest_listings hl ON hl.id = alo.listing_id
+      WHERE alo.id = $1
+    `, [req.params.offerId]);
+    if (!offer.rows.length) return res.status(404).json({ error: 'Offer not found' });
+    if (offer.rows[0].farmer_id !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
+
+    // Accept this offer, reject others
+    await query(`UPDATE aqua_listing_offers SET status='rejected', updated_at=NOW() WHERE listing_id=$1 AND id!=$2 AND status='pending'`,
+      [offer.rows[0].listing_id, req.params.offerId]);
+    const result = await query(`UPDATE aqua_listing_offers SET status='accepted', updated_at=NOW() WHERE id=$1 RETURNING *`, [req.params.offerId]);
+    res.json({ offer: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/aquaos/harvest-listings/offers/:offerId/reject
+router.patch('/harvest-listings/offers/:offerId/reject', authMiddleware, async (req, res) => {
+  try {
+    const offer = await query(`
+      SELECT alo.*, hl.farmer_id FROM aqua_listing_offers alo
+      JOIN harvest_listings hl ON hl.id = alo.listing_id
+      WHERE alo.id = $1
+    `, [req.params.offerId]);
+    if (!offer.rows.length) return res.status(404).json({ error: 'Offer not found' });
+    if (offer.rows[0].farmer_id !== req.user.id) return res.status(403).json({ error: 'Not authorized' });
+
+    const result = await query(`UPDATE aqua_listing_offers SET status='rejected', updated_at=NOW() WHERE id=$1 RETURNING *`, [req.params.offerId]);
+    res.json({ offer: result.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
