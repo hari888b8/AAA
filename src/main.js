@@ -37,6 +37,8 @@ import { renderTickets } from './screens/TicketsScreen.js';
 import { renderEscrow } from './screens/EscrowScreen.js';
 import { renderWatchlists } from './screens/WatchlistsScreen.js';
 import { renderFPODashboard } from './screens/FPODashboardScreen.js';
+import { renderFPOGalaxy } from './screens/FPOGalaxyScreen.js';
+import { renderFPOPortfolio } from './screens/FPOPortfolioScreen.js';
 import { renderCart } from './screens/CartScreen.js';
 import { renderLivestock } from './screens/LivestockScreen.js';
 import { renderLogistics } from './screens/LogisticsScreen.js';
@@ -61,6 +63,31 @@ import { renderVehicles } from './screens/VehiclesScreen.js';
 import { renderDelivery } from './screens/DeliveryScreen.js';
 import { renderGigWorkers } from './screens/GigWorkersScreen.js';
 import { renderCalculators } from './screens/CalculatorsScreen.js';
+// Galaxy screens
+import { renderFarmerGalaxy } from './screens/FarmerGalaxyScreen.js';
+import { renderFarmerPortfolio } from './screens/FarmerPortfolioScreen.js';
+import { renderAquaGalaxy } from './screens/AquaGalaxyScreen.js';
+import { renderAquaPortfolio } from './screens/AquaPortfolioScreen.js';
+import { renderInputsGalaxy } from './screens/InputsGalaxyScreen.js';
+import { renderInputsPortfolio } from './screens/InputsPortfolioScreen.js';
+import { renderLivestockGalaxy } from './screens/LivestockGalaxyScreen.js';
+import { renderLivestockPortfolio } from './screens/LivestockPortfolioScreen.js';
+import { renderContractsGalaxy } from './screens/ContractsGalaxyScreen.js';
+import { renderExporterGalaxy } from './screens/ExporterGalaxyScreen.js';
+import { renderMandiGalaxy } from './screens/MandiGalaxyScreen.js';
+import { renderMandiPortfolio } from './screens/MandiPortfolioScreen.js';
+import { renderTrainingGalaxy } from './screens/TrainingGalaxyScreen.js';
+import { renderSchemesGalaxy } from './screens/SchemesGalaxyScreen.js';
+import { renderKisanGalaxy } from './screens/KisanGalaxyScreen.js';
+// Platform readiness
+import { renderCompliance } from './screens/ComplianceScreen.js';
+// Phase 18 — Next-Level Platform
+import { renderFPOStorefront } from './screens/FPOStorefrontScreen.js';
+import { renderDigitalTwin } from './screens/DigitalTwinScreen.js';
+import { renderExportIntelligence } from './screens/ExportIntelligenceScreen.js';
+import { renderRuralCRM } from './screens/RuralCRMScreen.js';
+import { renderCreditGraph } from './screens/CreditGraphScreen.js';
+import { renderDynamicPricing } from './screens/DynamicPricingScreen.js';
 
 // ===== ROUTE CONFIG =====
 //
@@ -106,6 +133,8 @@ const ROUTES = {
   escrow:        { title: 'Escrow',        icon: '🔐', render: renderEscrow,       back: 'orders'  },
   watchlists:    { title: 'Watchlists',    icon: '👁️', render: renderWatchlists,   back: 'home'    },
   fpodashboard:  { title: 'FPO Hub',       icon: '🏢', render: renderFPODashboard, back: 'home'    },
+  fpogalaxy:     { title: 'FPO Galaxy',    icon: '🌐', render: renderFPOGalaxy,    back: 'home'    },
+  fpoportfolio:  { title: 'FPO Portfolio', icon: '🏢', render: renderFPOPortfolio, back: 'fpogalaxy' },
   cart:          { title: 'Cart',          icon: '🛒', render: renderCart,          back: 'home'    },
   livestock:     { title: 'Livestock',     icon: '🐄', render: renderLivestock,     back: 'agriflow'},
   logistics:     { title: 'Logistics',     icon: '🚚', render: renderLogistics,    back: 'home'    },
@@ -130,6 +159,36 @@ const ROUTES = {
   delivery:      { title: 'Delivery',     icon: '📦', render: renderDelivery,    back: 'kisan'    },
   gigworkers:    { title: 'Gig Workers',  icon: '👨‍🔧', render: renderGigWorkers,  back: 'kisan'    },
   calculators:   { title: 'Calculators', icon: '🧮', render: renderCalculators, back: 'home'     },
+  // Galaxy routes
+  farmergalaxy:  { title: 'Farmer Galaxy', icon: '👨‍🌾', render: renderFarmerGalaxy, back: 'home'   },
+  farmerportfolio:{ title: 'Farmer Profile',icon: '👨‍🌾', render: renderFarmerPortfolio, back: 'farmergalaxy' },
+  aquagalaxy:    { title: 'Aqua Galaxy',   icon: '🐟', render: renderAquaGalaxy,   back: 'home'    },
+  aquaportfolio: { title: 'Aqua Farm',     icon: '🐟', render: renderAquaPortfolio, back: 'aquagalaxy' },
+  inputsgalaxy:  { title: 'Inputs Galaxy', icon: '🌱', render: renderInputsGalaxy, back: 'home'    },
+  inputsportfolio:{ title: 'Supplier',     icon: '🏪', render: renderInputsPortfolio, back: 'inputsgalaxy' },
+  livestockgalaxy:{ title: 'Livestock Galaxy',icon:'🐄', render: renderLivestockGalaxy, back: 'home' },
+  livestockportfolio:{ title: 'Breeder',   icon: '🐄', render: renderLivestockPortfolio, back: 'livestockgalaxy' },
+  contractsgalaxy:{ title: 'Contracts',    icon: '📝', render: renderContractsGalaxy, back: 'home'  },
+  contractdetail:{ title: 'Contract',      icon: '📝', render: renderContractsGalaxy, back: 'contractsgalaxy' },
+  exportergalaxy:{ title: 'Exporter Galaxy',icon:'🌍', render: renderExporterGalaxy, back: 'home'  },
+  exporterportfolio:{ title: 'Exporter',   icon: '🌍', render: renderExporterGalaxy, back: 'exportergalaxy' },
+  mandigalaxy:   { title: 'Mandi Galaxy',  icon: '📍', render: renderMandiGalaxy,  back: 'home'    },
+  mandiportfolio:{ title: 'Mandi',         icon: '📍', render: renderMandiPortfolio, back: 'mandigalaxy' },
+  traininggalaxy:{ title: 'Training Galaxy',icon:'🎓', render: renderTrainingGalaxy, back: 'home'  },
+  trainingdetail:{ title: 'Course',        icon: '🎓', render: renderTrainingGalaxy, back: 'traininggalaxy' },
+  schemesgalaxy: { title: 'Schemes Galaxy',icon: '🏛️', render: renderSchemesGalaxy, back: 'home'   },
+  schemedetail:  { title: 'Scheme',        icon: '🏛️', render: renderSchemesGalaxy, back: 'schemesgalaxy' },
+  kisangalaxy:   { title: 'Kisan Galaxy',  icon: '🚜', render: renderKisanGalaxy,  back: 'home'    },
+  kisanportfolio:{ title: 'Vehicle',       icon: '🚜', render: renderKisanGalaxy,  back: 'kisangalaxy' },
+  // Platform Readiness
+  compliance:    { title: 'Compliance',    icon: '🛡️', render: renderCompliance,   back: 'profile' },
+  // Phase 18 — Next-Level Platform
+  fpostorefront: { title: 'FPO Store',     icon: '🏪', render: renderFPOStorefront, back: 'fpodashboard' },
+  digitaltwin:   { title: 'Farm Twin',     icon: '🔮', render: renderDigitalTwin,  back: 'farmdiary'    },
+  exportintel:   { title: 'Export Intel',  icon: '🌍', render: renderExportIntelligence, back: 'exporter' },
+  ruralcrm:      { title: 'Rural CRM',    icon: '📇', render: renderRuralCRM,     back: 'home'         },
+  creditgraph:   { title: 'Credit Graph',  icon: '💳', render: renderCreditGraph,  back: 'finance'      },
+  dynamicpricing:{ title: 'Live Prices',   icon: '📈', render: renderDynamicPricing, back: 'home'       },
 };
 
 // ─── Role-based nav — always 5 tabs ─────────────────────────────────────────────────────────
@@ -156,8 +215,16 @@ export { showToast, showModal, closeModal } from './app-shell.js';
 import { _registerNavigator } from './app-shell.js';
 
 export function navigate(route) {
-  if (!getState().isLoggedIn && route !== 'login') route = 'login';
-  currentRoute = route;
+  // Support route params: "fpoportfolio?id=123"
+  const [routeName, queryStr] = route.split('?');
+  if (queryStr) window._routeParams = queryStr;
+  else window._routeParams = '';
+  if (!getState().isLoggedIn && routeName !== 'login') {
+    currentRoute = 'login';
+    renderApp();
+    return;
+  }
+  currentRoute = routeName;
   renderApp();
 }
 _registerNavigator(navigate);
